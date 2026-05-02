@@ -52,3 +52,23 @@ In that setup:
 - DynamoDB stores application data without managing a database server.
 
 This keeps the demo inexpensive, scalable, and simple to maintain while leaving room to grow into a real web app.
+
+## Automatic AWS deployment
+
+This repo includes a GitHub Actions workflow at `.github/workflows/deploy-s3.yml`.
+
+After the GitHub repository has the required secrets, every push to `main` will automatically upload the static site files to the S3 bucket.
+
+Required GitHub repository secrets:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `S3_BUCKET`
+
+For the current demo bucket, the values are expected to be:
+
+- `AWS_REGION`: `us-east-1`
+- `S3_BUCKET`: `nfecke-demo-page-2026`
+
+The AWS user or role behind the access key needs permission to list the bucket, upload objects, delete old objects, and set object content in the S3 website bucket.
