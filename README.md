@@ -72,3 +72,9 @@ For the current demo bucket, the values are expected to be:
 - `S3_BUCKET`: `nfecke-demo-page-2026`
 
 The AWS user or role behind the access key needs permission to list the bucket, upload objects, delete old objects, and set object content in the S3 website bucket.
+
+## Standards change watch
+
+The repo also includes `.github/workflows/standards-change-watch.yml`, scheduled for a daily run. It is currently a scaffold: the next production step is to connect official standards/regulatory sources, compare detected changes against the standards linked to hypercare customers, and notify the responsible account owner.
+
+The current static page stores prototype additions in the browser with local storage. A production version should move standards, customers, hypercare links, and notifications into a backend database.
