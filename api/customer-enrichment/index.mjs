@@ -1,6 +1,3 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": process.env.ALLOWED_ORIGIN || "*",
   "Access-Control-Allow-Headers": "content-type,authorization",
@@ -25,8 +22,6 @@ const defaultStandards = [
   "UKCA / CE Market Access"
 ];
 
-const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
-
 export async function handler(event) {
   if (event.requestContext?.http?.method === "OPTIONS" || event.httpMethod === "OPTIONS") {
     return response(204, {});
@@ -38,22 +33,13 @@ export async function handler(event) {
       return response(400, { error: "Customer name is required." });
     }
 
-    const result = process.env.OPENAI_API_KEY
-      ? await enrichWithAi(body)
-      : deterministicEnrichment(body);
+    const result = process.env.ANTHROPIC_API_KEY
+      ? await enrichWithClaude(body)
+      : process.env.OPENAI_API_KEY
+        ? await enrichWithAi(body)
+        : deterministicEnrichment(body);
 
-    if (process.env.CUSTOMER_TABLE) {
-      await dynamo.send(new PutCommand({
-        TableName: process.env.CUSTOMER_TABLE,
-        Item: {
-          pk: `CUSTOMER#${slug(result.customer.name)}`,
-          sk: `PROFILE#${new Date().toISOString()}`,
-          ...result.customer,
-          enrichment_status: result.status,
-          created_at: new Date().toISOString()
-        }
-      }));
-    }
+    await saveCustomerProfile(result.customer, result.status);
 
     return response(200, result);
   } catch (error) {
@@ -62,6 +48,26 @@ export async function handler(event) {
       detail: error.message
     });
   }
+}
+
+async function saveCustomerProfile(customer, status) {
+  if (!process.env.CUSTOMER_TABLE) return;
+
+  const { DynamoDBClient } = await import("@aws-sdk/client-dynamodb");
+  const { DynamoDBDocumentClient, PutCommand } = await import("@aws-sdk/lib-dynamodb");
+  const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+  const createdAt = new Date().toISOString();
+
+  await dynamo.send(new PutCommand({
+    TableName: process.env.CUSTOMER_TABLE,
+    Item: {
+      pk: `CUSTOMER#${slug(customer.name)}`,
+      sk: `PROFILE#${createdAt}`,
+      ...customer,
+      enrichment_status: status,
+      created_at: createdAt
+    }
+  }));
 }
 
 async function enrichWithAi(body) {
@@ -76,7 +82,81 @@ async function enrichWithAi(body) {
     }))
     : defaultStandards;
 
-  const prompt = `You enrich global B2B customer profiles for a testing, inspection, certification, cybersecurity, functional safety, and market access team.
+  const prompt = buildEnrichmentPrompt(body, standards);
+
+  const aiResponse = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+      input: prompt,
+      text: { format: { type: "json_object" } }
+    })
+  });
+
+  if (!aiResponse.ok) {
+    const text = await aiResponse.text();
+    throw new Error(`AI provider returned ${aiResponse.status}: ${text}`);
+  }
+
+  const payload = await aiResponse.json();
+  const text = payload.output_text || payload.output?.flatMap((item) => item.content || []).map((part) => part.text || "").join("");
+  if (!text) throw new Error("AI provider returned no JSON text.");
+  return JSON.parse(text);
+}
+
+async function enrichWithClaude(body) {
+  const standards = Array.isArray(body.standards) && body.standards.length
+    ? body.standards.map((standard) => ({
+      name: standard.name,
+      domain: standard.domain,
+      sector: standard.sector,
+      markets: standard.markets,
+      topics: standard.topics,
+      description: standard.description
+    }))
+    : defaultStandards;
+
+  const prompt = buildEnrichmentPrompt(body, standards);
+  const aiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: process.env.ANTHROPIC_MODEL || "claude-3-5-haiku-20241022",
+      max_tokens: 2200,
+      system: "You enrich customer profiles for assurance, cybersecurity, functional safety, and market-access teams. Return valid JSON only.",
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
+    })
+  });
+
+  if (!aiResponse.ok) {
+    const text = await aiResponse.text();
+    throw new Error(`Anthropic returned ${aiResponse.status}: ${text}`);
+  }
+
+  const payload = await aiResponse.json();
+  const text = (payload.content || [])
+    .map((part) => part.type === "text" ? part.text : "")
+    .join("")
+    .trim();
+  if (!text) throw new Error("Anthropic returned no JSON text.");
+  return JSON.parse(text);
+}
+
+function buildEnrichmentPrompt(body, standards) {
+  return `You enrich global B2B customer profiles for a testing, inspection, certification, cybersecurity, functional safety, and market access team.
 
 Return compact valid JSON only. Do not include markdown.
 
@@ -116,29 +196,6 @@ Rules:
 - Never state guessed standards as confirmed requirements.
 - Include exactly 10 actions.
 - Prefer standards relevant to cybersecurity, functional safety, OT security, connected products, automotive, medical devices, financial resilience, and global market access.`;
-
-  const aiResponse = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-      input: prompt,
-      text: { format: { type: "json_object" } }
-    })
-  });
-
-  if (!aiResponse.ok) {
-    const text = await aiResponse.text();
-    throw new Error(`AI provider returned ${aiResponse.status}: ${text}`);
-  }
-
-  const payload = await aiResponse.json();
-  const text = payload.output_text || payload.output?.flatMap((item) => item.content || []).map((part) => part.text || "").join("");
-  if (!text) throw new Error("AI provider returned no JSON text.");
-  return JSON.parse(text);
 }
 
 function deterministicEnrichment(body) {
@@ -166,7 +223,7 @@ function deterministicEnrichment(body) {
       owner: "NA team",
       actions: engagementActions(sector, markets, name),
       evidenceNotes: [
-        "Deterministic fallback was used because OPENAI_API_KEY is not configured.",
+        "Deterministic fallback was used because no Anthropic or OpenAI API key is configured.",
         "Confirm customer facts, subsidiaries, and standards before outreach."
       ],
       confidence: "medium"
