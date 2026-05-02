@@ -1,0 +1,54 @@
+# new-project-starter
+
+Initial repository for the new project.
+
+## Current demo
+
+This project contains a single-page static website in `index.html`. The page is designed to be uploaded directly to an Amazon S3 bucket and served with S3 Static Website Hosting.
+
+## Architecture
+
+The current architecture is:
+
+```text
+Visitor's browser
+      |
+      v
+S3 static website endpoint
+      |
+      v
+index.html
+```
+
+S3 is acting as the web host. It stores the HTML file and returns it directly to visitors when they open the bucket website endpoint.
+
+For a simple public demo page, this is enough. There is no server and no database yet.
+
+## Future app architecture
+
+If the site needs to save data, such as contact form submissions or user records, the next version would usually look like this:
+
+```text
+Visitor's browser
+      |
+      v
+S3 static website
+      |
+      v
+API Gateway
+      |
+      v
+Lambda function
+      |
+      v
+DynamoDB
+```
+
+In that setup:
+
+- S3 hosts the public website.
+- API Gateway provides an HTTPS endpoint for the page to call.
+- Lambda runs backend code only when needed.
+- DynamoDB stores application data without managing a database server.
+
+This keeps the demo inexpensive, scalable, and simple to maintain while leaving room to grow into a real web app.
