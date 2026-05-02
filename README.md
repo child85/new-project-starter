@@ -69,8 +69,10 @@ A starter Lambda lives in `api/customer-enrichment/`.
 
 Environment variables:
 
-- `OPENAI_API_KEY`: optional. If omitted, the Lambda returns deterministic demo enrichment.
-- `OPENAI_MODEL`: optional model override.
+- `ANTHROPIC_API_KEY`: optional Claude API key. If present, the Lambda uses Claude first.
+- `ANTHROPIC_MODEL`: optional Claude model override. Recommended fast model: `claude-3-5-haiku-20241022`.
+- `OPENAI_API_KEY`: optional fallback OpenAI API key. If no AI key is set, the Lambda returns deterministic demo enrichment.
+- `OPENAI_MODEL`: optional OpenAI model override.
 - `CUSTOMER_TABLE`: optional DynamoDB table name for saving enrichment results.
 - `ALLOWED_ORIGIN`: optional CORS origin for the deployed site.
 
