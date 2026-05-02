@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: HTTP API Gateway trigger for the Assurance Hub customer enrichment Lambda.
+
+Parameters:
+  LambdaFunctionName:
+    Type: String
+    Description: Name of the existing Lambda function that contains api/customer-enrichment/index.mjs.
+  AllowedOrigin:
+    Type: String
+    Default: "*"
+    Description: Website origin allowed to call the API. Use * for first testing, then replace with the S3 website URL.
+
+Resources:
+  CustomerEnrichmentHttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: assurance-hub-customer-enrichment
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowOrigins:
+          - !Ref AllowedOrigin
+        AllowMethods:
+          - OPTIONS
+          - POST
+        AllowHeaders:
+          - content-type
+          - authorization
+        MaxAge: 300
+
+  CustomerEnrichmentIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref CustomerEnrichmentHttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${LambdaFunctionName}
+      PayloadFormatVersion: "2.0"
+
+  CustomerEnrichmentRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref CustomerEnrichmentHttpApi
+      RouteKey: POST /enrich
+      Target: !Sub integrations/${CustomerEnrichmentIntegration}
+
+  CustomerEnrichmentStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref CustomerEnrichmentHttpApi
+      StageName: $default
+      AutoDeploy: true
+
+  CustomerEnrichmentInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${CustomerEnrichmentHttpApi}/*/POST/enrich
+
+Outputs:
+  CustomerEnrichmentEndpoint:
+    Description: Paste this URL into the site's AI Backend Setup field.
+    Value: !Sub https://${CustomerEnrichmentHttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/enrich
