@@ -19,7 +19,9 @@
         --ok: #177245;
       }
 
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
 
       body {
         margin: 0;
@@ -28,23 +30,43 @@
         font-family: Arial, Helvetica, sans-serif;
       }
 
-      button, input, select, textarea { font: inherit; }
-      .top-strip { height: 10px; background: var(--gold); }
-      .site-header { background: var(--panel); }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      .top-strip {
+        height: 10px;
+        background: var(--gold);
+      }
+
+      .site-header {
+        background: var(--panel);
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+        position: relative;
+        z-index: 2;
+      }
 
       .header-inner {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         justify-content: space-between;
         gap: 32px;
         max-width: 1480px;
         margin: 0 auto;
-        padding: 28px 38px 14px;
-        border-bottom: 1px solid var(--line);
+        padding: 28px 38px 22px;
       }
 
-      .brand { display: flex; align-items: center; gap: 14px; }
-      .brand-mark { position: relative; width: 44px; height: 36px; }
+      .brand { display: flex; align-items: flex-start; gap: 14px; }
+
+      .brand-mark {
+        position: relative;
+        width: 44px;
+        height: 36px;
+      }
+
       .brand-mark::before {
         position: absolute;
         inset: 0;
@@ -52,6 +74,7 @@
         clip-path: polygon(50% 0, 100% 100%, 0 100%);
         background: var(--blue);
       }
+
       .brand-mark::after {
         position: absolute;
         inset: 10px 11px 8px;
@@ -59,9 +82,21 @@
         clip-path: polygon(50% 0, 100% 100%, 0 100%);
         background: var(--panel);
       }
-      .brand-title { display: grid; gap: 2px; }
-      .brand-title strong { font-size: 1.58rem; letter-spacing: 0; }
-      .brand-title span { font-size: 1rem; }
+
+      .brand-title {
+        display: grid;
+        gap: 2px;
+      }
+
+      .brand-title strong {
+        font-size: 1.55rem;
+        letter-spacing: 0;
+      }
+
+      .brand-title span {
+        font-size: 1rem;
+        color: #111820;
+      }
 
       .utility {
         display: flex;
@@ -70,7 +105,13 @@
         color: #2d3237;
         font-size: 1rem;
       }
-      .search { display: flex; align-items: center; gap: 10px; }
+
+      .search {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
       .search-icon {
         position: relative;
         width: 19px;
@@ -78,6 +119,7 @@
         border: 3px solid var(--blue);
         border-radius: 50%;
       }
+
       .search-icon::after {
         position: absolute;
         right: -8px;
@@ -90,121 +132,111 @@
       }
 
       .primary-nav {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(180px, 280px));
+        display: flex;
+        gap: 42px;
         max-width: 1480px;
         margin: 0 auto;
-        padding: 0 38px;
+        padding: 0 38px 24px;
         background: var(--panel);
       }
+
       .nav-tab {
-        min-height: 82px;
-        padding: 20px 14px;
+        min-height: 34px;
+        padding: 0;
         border: 0;
-        border-bottom: 4px solid transparent;
+        border-bottom: 3px solid transparent;
         color: #2d3237;
         background: var(--panel);
         font-size: 1.06rem;
         line-height: 1.25;
         text-align: left;
-        text-transform: uppercase;
+        text-transform: none;
       }
+
       .nav-tab.active {
-        border: 3px solid #111;
-        border-bottom: 6px solid var(--blue);
+        border-bottom-color: var(--blue);
         color: var(--blue-dark);
       }
 
       .hero {
         position: relative;
-        min-height: 500px;
+        min-height: 560px;
         overflow: hidden;
         background:
-          linear-gradient(90deg, rgba(15, 22, 30, 0.7), rgba(15, 22, 30, 0.08)),
-          url("https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1800&q=80");
+          linear-gradient(90deg, rgba(0, 34, 56, 0.82), rgba(0, 83, 132, 0.38), rgba(0, 0, 0, 0.05)),
+          url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1800&q=80");
         background-position: center;
         background-size: cover;
       }
-      .menu-panel {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        display: grid;
-        width: min(92vw, 1320px);
-        min-height: 370px;
-        grid-template-columns: 360px 1px 1fr;
-        transform: translateX(-50%);
-        background: var(--panel);
-        box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
-      }
-      .menu-list { display: grid; align-content: start; padding: 32px 0; }
-      .menu-list a {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: 60px;
-        padding: 0 42px 0 22px;
-        color: #121820;
-        font-size: 1.14rem;
-        text-decoration: none;
-      }
-      .menu-list a::after {
-        content: ">";
-        color: #1e2329;
-        font-size: 2rem;
-        font-weight: 800;
-        line-height: 1;
-      }
-      .divider { margin: 32px 0; background: var(--line); }
-      .menu-feature { position: relative; padding: 34px 48px; }
-      .close {
-        position: absolute;
-        top: 18px;
-        right: 22px;
-        color: #222;
-        font-size: 2rem;
-        font-weight: 800;
-      }
-      .menu-feature h1 {
-        max-width: 760px;
-        margin: 0;
-        color: var(--blue-dark);
-        font-size: clamp(2.35rem, 5vw, 4.7rem);
-        line-height: 1;
-      }
-      .menu-feature p {
-        max-width: 760px;
-        margin: 22px 0 0;
-        color: var(--muted);
-        font-size: 1.13rem;
-        line-height: 1.55;
-      }
-      .blue-panel {
-        position: absolute;
-        right: -46px;
-        bottom: 82px;
-        width: 92px;
-        height: 184px;
-        background: rgba(0, 121, 191, 0.94);
-      }
-      .carousel-dots {
-        display: flex;
-        justify-content: center;
-        gap: 20px;
-        padding: 18px 0 44px;
-      }
-      .dot {
-        width: 14px;
-        height: 14px;
-        border: 1px solid var(--blue);
-        border-radius: 50%;
-        background: transparent;
-      }
-      .dot.active { background: var(--blue); }
 
-      .content { max-width: 1480px; margin: 0 auto; padding: 0 38px 78px; }
-      .section-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 34px; align-items: start; }
-      .panel { border: 1px solid var(--line); background: var(--panel); }
+      .hero-copy {
+        max-width: 1480px;
+        margin: 0;
+        padding: 120px 38px 190px;
+      }
+
+      .hero-copy h1 {
+        max-width: 720px;
+        margin: 0;
+        color: #ffffff;
+        font-size: clamp(3rem, 6vw, 5.2rem);
+        font-weight: 400;
+        line-height: 1.12;
+      }
+
+      .hero-copy p {
+        max-width: 690px;
+        margin: 42px 0 0;
+        color: #ffffff;
+        font-size: clamp(1.45rem, 2.8vw, 2.25rem);
+        line-height: 1.35;
+      }
+
+      .wave {
+        position: absolute;
+        right: -4vw;
+        bottom: -1px;
+        left: -4vw;
+        height: 138px;
+        background: var(--panel);
+        border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+      }
+
+      .content {
+        max-width: 1480px;
+        margin: 0 auto;
+        padding: 26px 38px 78px;
+      }
+
+      .intro-copy {
+        max-width: 1180px;
+        margin-bottom: 52px;
+      }
+
+      .intro-copy h1 {
+        margin: 0 0 30px;
+        font-size: clamp(2rem, 3.2vw, 3.2rem);
+        font-weight: 400;
+      }
+
+      .intro-copy p {
+        margin: 0 0 20px;
+        font-size: 1.16rem;
+        line-height: 1.62;
+      }
+
+      .section-grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 34px;
+        align-items: start;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
       .panel-head {
         display: flex;
         align-items: flex-start;
@@ -213,8 +245,21 @@
         padding: 24px 26px;
         border-bottom: 1px solid var(--line);
       }
-      .panel-head h2, .panel-head h3 { margin: 0; color: var(--blue-dark); font-size: 1.42rem; }
-      .panel-head p { max-width: 760px; margin: 8px 0 0; color: var(--muted); line-height: 1.5; }
+
+      .panel-head h2,
+      .panel-head h3 {
+        margin: 0;
+        color: var(--blue-dark);
+        font-size: 1.42rem;
+      }
+
+      .panel-head p {
+        max-width: 760px;
+        margin: 8px 0 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
       .button {
         min-height: 42px;
         padding: 0 16px;
@@ -224,7 +269,12 @@
         font-weight: 800;
         cursor: pointer;
       }
-      .button.secondary { color: var(--blue-dark); background: var(--panel); }
+
+      .button.secondary {
+        color: var(--blue-dark);
+        background: var(--panel);
+      }
+
       .controls {
         display: grid;
         grid-template-columns: minmax(220px, 1fr) 190px 190px;
@@ -233,9 +283,22 @@
         border-bottom: 1px solid var(--line);
         background: #f8fafc;
       }
-      .field { display: grid; gap: 7px; }
-      label { color: var(--muted); font-size: 0.82rem; font-weight: 800; text-transform: uppercase; }
-      input, select, textarea {
+
+      .field {
+        display: grid;
+        gap: 7px;
+      }
+
+      label {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      input,
+      select,
+      textarea {
         width: 100%;
         min-height: 42px;
         border: 1px solid var(--line);
@@ -243,59 +306,220 @@
         background: var(--panel);
         padding: 9px 10px;
       }
-      textarea { min-height: 84px; resize: vertical; }
-      .standards-list, .customer-list { display: grid; }
-      .standard-row, .customer-row { display: grid; gap: 14px; padding: 22px 26px; border-bottom: 1px solid var(--line); }
-      .standard-row:last-child, .customer-row:last-child { border-bottom: 0; }
-      .row-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
-      .row-title { display: grid; gap: 6px; }
-      .row-title strong { font-size: 1.12rem; }
-      .row-title span, .row-copy { color: var(--muted); line-height: 1.48; }
-      .tags { display: flex; flex-wrap: wrap; gap: 8px; }
-      .tag { width: fit-content; padding: 5px 9px; border: 1px solid currentColor; color: var(--blue-dark); font-size: 0.82rem; font-weight: 800; }
-      .tag.warn { color: var(--warn); }
-      .tag.ok { color: var(--ok); }
 
-      .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin-bottom: 34px; }
-      .metric { min-height: 168px; padding: 26px; color: var(--panel); background: var(--blue); }
-      .metric span { display: block; margin-bottom: 26px; font-weight: 800; text-transform: uppercase; }
-      .metric strong { display: block; font-size: 2.4rem; line-height: 1; }
-      .metric p { margin: 10px 0 0; line-height: 1.4; }
-      .form-panel { padding: 24px 26px; }
-      .form-panel form { display: grid; gap: 14px; }
-      .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-      .watch-list { display: grid; padding: 0 26px 24px; }
-      .watch-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
-      .watch-row:last-child { border-bottom: 0; }
-      .watch-row strong { display: block; margin-bottom: 5px; }
-      .watch-row span { color: var(--muted); line-height: 1.4; }
-      .customers-section { margin-top: 38px; }
-      .applicability { display: grid; gap: 12px; padding: 18px 26px 26px; }
-      .check-output { min-height: 96px; padding: 16px; border: 1px solid var(--line); background: var(--soft); line-height: 1.55; }
+      textarea {
+        min-height: 84px;
+        resize: vertical;
+      }
+
+      .standards-list,
+      .customer-list {
+        display: grid;
+      }
+
+      .standard-row,
+      .customer-row {
+        display: grid;
+        gap: 14px;
+        padding: 22px 26px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .standard-row:last-child,
+      .customer-row:last-child {
+        border-bottom: 0;
+      }
+
+      .row-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+      }
+
+      .row-title {
+        display: grid;
+        gap: 6px;
+      }
+
+      .row-title strong {
+        font-size: 1.12rem;
+      }
+
+      .row-title span,
+      .row-copy {
+        color: var(--muted);
+        line-height: 1.48;
+      }
+
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .tag {
+        width: fit-content;
+        padding: 5px 9px;
+        border: 1px solid currentColor;
+        color: var(--blue-dark);
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      .tag.warn {
+        color: var(--warn);
+      }
+
+      .tag.ok {
+        color: var(--ok);
+      }
+
+      .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        margin-bottom: 34px;
+      }
+
+      .metric {
+        min-height: 168px;
+        padding: 26px;
+        color: var(--panel);
+        background: var(--blue);
+      }
+
+      .metric span {
+        display: block;
+        margin-bottom: 26px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .metric strong {
+        display: block;
+        font-size: 2.4rem;
+        line-height: 1;
+      }
+
+      .metric p {
+        margin: 10px 0 0;
+        line-height: 1.4;
+      }
+
+      .form-panel {
+        padding: 24px 26px;
+      }
+
+      .form-panel form {
+        display: grid;
+        gap: 14px;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .watch-list {
+        display: grid;
+        padding: 0 26px 24px;
+      }
+
+      .watch-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+        align-items: center;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .watch-row:last-child {
+        border-bottom: 0;
+      }
+
+      .watch-row strong {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .watch-row span {
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .customers-section {
+        margin-top: 38px;
+      }
+
+      .applicability {
+        display: grid;
+        gap: 12px;
+        padding: 18px 26px 26px;
+      }
+
+      .check-output {
+        min-height: 96px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: var(--soft);
+        line-height: 1.55;
+      }
 
       @media (max-width: 1100px) {
-        .section-grid, .metric-grid { grid-template-columns: 1fr; }
-        .menu-panel { position: relative; left: auto; width: 100%; grid-template-columns: 1fr; transform: none; }
-        .divider, .blue-panel { display: none; }
-        .hero { min-height: auto; }
-        .controls { grid-template-columns: 1fr; }
+        .section-grid,
+        .metric-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .controls {
+          grid-template-columns: 1fr;
+        }
       }
+
       @media (max-width: 720px) {
-        .header-inner, .utility, .panel-head, .row-top { align-items: flex-start; flex-direction: column; }
-        .primary-nav, .content { padding-right: 20px; padding-left: 20px; }
-        .primary-nav, .split, .watch-row { grid-template-columns: 1fr; }
+        .header-inner,
+        .utility,
+        .panel-head,
+        .row-top {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .primary-nav,
+        .content {
+          padding-right: 20px;
+          padding-left: 20px;
+        }
+
+        .split,
+        .watch-row {
+          grid-template-columns: 1fr;
+        }
+
+        .primary-nav {
+          flex-direction: column;
+          gap: 14px;
+        }
+
+        .hero-copy {
+          padding: 72px 20px 150px;
+        }
       }
     </style>
   </head>
   <body>
     <div class="top-strip"></div>
+
     <header class="site-header">
       <div class="header-inner">
         <div class="brand" aria-label="Assurance Hub">
           <div class="brand-mark"></div>
           <div class="brand-title">
-            <strong>Assurance Hub NA</strong>
-            <span>Cybersecurity and Functional Safety knowledge base.</span>
+            <strong>TUV Rheinland</strong>
+            <span>Assurance Hub NA</span>
           </div>
         </div>
         <div class="utility">
@@ -304,6 +528,7 @@
           <span class="search"><span class="search-icon"></span>Search</span>
         </div>
       </div>
+
       <nav class="primary-nav" aria-label="Main menu">
         <button class="nav-tab active" data-jump="customers">Customers</button>
         <button class="nav-tab" data-jump="compliance">Compliance</button>
@@ -312,51 +537,130 @@
 
     <main>
       <section class="hero" aria-label="Assurance Hub overview">
-        <div class="menu-panel">
-          <div class="menu-list">
-            <a href="#customers">Customers</a>
-            <a href="#compliance">Compliance</a>
-          </div>
-          <div class="divider"></div>
-          <div class="menu-feature">
-            <div class="close">x</div>
-            <h1>Standards intelligence for customer assurance work.</h1>
-            <p>
-              Build a practical knowledge base for standards and regulations,
-              check which requirements may apply to customers, and keep
-              hypercare projects informed when standards change.
-            </p>
-            <div class="blue-panel"></div>
-          </div>
+        <div class="hero-copy">
+          <h1>Standards intelligence for safer products.</h1>
+          <p>
+            Cybersecurity and Functional Safety knowledge for North America.
+          </p>
         </div>
+        <div class="wave"></div>
       </section>
 
-      <div class="carousel-dots" aria-label="Carousel position"><span class="dot active"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
-
       <section class="content">
+        <section class="intro-copy">
+          <h1>Your standards and customer assurance work - one click away.</h1>
+          <p>
+            Use this hub as a practical knowledge base for standards and
+            regulations used in cybersecurity and functional safety testing,
+            assessments, gap analyses, and certifications.
+          </p>
+          <p>
+            Add new standards, keep short plain-English descriptions, check
+            which requirements may apply to a customer, and monitor completed
+            project work during hypercare so customers can be notified when
+            relevant changes are published.
+          </p>
+        </section>
+
         <div class="metric-grid">
-          <article class="metric"><span>Standards library</span><strong id="standardCount">0</strong><p>Cybersecurity, functional safety, and regulatory references.</p></article>
-          <article class="metric"><span>Hypercare watch</span><strong id="watchCount">0</strong><p>Customer projects monitored for post-project changes.</p></article>
-          <article class="metric"><span>Daily updates</span><strong>06:00</strong><p>Designed for a daily automated standards change check.</p></article>
+          <article class="metric">
+            <span>Standards library</span>
+            <strong id="standardCount">0</strong>
+            <p>Cybersecurity, functional safety, and regulatory references.</p>
+          </article>
+          <article class="metric">
+            <span>Hypercare watch</span>
+            <strong id="watchCount">0</strong>
+            <p>Customer projects monitored for post-project changes.</p>
+          </article>
+          <article class="metric">
+            <span>Daily updates</span>
+            <strong>06:00</strong>
+            <p>Designed for a daily automated standards change check.</p>
+          </article>
         </div>
 
         <section class="section-grid" id="compliance">
           <div class="panel">
-            <div class="panel-head"><div><h2>Standards and Regulations</h2><p>Short, readable descriptions for standards used in testing, assessments, gap analyses, and certifications.</p></div><button class="button secondary" id="resetStandards">Reset sample data</button></div>
-            <div class="controls">
-              <div class="field"><label for="standardSearch">Search</label><input id="standardSearch" type="search" placeholder="Search name, topic, or description" /></div>
-              <div class="field"><label for="domainFilter">Domain</label><select id="domainFilter"><option value="All">All</option><option value="Cybersecurity">Cybersecurity</option><option value="Functional Safety">Functional Safety</option><option value="Regulation">Regulation</option></select></div>
-              <div class="field"><label for="regionFilter">Region</label><select id="regionFilter"><option value="All">All NA</option><option value="US">US</option><option value="Canada">Canada</option><option value="Mexico">Mexico</option><option value="Global">Global</option></select></div>
+            <div class="panel-head">
+              <div>
+                <h2>Standards and Regulations</h2>
+                <p>
+                  Short, readable descriptions for standards used in testing,
+                  assessments, gap analyses, and certifications.
+                </p>
+              </div>
+              <button class="button secondary" id="resetStandards">Reset sample data</button>
             </div>
+
+            <div class="controls">
+              <div class="field">
+                <label for="standardSearch">Search</label>
+                <input id="standardSearch" type="search" placeholder="Search name, topic, or description" />
+              </div>
+              <div class="field">
+                <label for="domainFilter">Domain</label>
+                <select id="domainFilter">
+                  <option value="All">All</option>
+                  <option value="Cybersecurity">Cybersecurity</option>
+                  <option value="Functional Safety">Functional Safety</option>
+                  <option value="Regulation">Regulation</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="regionFilter">Region</label>
+                <select id="regionFilter">
+                  <option value="All">All NA</option>
+                  <option value="US">US</option>
+                  <option value="Canada">Canada</option>
+                  <option value="Mexico">Mexico</option>
+                  <option value="Global">Global</option>
+                </select>
+              </div>
+            </div>
+
             <div class="standards-list" id="standardsList"></div>
           </div>
+
           <aside class="panel form-panel">
-            <div class="panel-head"><div><h3>Add New Standard</h3><p>Add the short description your team can understand quickly.</p></div></div>
+            <div class="panel-head">
+              <div>
+                <h3>Add New Standard</h3>
+                <p>Add the short description your team can understand quickly.</p>
+              </div>
+            </div>
             <form id="standardForm">
-              <div class="field"><label for="stdName">Name</label><input id="stdName" required placeholder="Example: ISO/SAE 21434" /></div>
-              <div class="split"><div class="field"><label for="stdDomain">Domain</label><select id="stdDomain"><option>Cybersecurity</option><option>Functional Safety</option><option>Regulation</option></select></div><div class="field"><label for="stdRegion">Region</label><select id="stdRegion"><option>Global</option><option>US</option><option>Canada</option><option>Mexico</option></select></div></div>
-              <div class="field"><label for="stdTopics">Topics</label><input id="stdTopics" placeholder="automotive, medical, industrial" /></div>
-              <div class="field"><label for="stdDescription">Plain-English Description</label><textarea id="stdDescription" required placeholder="One or two short sentences."></textarea></div>
+              <div class="field">
+                <label for="stdName">Name</label>
+                <input id="stdName" required placeholder="Example: ISO/SAE 21434" />
+              </div>
+              <div class="split">
+                <div class="field">
+                  <label for="stdDomain">Domain</label>
+                  <select id="stdDomain">
+                    <option>Cybersecurity</option>
+                    <option>Functional Safety</option>
+                    <option>Regulation</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="stdRegion">Region</label>
+                  <select id="stdRegion">
+                    <option>Global</option>
+                    <option>US</option>
+                    <option>Canada</option>
+                    <option>Mexico</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field">
+                <label for="stdTopics">Topics</label>
+                <input id="stdTopics" placeholder="automotive, medical, industrial" />
+              </div>
+              <div class="field">
+                <label for="stdDescription">Plain-English Description</label>
+                <textarea id="stdDescription" required placeholder="One or two short sentences."></textarea>
+              </div>
               <button class="button" type="submit">Add standard</button>
             </form>
           </aside>
@@ -364,89 +668,374 @@
 
         <section class="section-grid customers-section" id="customers">
           <div class="panel">
-            <div class="panel-head"><div><h2>Customers</h2><p>Check which standards may apply, add new customers, and track standards tested during a hypercare phase.</p></div><button class="button secondary" id="resetCustomers">Reset sample data</button></div>
-            <div class="applicability">
-              <div class="split"><div class="field"><label for="customerProfile">Customer Profile</label><textarea id="customerProfile" placeholder="Example: Automotive supplier building connected vehicle components for US OEMs."></textarea></div><div class="field"><label for="customerIndustry">Industry</label><select id="customerIndustry"><option>Automotive</option><option>Industrial</option><option>Medical</option><option>Energy</option><option>Consumer IoT</option></select></div></div>
-              <button class="button" id="runCheck">Check possible standards</button>
-              <div class="check-output" id="checkOutput">Enter a customer profile and run a check to see likely applicable standards.</div>
+            <div class="panel-head">
+              <div>
+                <h2>Customers</h2>
+                <p>
+                  Check which standards may apply, add new customers, and track
+                  standards tested during a hypercare phase.
+                </p>
+              </div>
+              <button class="button secondary" id="resetCustomers">Reset sample data</button>
             </div>
+
+            <div class="applicability">
+              <div class="split">
+                <div class="field">
+                  <label for="customerProfile">Customer Profile</label>
+                  <textarea id="customerProfile" placeholder="Example: Automotive supplier building connected vehicle components for US OEMs."></textarea>
+                </div>
+                <div class="field">
+                  <label for="customerIndustry">Industry</label>
+                  <select id="customerIndustry">
+                    <option>Automotive</option>
+                    <option>Industrial</option>
+                    <option>Medical</option>
+                    <option>Energy</option>
+                    <option>Consumer IoT</option>
+                  </select>
+                </div>
+              </div>
+              <button class="button" id="runCheck">Check possible standards</button>
+              <div class="check-output" id="checkOutput">
+                Enter a customer profile and run a check to see likely applicable standards.
+              </div>
+            </div>
+
             <div class="customer-list" id="customerList"></div>
           </div>
+
           <aside class="panel form-panel">
-            <div class="panel-head"><div><h3>Add Customer</h3><p>Capture tested standards and mark the account for hypercare alerts.</p></div></div>
+            <div class="panel-head">
+              <div>
+                <h3>Add Customer</h3>
+                <p>Capture tested standards and mark the account for hypercare alerts.</p>
+              </div>
+            </div>
             <form id="customerForm">
-              <div class="field"><label for="custName">Customer Name</label><input id="custName" required placeholder="Example: Northstar Manufacturing" /></div>
-              <div class="field"><label for="custProfile">Profile</label><textarea id="custProfile" required placeholder="Short description of product, market, and context."></textarea></div>
-              <div class="field"><label for="custStandards">Standards Tested</label><input id="custStandards" placeholder="Comma-separated names, e.g. ISO/SAE 21434, ISO 26262" /></div>
-              <div class="split"><div class="field"><label for="custHypercare">Hypercare</label><select id="custHypercare"><option>Active</option><option>Inactive</option></select></div><div class="field"><label for="custOwner">Owner</label><input id="custOwner" placeholder="Team owner" /></div></div>
+              <div class="field">
+                <label for="custName">Customer Name</label>
+                <input id="custName" required placeholder="Example: Northstar Manufacturing" />
+              </div>
+              <div class="field">
+                <label for="custProfile">Profile</label>
+                <textarea id="custProfile" required placeholder="Short description of product, market, and context."></textarea>
+              </div>
+              <div class="field">
+                <label for="custStandards">Standards Tested</label>
+                <input id="custStandards" placeholder="Comma-separated names, e.g. ISO/SAE 21434, ISO 26262" />
+              </div>
+              <div class="split">
+                <div class="field">
+                  <label for="custHypercare">Hypercare</label>
+                  <select id="custHypercare">
+                    <option>Active</option>
+                    <option>Inactive</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="custOwner">Owner</label>
+                  <input id="custOwner" placeholder="Team owner" />
+                </div>
+              </div>
               <button class="button" type="submit">Add customer</button>
             </form>
           </aside>
         </section>
 
-        <section class="panel customers-section"><div class="panel-head"><div><h2>Daily Change Watch</h2><p>The live version should connect to official standards and regulatory sources, run a daily check, and notify owners when changes affect customers in hypercare.</p></div></div><div class="watch-list" id="watchList"></div></section>
+        <section class="panel customers-section">
+          <div class="panel-head">
+            <div>
+              <h2>Daily Change Watch</h2>
+              <p>
+                The live version should connect to official standards and
+                regulatory sources, run a daily check, and notify owners when
+                changes affect customers in hypercare.
+              </p>
+            </div>
+          </div>
+          <div class="watch-list" id="watchList"></div>
+        </section>
       </section>
     </main>
 
     <script>
       const starterStandards = [
-        { name: "ISO/SAE 21434", domain: "Cybersecurity", region: "Global", topics: ["automotive", "connected vehicle", "cybersecurity"], description: "Defines how to manage cybersecurity risks across the automotive product lifecycle. It is used to show that security was considered from concept through production and support.", status: "Watch" },
-        { name: "ISO 26262", domain: "Functional Safety", region: "Global", topics: ["automotive", "safety", "electronics"], description: "Sets expectations for functional safety of electrical and electronic systems in road vehicles. It helps teams reduce risk from system failures that could cause harm.", status: "Watch" },
-        { name: "IEC 62443", domain: "Cybersecurity", region: "Global", topics: ["industrial", "automation", "ot security"], description: "A family of standards for cybersecurity in industrial automation and control systems. It is often used for secure product development and OT environment assessments.", status: "Watch" },
-        { name: "UL 2900", domain: "Cybersecurity", region: "US", topics: ["connected product", "medical", "iot"], description: "Covers cybersecurity testing for network-connectable products and systems. It is useful when customers need product security testing evidence for connected devices.", status: "Review" },
-        { name: "NIST Cybersecurity Framework 2.0", domain: "Cybersecurity", region: "US", topics: ["governance", "risk", "assessment"], description: "Provides a common way to organize cybersecurity risk management. It is often used for gap analyses, maturity checks, and executive reporting.", status: "Watch" },
-        { name: "EU Cyber Resilience Act", domain: "Regulation", region: "Global", topics: ["product security", "software", "market access"], description: "Introduces cybersecurity requirements for products with digital elements sold into the EU. North American manufacturers may need it when exporting connected products.", status: "Monitor" }
+        {
+          name: "ISO/SAE 21434",
+          domain: "Cybersecurity",
+          region: "Global",
+          topics: ["automotive", "connected vehicle", "cybersecurity"],
+          description:
+            "Defines how to manage cybersecurity risks across the automotive product lifecycle. It is used to show that security was considered from concept through production and support.",
+          status: "Watch"
+        },
+        {
+          name: "ISO 26262",
+          domain: "Functional Safety",
+          region: "Global",
+          topics: ["automotive", "safety", "electronics"],
+          description:
+            "Sets expectations for functional safety of electrical and electronic systems in road vehicles. It helps teams reduce risk from system failures that could cause harm.",
+          status: "Watch"
+        },
+        {
+          name: "IEC 62443",
+          domain: "Cybersecurity",
+          region: "Global",
+          topics: ["industrial", "automation", "ot security"],
+          description:
+            "A family of standards for cybersecurity in industrial automation and control systems. It is often used for secure product development and OT environment assessments.",
+          status: "Watch"
+        },
+        {
+          name: "UL 2900",
+          domain: "Cybersecurity",
+          region: "US",
+          topics: ["connected product", "medical", "iot"],
+          description:
+            "Covers cybersecurity testing for network-connectable products and systems. It is useful when customers need product security testing evidence for connected devices.",
+          status: "Review"
+        },
+        {
+          name: "NIST Cybersecurity Framework 2.0",
+          domain: "Cybersecurity",
+          region: "US",
+          topics: ["governance", "risk", "assessment"],
+          description:
+            "Provides a common way to organize cybersecurity risk management. It is often used for gap analyses, maturity checks, and executive reporting.",
+          status: "Watch"
+        },
+        {
+          name: "EU Cyber Resilience Act",
+          domain: "Regulation",
+          region: "Global",
+          topics: ["product security", "software", "market access"],
+          description:
+            "Introduces cybersecurity requirements for products with digital elements sold into the EU. North American manufacturers may need it when exporting connected products.",
+          status: "Monitor"
+        }
       ];
+
       const starterCustomers = [
-        { name: "Northstar Manufacturing", profile: "Automotive supplier developing connected vehicle components for US and global OEMs.", standards: ["ISO/SAE 21434", "ISO 26262"], hypercare: "Active", owner: "NA Cybersecurity" },
-        { name: "ClearGrid Energy", profile: "Industrial energy platform with remote monitoring and OT connectivity.", standards: ["IEC 62443", "NIST Cybersecurity Framework 2.0"], hypercare: "Active", owner: "Industrial Security" },
-        { name: "MetroLab Devices", profile: "Connected medical and lab equipment manufacturer preparing product security evidence.", standards: ["UL 2900", "NIST Cybersecurity Framework 2.0"], hypercare: "Inactive", owner: "Product Security" }
+        {
+          name: "Northstar Manufacturing",
+          profile: "Automotive supplier developing connected vehicle components for US and global OEMs.",
+          standards: ["ISO/SAE 21434", "ISO 26262"],
+          hypercare: "Active",
+          owner: "NA Cybersecurity"
+        },
+        {
+          name: "ClearGrid Energy",
+          profile: "Industrial energy platform with remote monitoring and OT connectivity.",
+          standards: ["IEC 62443", "NIST Cybersecurity Framework 2.0"],
+          hypercare: "Active",
+          owner: "Industrial Security"
+        },
+        {
+          name: "MetroLab Devices",
+          profile: "Connected medical and lab equipment manufacturer preparing product security evidence.",
+          standards: ["UL 2900", "NIST Cybersecurity Framework 2.0"],
+          hypercare: "Inactive",
+          owner: "Product Security"
+        }
       ];
-      const store = { get(key, fallback) { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }, set(key, value) { localStorage.setItem(key, JSON.stringify(value)); } };
+
+      const store = {
+        get(key, fallback) {
+          const raw = localStorage.getItem(key);
+          return raw ? JSON.parse(raw) : fallback;
+        },
+        set(key, value) {
+          localStorage.setItem(key, JSON.stringify(value));
+        }
+      };
+
       let standards = store.get("assuranceStandards", starterStandards);
       let customers = store.get("assuranceCustomers", starterCustomers);
+
       const standardsList = document.getElementById("standardsList");
       const customerList = document.getElementById("customerList");
       const watchList = document.getElementById("watchList");
       const standardCount = document.getElementById("standardCount");
       const watchCount = document.getElementById("watchCount");
+
       function renderStandards() {
         const search = document.getElementById("standardSearch").value.toLowerCase();
         const domain = document.getElementById("domainFilter").value;
         const region = document.getElementById("regionFilter").value;
+
         const filtered = standards.filter((standard) => {
-          const text = [standard.name, standard.domain, standard.region, standard.description, standard.topics.join(" ")].join(" ").toLowerCase();
-          return (!search || text.includes(search)) && (domain === "All" || standard.domain === domain) && (region === "All" || standard.region === region);
+          const text = [
+            standard.name,
+            standard.domain,
+            standard.region,
+            standard.description,
+            standard.topics.join(" ")
+          ]
+            .join(" ")
+            .toLowerCase();
+          const matchesSearch = !search || text.includes(search);
+          const matchesDomain = domain === "All" || standard.domain === domain;
+          const matchesRegion = region === "All" || standard.region === region;
+          return matchesSearch && matchesDomain && matchesRegion;
         });
-        standardsList.innerHTML = filtered.map((standard) => `<article class="standard-row"><div class="row-top"><div class="row-title"><strong>${standard.name}</strong><span>${standard.domain} | ${standard.region}</span></div><span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${standard.status}</span></div><div class="row-copy">${standard.description}</div><div class="tags">${standard.topics.map((topic) => `<span class="tag">${topic}</span>`).join("")}</div></article>`).join("");
+
+        standardsList.innerHTML = filtered
+          .map(
+            (standard) => `
+              <article class="standard-row">
+                <div class="row-top">
+                  <div class="row-title">
+                    <strong>${standard.name}</strong>
+                    <span>${standard.domain} | ${standard.region}</span>
+                  </div>
+                  <span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${standard.status}</span>
+                </div>
+                <div class="row-copy">${standard.description}</div>
+                <div class="tags">${standard.topics.map((topic) => `<span class="tag">${topic}</span>`).join("")}</div>
+              </article>
+            `
+          )
+          .join("");
+
         standardCount.textContent = standards.length;
       }
+
       function renderCustomers() {
-        customerList.innerHTML = customers.map((customer) => `<article class="customer-row"><div class="row-top"><div class="row-title"><strong>${customer.name}</strong><span>${customer.owner || "Unassigned"} | Hypercare: ${customer.hypercare}</span></div><span class="tag ${customer.hypercare === "Active" ? "ok" : ""}">${customer.hypercare}</span></div><div class="row-copy">${customer.profile}</div><div class="tags">${customer.standards.map((standard) => `<span class="tag">${standard}</span>`).join("")}</div></article>`).join("");
+        customerList.innerHTML = customers
+          .map(
+            (customer) => `
+              <article class="customer-row">
+                <div class="row-top">
+                  <div class="row-title">
+                    <strong>${customer.name}</strong>
+                    <span>${customer.owner || "Unassigned"} | Hypercare: ${customer.hypercare}</span>
+                  </div>
+                  <span class="tag ${customer.hypercare === "Active" ? "ok" : ""}">${customer.hypercare}</span>
+                </div>
+                <div class="row-copy">${customer.profile}</div>
+                <div class="tags">${customer.standards.map((standard) => `<span class="tag">${standard}</span>`).join("")}</div>
+              </article>
+            `
+          )
+          .join("");
+
         watchCount.textContent = customers.filter((customer) => customer.hypercare === "Active").length;
       }
+
       function renderWatch() {
         const active = customers.filter((customer) => customer.hypercare === "Active");
-        watchList.innerHTML = active.map((customer) => { const watched = standards.filter((standard) => customer.standards.includes(standard.name)); return `<div class="watch-row"><div><strong>${customer.name}</strong><span>Monitoring ${watched.length || customer.standards.length} standard(s): ${customer.standards.join(", ")}</span></div><span class="tag ok">Notify on change</span></div>`; }).join("");
+        watchList.innerHTML = active
+          .map((customer) => {
+            const watched = standards.filter((standard) => customer.standards.includes(standard.name));
+            return `
+              <div class="watch-row">
+                <div>
+                  <strong>${customer.name}</strong>
+                  <span>Monitoring ${watched.length || customer.standards.length} standard(s): ${customer.standards.join(", ")}</span>
+                </div>
+                <span class="tag ok">Notify on change</span>
+              </div>
+            `;
+          })
+          .join("");
       }
+
       function runApplicabilityCheck() {
         const profile = `${document.getElementById("customerProfile").value} ${document.getElementById("customerIndustry").value}`.toLowerCase();
-        const hits = standards.filter((standard) => standard.topics.some((topic) => profile.includes(topic.toLowerCase())) || profile.includes(standard.domain.toLowerCase()));
+        const hits = standards.filter((standard) => {
+          return standard.topics.some((topic) => profile.includes(topic.toLowerCase())) || profile.includes(standard.domain.toLowerCase());
+        });
+
         const output = document.getElementById("checkOutput");
-        if (!profile.trim()) { output.textContent = "Add a short customer profile first."; return; }
-        if (!hits.length) { output.textContent = "No direct matches found from the current sample library. Add more standards or refine the customer profile."; return; }
-        output.innerHTML = `<strong>Possible applicable standards:</strong><div class="tags" style="margin-top: 10px;">${hits.map((standard) => `<span class="tag">${standard.name}</span>`).join("")}</div><div style="margin-top: 12px;">Review these with the delivery team before treating them as required.</div>`;
+        if (!profile.trim()) {
+          output.textContent = "Add a short customer profile first.";
+          return;
+        }
+
+        if (!hits.length) {
+          output.textContent =
+            "No direct matches found from the current sample library. Add more standards or refine the customer profile.";
+          return;
+        }
+
+        output.innerHTML = `
+          <strong>Possible applicable standards:</strong>
+          <div class="tags" style="margin-top: 10px;">
+            ${hits.map((standard) => `<span class="tag">${standard.name}</span>`).join("")}
+          </div>
+          <div style="margin-top: 12px;">Review these with the delivery team before treating them as required.</div>
+        `;
       }
-      document.getElementById("standardForm").addEventListener("submit", (event) => { event.preventDefault(); standards.unshift({ name: document.getElementById("stdName").value.trim(), domain: document.getElementById("stdDomain").value, region: document.getElementById("stdRegion").value, topics: document.getElementById("stdTopics").value.split(",").map((topic) => topic.trim()).filter(Boolean), description: document.getElementById("stdDescription").value.trim(), status: "Watch" }); store.set("assuranceStandards", standards); event.target.reset(); renderStandards(); renderWatch(); });
-      document.getElementById("customerForm").addEventListener("submit", (event) => { event.preventDefault(); customers.unshift({ name: document.getElementById("custName").value.trim(), profile: document.getElementById("custProfile").value.trim(), standards: document.getElementById("custStandards").value.split(",").map((standard) => standard.trim()).filter(Boolean), hypercare: document.getElementById("custHypercare").value, owner: document.getElementById("custOwner").value.trim() }); store.set("assuranceCustomers", customers); event.target.reset(); renderCustomers(); renderWatch(); });
+
+      document.getElementById("standardForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        standards.unshift({
+          name: document.getElementById("stdName").value.trim(),
+          domain: document.getElementById("stdDomain").value,
+          region: document.getElementById("stdRegion").value,
+          topics: document
+            .getElementById("stdTopics")
+            .value.split(",")
+            .map((topic) => topic.trim())
+            .filter(Boolean),
+          description: document.getElementById("stdDescription").value.trim(),
+          status: "Watch"
+        });
+        store.set("assuranceStandards", standards);
+        event.target.reset();
+        renderStandards();
+        renderWatch();
+      });
+
+      document.getElementById("customerForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        customers.unshift({
+          name: document.getElementById("custName").value.trim(),
+          profile: document.getElementById("custProfile").value.trim(),
+          standards: document
+            .getElementById("custStandards")
+            .value.split(",")
+            .map((standard) => standard.trim())
+            .filter(Boolean),
+          hypercare: document.getElementById("custHypercare").value,
+          owner: document.getElementById("custOwner").value.trim()
+        });
+        store.set("assuranceCustomers", customers);
+        event.target.reset();
+        renderCustomers();
+        renderWatch();
+      });
+
       document.getElementById("standardSearch").addEventListener("input", renderStandards);
       document.getElementById("domainFilter").addEventListener("change", renderStandards);
       document.getElementById("regionFilter").addEventListener("change", renderStandards);
       document.getElementById("runCheck").addEventListener("click", runApplicabilityCheck);
-      document.getElementById("resetStandards").addEventListener("click", () => { standards = starterStandards; store.set("assuranceStandards", standards); renderStandards(); renderWatch(); });
-      document.getElementById("resetCustomers").addEventListener("click", () => { customers = starterCustomers; store.set("assuranceCustomers", customers); renderCustomers(); renderWatch(); });
-      document.querySelectorAll("[data-jump]").forEach((button) => { button.addEventListener("click", () => { document.getElementById(button.dataset.jump).scrollIntoView({ behavior: "smooth" }); }); });
-      renderStandards(); renderCustomers(); renderWatch();
+
+      document.getElementById("resetStandards").addEventListener("click", () => {
+        standards = starterStandards;
+        store.set("assuranceStandards", standards);
+        renderStandards();
+        renderWatch();
+      });
+
+      document.getElementById("resetCustomers").addEventListener("click", () => {
+        customers = starterCustomers;
+        store.set("assuranceCustomers", customers);
+        renderCustomers();
+        renderWatch();
+      });
+
+      document.querySelectorAll("[data-jump]").forEach((button) => {
+        button.addEventListener("click", () => {
+          document.getElementById(button.dataset.jump).scrollIntoView({ behavior: "smooth" });
+        });
+      });
+
+      renderStandards();
+      renderCustomers();
+      renderWatch();
     </script>
   </body>
 </html>
