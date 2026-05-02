@@ -1,8 +1,8 @@
-# new-project-starter
+# Assurance Intelligence Hub
 
-Initial repository for the new project.
+Static demo site and backend starter for a TÜV Rheinland-inspired customer and compliance intelligence tool.
 
-## Current demo
+## Current site
 
 This project contains a single-page static website in `index.html`. The page is designed to be uploaded directly to an Amazon S3 bucket and served with S3 Static Website Hosting.
 
@@ -17,66 +17,61 @@ The page now includes a customer lookup and enrichment workflow:
 
 ## Architecture
 
-The current website architecture is:
+The live demo page is static, but the intended production setup keeps AI keys and customer data on the AWS side:
 
-```text
-Visitor's browser
-      |
-      v
-S3 static website endpoint
-      |
-      v
-index.html
+```mermaid
+flowchart LR
+    User["NA-based team member<br/>Browser"] --> Site["S3 static website<br/>index.html"]
+    Site --> Gateway["API Gateway<br/>/enrich endpoint"]
+    Gateway --> Lambda["Lambda<br/>customer-enrichment/index.mjs"]
+    Lambda --> Claude["Anthropic Claude<br/>Haiku model"]
+    Lambda -. optional .-> Dynamo["DynamoDB<br/>customer profiles + hypercare"]
+    Watch["EventBridge daily schedule"] -. future .-> Standards["Standards and regulation sources"]
+    Standards -. future updates .-> Lambda
+    Lambda -. future notifications .-> Notify["Account owner notifications"]
 ```
 
-S3 is acting as the web host. It stores the HTML file and returns it directly to visitors when they open the bucket website endpoint.
-
-The live page works today with browser demo enrichment. That means it is useful for demos, but saved data stays in the user's browser until the backend is connected.
-
-## Production app architecture
-
-For real AI enrichment, do not put an AI key in the static page. Use this architecture:
-
-```text
-Visitor's browser
-      |
-      v
-S3 static website
-      |
-      v
-API Gateway
-      |
-      v
-Lambda function
-      |
-      v
-AI model + DynamoDB
-```
-
-In that setup:
+In this setup:
 
 - S3 hosts the public website.
 - API Gateway provides an HTTPS endpoint for the page to call.
-- Lambda runs the customer enrichment logic and calls the AI model from the server side.
-- DynamoDB stores customer profiles, enrichment runs, standards links, and hypercare records.
-- EventBridge can run a daily standards/regulations change check.
+- Lambda runs the customer enrichment logic and calls Claude from the server side.
+- DynamoDB can store customer profiles, enrichment runs, standards links, and hypercare records.
+- EventBridge can later run a daily standards/regulations change check.
 
-This keeps secrets out of the browser and gives the team a proper shared database.
+This keeps AI keys out of the browser and gives the team a path toward a proper shared database.
+
+The live page still works without the backend by using browser demo enrichment. That is useful for demos, but saved data stays in the user's browser until the backend and database are connected.
 
 ## Customer enrichment backend
 
 A starter Lambda lives in `api/customer-enrichment/`.
 
-Environment variables:
+The Lambda supports Claude first, OpenAI as an optional fallback, and deterministic demo enrichment if no AI key is configured.
 
-- `ANTHROPIC_API_KEY`: optional Claude API key. If present, the Lambda uses Claude first.
-- `ANTHROPIC_MODEL`: optional Claude model override. Recommended fast model: `claude-3-5-haiku-20241022`.
+Recommended Lambda environment variables for Claude:
+
+- `ANTHROPIC_API_KEY`: Claude API key. Keep this only in Lambda, never in the website.
+- `ANTHROPIC_MODEL`: `claude-3-5-haiku-20241022`.
+- `ALLOWED_ORIGIN`: `*` for early testing, or the S3 website URL for tighter access later.
+
+Optional Lambda environment variables:
+
 - `OPENAI_API_KEY`: optional fallback OpenAI API key. If no AI key is set, the Lambda returns deterministic demo enrichment.
 - `OPENAI_MODEL`: optional OpenAI model override.
 - `CUSTOMER_TABLE`: optional DynamoDB table name for saving enrichment results.
-- `ALLOWED_ORIGIN`: optional CORS origin for the deployed site.
 
-After the Lambda is deployed behind API Gateway, paste the API endpoint into the "AI Backend Setup" section of the page. The browser will try the AWS backend first and fall back to demo enrichment if the endpoint is unavailable.
+After the Lambda is deployed behind API Gateway, paste the API endpoint into the "AI Backend Setup" section of the page. The browser will call the AWS backend first and fall back to demo enrichment if the endpoint is unavailable.
+
+## AWS setup checklist
+
+1. Host `index.html` in the S3 static website bucket.
+2. Create a Lambda function with Node.js and paste in `api/customer-enrichment/index.mjs`.
+3. Set the Lambda environment variables for Claude.
+4. Create an API Gateway HTTP API route such as `POST /enrich`.
+5. Connect that route to the Lambda function.
+6. Copy the API Gateway invoke URL into the website's "AI Backend Setup" field.
+7. Test a customer lookup from the website.
 
 ## Automatic AWS deployment
 
