@@ -1,0 +1,19 @@
+name: Standards change watch
+
+on:
+  schedule:
+    - cron: "0 11 * * *"
+  workflow_dispatch:
+
+jobs:
+  check-standards:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Placeholder change check
+        run: |
+          echo "Daily standards change watch placeholder"
+          echo "Next production step: connect official standards/regulatory sources and notify owners for impacted hypercare customers."
