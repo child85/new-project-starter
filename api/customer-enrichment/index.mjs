@@ -28,7 +28,7 @@ export async function handler(event) {
   }
 
   try {
-    const body = JSON.parse(event.body || "{}");
+    const body = parseRequestBody(event);
     if (!body.name || !String(body.name).trim()) {
       return response(400, { error: "Customer name is required." });
     }
@@ -48,6 +48,15 @@ export async function handler(event) {
       detail: error.message
     });
   }
+}
+
+function parseRequestBody(event) {
+  if (!event?.body) return {};
+  if (typeof event.body === "object") return event.body;
+  const rawBody = event.isBase64Encoded
+    ? Buffer.from(event.body, "base64").toString("utf8")
+    : event.body;
+  return JSON.parse(rawBody || "{}");
 }
 
 async function saveCustomerProfile(customer, status) {
@@ -105,7 +114,7 @@ async function enrichWithAi(body) {
   const payload = await aiResponse.json();
   const text = payload.output_text || payload.output?.flatMap((item) => item.content || []).map((part) => part.text || "").join("");
   if (!text) throw new Error("AI provider returned no JSON text.");
-  return JSON.parse(text);
+  return parseJsonObject(text);
 }
 
 async function enrichWithClaude(body) {
@@ -152,7 +161,21 @@ async function enrichWithClaude(body) {
     .join("")
     .trim();
   if (!text) throw new Error("Anthropic returned no JSON text.");
-  return JSON.parse(text);
+  return parseJsonObject(text);
+}
+
+function parseJsonObject(text) {
+  const trimmed = String(text || "").trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced) return JSON.parse(fenced[1].trim());
+    const start = trimmed.indexOf("{");
+    const end = trimmed.lastIndexOf("}");
+    if (start >= 0 && end > start) return JSON.parse(trimmed.slice(start, end + 1));
+    throw new Error("AI provider returned text that was not valid JSON.");
+  }
 }
 
 function buildEnrichmentPrompt(body, standards) {
@@ -200,9 +223,10 @@ Rules:
 
 function deterministicEnrichment(body) {
   const name = String(body.confirmedEntity?.name || body.name).trim();
-  const text = normalize(`${name} ${body.sector || ""} ${body.notes || ""} ${(body.markets || []).join(" ")}`);
+  const inputMarkets = normalizeList(body.markets);
+  const text = normalize(`${name} ${body.sector || ""} ${body.notes || ""} ${inputMarkets.join(" ")}`);
   const sector = body.sector || inferSector(text);
-  const markets = Array.from(new Set([...(body.markets || ["North America"]), ...(text.includes("global") ? ["Global"] : [])]));
+  const markets = Array.from(new Set([...(inputMarkets.length ? inputMarkets : ["North America"]), ...(text.includes("global") ? ["Global"] : [])]));
   const likelyStandards = standardsFor(sector, markets);
 
   return {
@@ -245,7 +269,7 @@ function sectorSubSector(sector) {
     "Industrial / OT": "Industrial automation, plant systems, process safety, or OT cybersecurity",
     "Medical Devices": "Connected medical technology, regulated software, or product security",
     "Financial Services": "Digital operational resilience, third-party ICT risk, and information security",
-    "ICT / Connected Products": "Connected products, cloud services, software, or digital infrastructure"
+    "ICT / Connected Products": "Connected products, software, cloud, or digital infrastructure"
   };
   return map[sector] || "General assurance and market access";
 }
@@ -305,6 +329,12 @@ function engagementActions(sector, markets, name) {
 
 function normalize(value) {
   return String(value || "").toLowerCase();
+}
+
+function normalizeList(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.trim()) return value.split(",").map((item) => item.trim()).filter(Boolean);
+  return [];
 }
 
 function slug(value) {
