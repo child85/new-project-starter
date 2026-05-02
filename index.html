@@ -684,6 +684,42 @@
         background: var(--soft);
       }
 
+      .setup-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .setup-step {
+        min-height: 146px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .setup-step span {
+        display: inline-grid;
+        width: 32px;
+        height: 32px;
+        margin-bottom: 14px;
+        place-items: center;
+        color: #ffffff;
+        background: var(--blue);
+        font-weight: 800;
+      }
+
+      .setup-step strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--blue-dark);
+      }
+
+      .setup-step p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
       .code {
         overflow-x: auto;
         padding: 16px;
@@ -732,6 +768,7 @@
         .metric-grid,
         .section-grid,
         .source-grid,
+        .setup-grid,
         .split,
         .wide-split,
         .profile-grid,
@@ -1136,6 +1173,23 @@
             </div>
           </div>
           <div class="setup-box">
+            <div class="setup-grid">
+              <article class="setup-step">
+                <span>1</span>
+                <strong>Create API Gateway trigger</strong>
+                <p>In the Lambda function, add an API Gateway HTTP API trigger with a POST route named /enrich.</p>
+              </article>
+              <article class="setup-step">
+                <span>2</span>
+                <strong>Keep secrets in Lambda</strong>
+                <p>Add ANTHROPIC_API_KEY, ANTHROPIC_MODEL, and ALLOWED_ORIGIN in Lambda environment variables.</p>
+              </article>
+              <article class="setup-step">
+                <span>3</span>
+                <strong>Paste endpoint here</strong>
+                <p>Use the API Gateway invoke URL ending in /enrich. The site will call AWS first, then fall back to demo mode.</p>
+              </article>
+            </div>
             <div class="split">
               <div class="field">
                 <label for="apiEndpoint">Customer Enrichment API URL</label>
@@ -1146,7 +1200,11 @@
                 <button class="button" id="saveApiEndpoint" type="button">Save API endpoint</button>
               </div>
             </div>
-            <div class="code">S3 / CloudFront site -> API Gateway -> Lambda -> AI model -> DynamoDB -> Daily EventBridge watch</div>
+            <div class="split">
+              <button class="button secondary" id="testApiEndpoint" type="button">Test saved endpoint</button>
+              <div class="code" id="apiSetupStatus">Next AWS step: Lambda -> Add trigger -> API Gateway -> HTTP API -> POST /enrich.</div>
+            </div>
+            <div class="code">S3 static site -> API Gateway HTTP API -> Lambda -> Claude Haiku -> optional DynamoDB -> future EventBridge watch</div>
           </div>
         </section>
       </section>
@@ -1413,7 +1471,39 @@
       }
 
       function regionsText(regions) {
-        return (regions || []).join(", ") || "Unknown";
+        const list = Array.isArray(regions) ? regions : (regions ? [regions] : []);
+        return list.join(", ") || "Unknown";
+      }
+
+      function esc(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function safeList(value) {
+        if (Array.isArray(value)) return value;
+        if (typeof value === "string" && value.trim()) return value.split(",").map((item) => item.trim()).filter(Boolean);
+        return [];
+      }
+
+      function renderTags(values, className = "tag") {
+        return safeList(values).map((value) => `<span class="${className}">${esc(value)}</span>`).join("");
+      }
+
+      function cleanEndpoint(value) {
+        const trimmed = String(value || "").trim();
+        if (!trimmed) return "";
+        try {
+          const url = new URL(trimmed);
+          if (url.protocol !== "https:") return "";
+          return url.href;
+        } catch {
+          return "";
+        }
       }
 
       function getApiUrl() {
@@ -1588,6 +1678,35 @@
         return response.json();
       }
 
+      async function testSavedEndpoint() {
+        const apiUrl = getApiUrl();
+        const status = document.getElementById("apiSetupStatus");
+        if (!apiUrl) {
+          status.textContent = "No endpoint saved yet. Paste the API Gateway URL ending in /enrich, then save it.";
+          return;
+        }
+        document.getElementById("testApiEndpoint").disabled = true;
+        status.textContent = "Testing API Gateway endpoint with a small sample request...";
+        try {
+          const result = await enrichWithApi({
+            name: "BMW",
+            sector: "Automotive",
+            size: "Global enterprise",
+            website: "",
+            markets: ["North America", "EU"],
+            notes: "Endpoint connection test from Assurance Hub."
+          });
+          const customer = normalizeApiResult(result);
+          status.textContent = customer?.name
+            ? `Connected. Lambda returned an enrichment profile for ${customer.name}.`
+            : "Connected, but the response shape was not recognized. Check the Lambda response body.";
+        } catch (error) {
+          status.textContent = `Connection failed: ${error.message}. Check API Gateway route, CORS, Lambda trigger permission, and Lambda environment variables.`;
+        } finally {
+          document.getElementById("testApiEndpoint").disabled = false;
+        }
+      }
+
       async function runLookup(event, confirmed = null) {
         if (event) event.preventDefault();
         const input = {
@@ -1665,8 +1784,8 @@
           ${candidates.map((candidate, index) => `
             <article class="candidate">
               <div>
-                <strong>${candidate.name}</strong>
-                <p class="row-copy">${candidate.headquarters} | ${candidate.sector} | ${candidate.summary}</p>
+                <strong>${esc(candidate.name)}</strong>
+                <p class="row-copy">${esc(candidate.headquarters)} | ${esc(candidate.sector)} | ${esc(candidate.summary)}</p>
               </div>
               <button class="button secondary" type="button" data-candidate="${index}">Use this entity</button>
             </article>
@@ -1683,13 +1802,13 @@
         box.innerHTML = `
           <div class="result-hero">
             <div>
-              <h3>${profile.name}</h3>
-              <p>${profile.summary}</p>
-              <div class="tags" style="margin-top: 14px;">${(profile.markets || []).map((market) => `<span class="tag">${market}</span>`).join("")}</div>
+              <h3>${esc(profile.name)}</h3>
+              <p>${esc(profile.summary)}</p>
+              <div class="tags" style="margin-top: 14px;">${renderTags(profile.markets)}</div>
             </div>
             <div class="confidence">
               <span>AI confidence</span>
-              <strong>${profile.confidence || "medium"}</strong>
+              <strong>${esc(profile.confidence || "medium")}</strong>
             </div>
           </div>
           <div class="profile-grid">
@@ -1706,27 +1825,33 @@
               ${(profile.likelyStandards || []).map((item) => `
                 <article class="info-card">
                   <div class="row-top">
-                    <strong>${item.name}</strong>
-                    <span class="tag ${item.confidence === "high" ? "ok" : "warn"}">${item.confidence || "medium"}</span>
+                    <strong>${esc(item.name)}</strong>
+                    <span class="tag ${item.confidence === "high" ? "ok" : "warn"}">${esc(item.confidence || "medium")}</span>
                   </div>
-                  <p>${item.why || "AI inferred this from sector, geography, and business model. Confirm before treating it as required."}</p>
+                  <p>${esc(item.why || "AI inferred this from sector, geography, and business model. Confirm before treating it as required.")}</p>
                 </article>
               `).join("") || `<p class="row-copy">No standards matched yet. Add more sector or market details.</p>`}
             </div>
           </div>
           <div class="subpanel">
             <h4>Top 10 engagement, cross-sell, and upsell ideas</h4>
-            <div class="action-list">${(profile.actions || []).map((action) => `<div class="action-row"><div><strong>${action.split(".")[0]}</strong><span>${action.includes(".") ? action.slice(action.indexOf(".") + 1).trim() : action}</span></div></div>`).join("")}</div>
+            <div class="action-list">${safeList(profile.actions).map((action) => {
+              const actionText = String(action || "");
+              const splitAt = actionText.indexOf(".");
+              const title = splitAt > 0 ? actionText.slice(0, splitAt) : actionText;
+              const detail = splitAt > 0 ? actionText.slice(splitAt + 1).trim() : actionText;
+              return `<div class="action-row"><div><strong>${esc(title)}</strong><span>${esc(detail)}</span></div></div>`;
+            }).join("")}</div>
           </div>
           <div class="subpanel">
             <h4>Evidence and review notes</h4>
-            <div class="tags">${(profile.evidenceNotes || []).map((note) => `<span class="tag dark">${note}</span>`).join("")}</div>
+            <div class="tags">${renderTags(profile.evidenceNotes, "tag dark")}</div>
           </div>
         `;
       }
 
       function fact(label, value) {
-        return `<div class="profile-fact"><span>${label}</span><strong>${value}</strong></div>`;
+        return `<div class="profile-fact"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
       }
 
       function saveCurrentResult() {
@@ -1750,13 +1875,13 @@
             <article class="customer-row">
               <div class="row-top">
                 <div class="row-title">
-                  <strong>${customer.name}</strong>
-                  <span>${customer.sector || "Unknown sector"} | ${customer.size || "Unknown size"} | ${regionsText(customer.markets)}</span>
+                  <strong>${esc(customer.name)}</strong>
+                  <span>${esc(customer.sector || "Unknown sector")} | ${esc(customer.size || "Unknown size")} | ${esc(regionsText(customer.markets))}</span>
                 </div>
-                <span class="tag ${customer.hypercare === "Active" ? "ok" : ""}">${customer.hypercare || "Inactive"}</span>
+                <span class="tag ${customer.hypercare === "Active" ? "ok" : ""}">${esc(customer.hypercare || "Inactive")}</span>
               </div>
-              <div class="row-copy">${customer.summary || "No summary saved yet."}</div>
-              <div class="tags">${[...(customer.knownStandards || []), ...(customer.guessedStandards || [])].slice(0, 8).map((standard) => `<span class="tag">${standard}</span>`).join("")}</div>
+              <div class="row-copy">${esc(customer.summary || "No summary saved yet.")}</div>
+              <div class="tags">${renderTags([...safeList(customer.knownStandards), ...safeList(customer.guessedStandards)].slice(0, 8))}</div>
               <div class="split">
                 <button class="button secondary" data-load-customer="${index}" type="button">Open profile</button>
                 <button class="button secondary" data-toggle-watch="${index}" type="button">${customer.hypercare === "Active" ? "Pause hypercare" : "Start hypercare"}</button>
@@ -1790,7 +1915,7 @@
         const domain = document.getElementById("domainFilter").value;
         const sector = document.getElementById("sectorFilter").value;
         const filtered = standards.filter((standard) => {
-          const text = normalize(`${standard.name} ${standard.domain} ${standard.sector} ${standard.markets.join(" ")} ${standard.topics.join(" ")} ${standard.description}`);
+          const text = normalize(`${standard.name} ${standard.domain} ${standard.sector} ${safeList(standard.markets).join(" ")} ${safeList(standard.topics).join(" ")} ${standard.description}`);
           return (!search || text.includes(search))
             && (domain === "All" || standard.domain === domain)
             && (sector === "All" || standard.sector === sector);
@@ -1800,13 +1925,13 @@
           <article class="standard-row">
             <div class="row-top">
               <div class="row-title">
-                <strong>${standard.name}</strong>
-                <span>${standard.domain} | ${standard.sector} | ${regionsText(standard.markets)}</span>
+                <strong>${esc(standard.name)}</strong>
+                <span>${esc(standard.domain)} | ${esc(standard.sector)} | ${esc(regionsText(standard.markets))}</span>
               </div>
-              <span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${standard.status}</span>
+              <span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${esc(standard.status)}</span>
             </div>
-            <div class="row-copy">${standard.description}</div>
-            <div class="tags">${standard.topics.map((topic) => `<span class="tag">${topic}</span>`).join("")}</div>
+            <div class="row-copy">${esc(standard.description)}</div>
+            <div class="tags">${renderTags(standard.topics)}</div>
           </article>
         `).join("");
         document.getElementById("standardCount").textContent = standards.length;
@@ -1818,12 +1943,12 @@
           <article class="watch-row">
             <div class="row-top">
               <div class="row-title">
-                <strong>${customer.name}</strong>
-                <span>Monitoring ${[...(customer.knownStandards || []), ...(customer.guessedStandards || [])].length} standards across ${regionsText(customer.markets)}</span>
+                <strong>${esc(customer.name)}</strong>
+                <span>Monitoring ${[...safeList(customer.knownStandards), ...safeList(customer.guessedStandards)].length} standards across ${esc(regionsText(customer.markets))}</span>
               </div>
               <span class="tag ok">Notify on change</span>
             </div>
-            <div class="row-copy">${customer.owner || "NA team"} should be alerted when watched standards publish meaningful changes.</div>
+            <div class="row-copy">${esc(customer.owner || "NA team")} should be alerted when watched standards publish meaningful changes.</div>
           </article>
         `).join("") : `<article class="watch-row"><p class="row-copy">No active hypercare customers yet.</p></article>`;
       }
@@ -1875,11 +2000,22 @@
       document.getElementById("sectorFilter").addEventListener("change", renderStandards);
 
       document.getElementById("saveApiEndpoint").addEventListener("click", () => {
-        const value = document.getElementById("apiEndpoint").value.trim();
+        const rawValue = document.getElementById("apiEndpoint").value;
+        const value = cleanEndpoint(rawValue);
+        if (rawValue.trim() && !value) {
+          document.getElementById("apiSetupStatus").textContent = "Use the full HTTPS API Gateway invoke URL, ending in /enrich.";
+          return;
+        }
         if (value) localStorage.setItem("assuranceHubApiUrl", value);
         else localStorage.removeItem("assuranceHubApiUrl");
+        document.getElementById("apiEndpoint").value = value;
+        document.getElementById("apiSetupStatus").textContent = value
+          ? "Endpoint saved. Use Test saved endpoint after the API Gateway trigger is deployed."
+          : "Endpoint cleared. Browser demo enrichment is active.";
         setStatus(value ? "AWS API endpoint saved. Future enrichments will try the backend first." : "API endpoint cleared. Browser demo enrichment is active.");
       });
+
+      document.getElementById("testApiEndpoint").addEventListener("click", testSavedEndpoint);
 
       document.querySelectorAll("[data-jump]").forEach((button) => {
         button.addEventListener("click", () => {
