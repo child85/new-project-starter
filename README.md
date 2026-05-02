@@ -73,6 +73,37 @@ After the Lambda is deployed behind API Gateway, paste the API endpoint into the
 6. Copy the API Gateway invoke URL into the website's "AI Backend Setup" field.
 7. Test a customer lookup from the website.
 
+## API Gateway trigger
+
+The next backend step is connecting the website to Lambda through API Gateway. The repo includes `aws/api-gateway-trigger.yml`, a CloudFormation starter that creates:
+
+- an HTTP API
+- a `POST /enrich` route
+- a Lambda proxy integration
+- the Lambda invoke permission that makes the API Gateway trigger appear on the Lambda function
+- an output URL to paste into the website
+
+Manual console path:
+
+1. Open the Lambda function.
+2. Choose **Add trigger**.
+3. Select **API Gateway**.
+4. Choose **Create a new API**.
+5. Choose **HTTP API**.
+6. Use open access for the first test only.
+7. Save the trigger.
+8. Copy the API endpoint and add `/enrich` if your route requires it.
+9. Paste the final HTTPS URL into the site's **AI Backend Setup** field.
+
+Template path:
+
+1. Open AWS CloudFormation.
+2. Create a stack using `aws/api-gateway-trigger.yml`.
+3. Enter the existing Lambda function name.
+4. Use `*` for `AllowedOrigin` while testing.
+5. After the stack completes, copy the `CustomerEnrichmentEndpoint` output.
+6. Paste that URL into the site's **AI Backend Setup** field and run **Test saved endpoint**.
+
 ## Automatic AWS deployment
 
 This repo includes a GitHub Actions workflow at `.github/workflows/deploy-s3.yml`.
@@ -93,7 +124,7 @@ For the current demo bucket, the values are expected to be:
 
 The AWS user or role behind the access key needs permission to list the bucket, upload objects, delete old objects, and set object content in the S3 website bucket.
 
-The deploy workflow excludes `.github`, `README.md`, and `api` so backend source files are not uploaded as public website files.
+The deploy workflow excludes `.github`, `README.md`, `api`, and `aws` so backend source and infrastructure templates are not uploaded as public website files.
 
 ## Standards change watch
 
