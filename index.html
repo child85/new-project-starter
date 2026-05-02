@@ -11,17 +11,19 @@
         --gold: #b9a150;
         --ink: #1d232b;
         --muted: #5b6570;
-        --line: #ccd5dd;
+        --line: #cbd5dc;
         --page: #dfe5e9;
         --panel: #ffffff;
         --soft: #eef5fa;
-        --warn: #b65f00;
+        --soft-blue: #dff0fa;
+        --warn: #a45b00;
         --ok: #177245;
+        --shadow: 0 22px 58px rgba(22, 31, 41, 0.16);
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
 
       body {
         margin: 0;
@@ -33,9 +35,9 @@
       button,
       input,
       select,
-      textarea {
-        font: inherit;
-      }
+      textarea { font: inherit; }
+
+      button { cursor: pointer; }
 
       .top-strip {
         height: 10px;
@@ -43,10 +45,11 @@
       }
 
       .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 5;
         background: var(--panel);
         box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
-        position: relative;
-        z-index: 2;
       }
 
       .header-inner {
@@ -56,30 +59,36 @@
         gap: 32px;
         max-width: 1480px;
         margin: 0 auto;
-        padding: 28px 38px 22px;
+        padding: 24px 38px 20px;
       }
 
-      .brand { display: flex; align-items: flex-start; gap: 14px; }
+      .brand {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+      }
 
       .brand-mark {
         position: relative;
         width: 44px;
         height: 36px;
+        flex: 0 0 auto;
+      }
+
+      .brand-mark::before,
+      .brand-mark::after {
+        position: absolute;
+        content: "";
+        clip-path: polygon(50% 0, 100% 100%, 0 100%);
       }
 
       .brand-mark::before {
-        position: absolute;
         inset: 0;
-        content: "";
-        clip-path: polygon(50% 0, 100% 100%, 0 100%);
         background: var(--blue);
       }
 
       .brand-mark::after {
-        position: absolute;
         inset: 10px 11px 8px;
-        content: "";
-        clip-path: polygon(50% 0, 100% 100%, 0 100%);
         background: var(--panel);
       }
 
@@ -94,8 +103,8 @@
       }
 
       .brand-title span {
-        font-size: 1rem;
         color: #111820;
+        font-size: 1rem;
       }
 
       .utility {
@@ -136,7 +145,7 @@
         gap: 42px;
         max-width: 1480px;
         margin: 0 auto;
-        padding: 0 38px 24px;
+        padding: 0 38px 20px;
         background: var(--panel);
       }
 
@@ -150,7 +159,6 @@
         font-size: 1.06rem;
         line-height: 1.25;
         text-align: left;
-        text-transform: none;
       }
 
       .nav-tab.active {
@@ -160,10 +168,10 @@
 
       .hero {
         position: relative;
-        min-height: 560px;
+        min-height: 540px;
         overflow: hidden;
         background:
-          linear-gradient(90deg, rgba(0, 34, 56, 0.82), rgba(0, 83, 132, 0.38), rgba(0, 0, 0, 0.05)),
+          linear-gradient(90deg, rgba(0, 34, 56, 0.86), rgba(0, 83, 132, 0.42), rgba(0, 0, 0, 0.08)),
           url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1800&q=80");
         background-position: center;
         background-size: cover;
@@ -171,24 +179,24 @@
 
       .hero-copy {
         max-width: 1480px;
-        margin: 0;
-        padding: 120px 38px 190px;
+        margin: 0 auto;
+        padding: 108px 38px 180px;
       }
 
       .hero-copy h1 {
-        max-width: 720px;
+        max-width: 820px;
         margin: 0;
         color: #ffffff;
-        font-size: clamp(3rem, 6vw, 5.2rem);
+        font-size: clamp(3rem, 6vw, 5.1rem);
         font-weight: 400;
         line-height: 1.12;
       }
 
       .hero-copy p {
-        max-width: 690px;
-        margin: 42px 0 0;
+        max-width: 750px;
+        margin: 36px 0 0;
         color: #ffffff;
-        font-size: clamp(1.45rem, 2.8vw, 2.25rem);
+        font-size: clamp(1.35rem, 2.4vw, 2.05rem);
         line-height: 1.35;
       }
 
@@ -197,7 +205,7 @@
         right: -4vw;
         bottom: -1px;
         left: -4vw;
-        height: 138px;
+        height: 130px;
         background: var(--panel);
         border-radius: 50% 50% 0 0 / 100% 100% 0 0;
       }
@@ -205,29 +213,94 @@
       .content {
         max-width: 1480px;
         margin: 0 auto;
-        padding: 26px 38px 78px;
+        padding: 28px 38px 82px;
       }
 
       .intro-copy {
-        max-width: 1180px;
-        margin-bottom: 52px;
+        max-width: 1160px;
+        margin-bottom: 48px;
       }
 
       .intro-copy h1 {
-        margin: 0 0 30px;
-        font-size: clamp(2rem, 3.2vw, 3.2rem);
+        margin: 0 0 28px;
+        font-size: clamp(2rem, 3.1vw, 3.1rem);
         font-weight: 400;
       }
 
       .intro-copy p {
-        margin: 0 0 20px;
+        margin: 0 0 18px;
         font-size: 1.16rem;
         line-height: 1.62;
       }
 
+      .service-strip,
+      .metric-grid,
+      .source-grid {
+        display: grid;
+        gap: 18px;
+      }
+
+      .service-strip {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 36px;
+      }
+
+      .service-card {
+        min-height: 178px;
+        padding: 26px;
+        color: #ffffff;
+        background: var(--blue);
+      }
+
+      .service-card strong {
+        display: block;
+        margin-bottom: 24px;
+        font-size: 1.28rem;
+        font-weight: 700;
+        line-height: 1.25;
+      }
+
+      .service-card span {
+        line-height: 1.45;
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-bottom: 36px;
+      }
+
+      .metric {
+        min-height: 138px;
+        padding: 22px;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .metric span {
+        display: block;
+        margin-bottom: 22px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .metric strong {
+        display: block;
+        color: var(--blue-dark);
+        font-size: 2.2rem;
+        line-height: 1;
+      }
+
+      .metric p {
+        margin: 9px 0 0;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
       .section-grid {
         display: grid;
-        grid-template-columns: 1.2fr 0.8fr;
+        grid-template-columns: minmax(0, 1.04fr) minmax(360px, 0.66fr);
         gap: 34px;
         align-items: start;
       }
@@ -236,6 +309,8 @@
         border: 1px solid var(--line);
         background: var(--panel);
       }
+
+      .panel + .panel { margin-top: 28px; }
 
       .panel-head {
         display: flex;
@@ -254,7 +329,7 @@
       }
 
       .panel-head p {
-        max-width: 760px;
+        max-width: 780px;
         margin: 8px 0 0;
         color: var(--muted);
         line-height: 1.5;
@@ -267,7 +342,6 @@
         color: var(--panel);
         background: var(--blue);
         font-weight: 800;
-        cursor: pointer;
       }
 
       .button.secondary {
@@ -275,13 +349,9 @@
         background: var(--panel);
       }
 
-      .controls {
-        display: grid;
-        grid-template-columns: minmax(220px, 1fr) 190px 190px;
-        gap: 12px;
-        padding: 18px 26px;
-        border-bottom: 1px solid var(--line);
-        background: #f8fafc;
+      .button:disabled {
+        cursor: wait;
+        opacity: 0.58;
       }
 
       .field {
@@ -308,27 +378,253 @@
       }
 
       textarea {
-        min-height: 84px;
+        min-height: 96px;
         resize: vertical;
       }
 
+      .lookup-form {
+        display: grid;
+        gap: 16px;
+        padding: 24px 26px 28px;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .wide-split {
+        display: grid;
+        grid-template-columns: 1.4fr 0.8fr 0.8fr;
+        gap: 14px;
+      }
+
+      .region-picker,
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip,
+      .tag {
+        width: fit-content;
+        border: 1px solid currentColor;
+        color: var(--blue-dark);
+        background: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      .chip {
+        min-height: 34px;
+        padding: 0 10px;
+      }
+
+      .chip.active {
+        color: #ffffff;
+        background: var(--blue);
+      }
+
+      .tag {
+        padding: 5px 9px;
+      }
+
+      .tag.warn { color: var(--warn); }
+      .tag.ok { color: var(--ok); }
+      .tag.dark { color: var(--ink); }
+
+      .status-line {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 14px 26px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        background: #f8fafc;
+        line-height: 1.4;
+      }
+
+      .result-card {
+        margin: 0 26px 26px;
+        border: 1px solid var(--line);
+        background: var(--soft);
+      }
+
+      .result-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        padding: 22px;
+        border-bottom: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .result-hero h3 {
+        margin: 0 0 8px;
+        color: var(--blue-dark);
+        font-size: 1.55rem;
+      }
+
+      .result-hero p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .confidence {
+        min-width: 160px;
+        padding: 14px;
+        color: #ffffff;
+        background: var(--blue);
+      }
+
+      .confidence span {
+        display: block;
+        margin-bottom: 10px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .confidence strong { font-size: 1.55rem; }
+
+      .profile-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1px;
+        background: var(--line);
+      }
+
+      .profile-fact {
+        min-height: 104px;
+        padding: 18px;
+        background: #ffffff;
+      }
+
+      .profile-fact span {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .profile-fact strong {
+        font-size: 1.02rem;
+        line-height: 1.35;
+      }
+
+      .subpanel {
+        padding: 22px;
+        border-top: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .subpanel h4 {
+        margin: 0 0 14px;
+        color: var(--blue-dark);
+        font-size: 1.08rem;
+      }
+
+      .card-list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .info-card {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .info-card strong {
+        color: var(--ink);
+      }
+
+      .info-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .action-list {
+        display: grid;
+        gap: 10px;
+        counter-reset: action;
+      }
+
+      .action-row {
+        display: grid;
+        grid-template-columns: 42px 1fr;
+        gap: 12px;
+        align-items: start;
+        padding: 14px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .action-row::before {
+        counter-increment: action;
+        content: counter(action);
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        color: #ffffff;
+        background: var(--blue);
+        font-weight: 800;
+      }
+
+      .action-row strong {
+        display: block;
+        margin-bottom: 5px;
+      }
+
+      .action-row span {
+        color: var(--muted);
+        line-height: 1.4;
+      }
+
+      .candidate-list {
+        display: grid;
+        gap: 10px;
+        padding: 22px 26px;
+      }
+
+      .candidate {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 14px;
+        align-items: center;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .customer-list,
       .standards-list,
-      .customer-list {
+      .watch-list {
         display: grid;
       }
 
+      .customer-row,
       .standard-row,
-      .customer-row {
+      .watch-row {
         display: grid;
         gap: 14px;
-        padding: 22px 26px;
+        padding: 20px 26px;
         border-bottom: 1px solid var(--line);
       }
 
+      .customer-row:last-child,
       .standard-row:last-child,
-      .customer-row:last-child {
-        border-bottom: 0;
-      }
+      .watch-row:last-child { border-bottom: 0; }
 
       .row-top {
         display: flex;
@@ -342,9 +638,7 @@
         gap: 6px;
       }
 
-      .row-title strong {
-        font-size: 1.12rem;
-      }
+      .row-title strong { font-size: 1.12rem; }
 
       .row-title span,
       .row-copy {
@@ -352,138 +646,77 @@
         line-height: 1.48;
       }
 
-      .tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-      }
-
-      .tag {
-        width: fit-content;
-        padding: 5px 9px;
-        border: 1px solid currentColor;
-        color: var(--blue-dark);
-        font-size: 0.82rem;
-        font-weight: 800;
-      }
-
-      .tag.warn {
-        color: var(--warn);
-      }
-
-      .tag.ok {
-        color: var(--ok);
-      }
-
-      .metric-grid {
+      .controls {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 18px;
-        margin-bottom: 34px;
-      }
-
-      .metric {
-        min-height: 168px;
-        padding: 26px;
-        color: var(--panel);
-        background: var(--blue);
-      }
-
-      .metric span {
-        display: block;
-        margin-bottom: 26px;
-        font-weight: 800;
-        text-transform: uppercase;
-      }
-
-      .metric strong {
-        display: block;
-        font-size: 2.4rem;
-        line-height: 1;
-      }
-
-      .metric p {
-        margin: 10px 0 0;
-        line-height: 1.4;
-      }
-
-      .form-panel {
-        padding: 24px 26px;
-      }
-
-      .form-panel form {
-        display: grid;
-        gap: 14px;
-      }
-
-      .split {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(220px, 1fr) 180px 180px;
         gap: 12px;
-      }
-
-      .watch-list {
-        display: grid;
-        padding: 0 26px 24px;
-      }
-
-      .watch-row {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 14px;
-        align-items: center;
-        padding: 16px 0;
+        padding: 18px 26px;
         border-bottom: 1px solid var(--line);
+        background: #f8fafc;
       }
 
-      .watch-row:last-child {
-        border-bottom: 0;
+      .source-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
-      .watch-row strong {
-        display: block;
-        margin-bottom: 5px;
-      }
-
-      .watch-row span {
-        color: var(--muted);
-        line-height: 1.4;
-      }
-
-      .customers-section {
-        margin-top: 38px;
-      }
-
-      .applicability {
-        display: grid;
-        gap: 12px;
-        padding: 18px 26px 26px;
-      }
-
-      .check-output {
-        min-height: 96px;
-        padding: 16px;
+      .source-card {
+        min-height: 170px;
+        padding: 22px;
         border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .source-card h3 {
+        margin: 0 0 12px;
+        color: var(--blue-dark);
+      }
+
+      .source-card p {
+        margin: 0 0 14px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .setup-box {
+        display: grid;
+        gap: 14px;
+        padding: 22px 26px;
         background: var(--soft);
-        line-height: 1.55;
       }
 
-      @media (max-width: 1100px) {
+      .code {
+        overflow-x: auto;
+        padding: 16px;
+        color: #ffffff;
+        background: #1f2933;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.92rem;
+        line-height: 1.5;
+      }
+
+      .hidden { display: none; }
+
+      @media (max-width: 1180px) {
         .section-grid,
-        .metric-grid {
-          grid-template-columns: 1fr;
+        .metric-grid,
+        .service-strip,
+        .source-grid {
+          grid-template-columns: 1fr 1fr;
         }
 
-        .controls {
-          grid-template-columns: 1fr;
+        .wide-split,
+        .profile-grid {
+          grid-template-columns: 1fr 1fr;
         }
       }
 
-      @media (max-width: 720px) {
+      @media (max-width: 760px) {
         .header-inner,
         .utility,
         .panel-head,
-        .row-top {
+        .row-top,
+        .result-hero,
+        .candidate {
           align-items: flex-start;
           flex-direction: column;
         }
@@ -494,8 +727,15 @@
           padding-left: 20px;
         }
 
+        .primary-nav,
+        .service-strip,
+        .metric-grid,
+        .section-grid,
+        .source-grid,
         .split,
-        .watch-row {
+        .wide-split,
+        .profile-grid,
+        .controls {
           grid-template-columns: 1fr;
         }
 
@@ -505,7 +745,7 @@
         }
 
         .hero-copy {
-          padding: 72px 20px 150px;
+          padding: 72px 20px 140px;
         }
       }
     </style>
@@ -523,8 +763,8 @@
           </div>
         </div>
         <div class="utility">
-          <span>North America</span>
-          <span>Daily change watch</span>
+          <span>North America users</span>
+          <span>Global customer scope</span>
           <span class="search"><span class="search-icon"></span>Search</span>
         </div>
       </div>
@@ -532,15 +772,18 @@
       <nav class="primary-nav" aria-label="Main menu">
         <button class="nav-tab active" data-jump="customers">Customers</button>
         <button class="nav-tab" data-jump="compliance">Compliance</button>
+        <button class="nav-tab" data-jump="watch">Daily Watch</button>
+        <button class="nav-tab" data-jump="setup">AI Setup</button>
       </nav>
     </header>
 
     <main>
       <section class="hero" aria-label="Assurance Hub overview">
         <div class="hero-copy">
-          <h1>Standards intelligence for safer products.</h1>
+          <h1>Activate customer assurance intelligence.</h1>
           <p>
-            Cybersecurity and Functional Safety knowledge for North America.
+            Look up global customers, enrich their profile, infer likely
+            compliance needs, and plan practical engagement actions.
           </p>
         </div>
         <div class="wave"></div>
@@ -550,17 +793,36 @@
         <section class="intro-copy">
           <h1>Your standards and customer assurance work - one click away.</h1>
           <p>
-            Use this hub as a practical knowledge base for standards and
-            regulations used in cybersecurity and functional safety testing,
-            assessments, gap analyses, and certifications.
+            This hub is built for NA-based team members working with customers
+            worldwide. A customer can be headquartered in one region, sell into
+            another, and operate subsidiaries elsewhere, so the lookup considers
+            global market access, cybersecurity, and functional safety exposure.
           </p>
           <p>
-            Add new standards, keep short plain-English descriptions, check
-            which requirements may apply to a customer, and monitor completed
-            project work during hypercare so customers can be notified when
-            relevant changes are published.
+            The demo enrichment works in the browser today. When the AWS API is
+            connected, the same screen will call a secure backend that uses AI,
+            stores the profile, and keeps an audit trail.
           </p>
         </section>
+
+        <div class="service-strip">
+          <article class="service-card">
+            <strong>Customer lookup</strong>
+            <span>Resolve ambiguous names, enrich metadata, and save confirmed customer context.</span>
+          </article>
+          <article class="service-card">
+            <strong>Compliance fit</strong>
+            <span>Guess likely standards from sector, product type, and operating markets.</span>
+          </article>
+          <article class="service-card">
+            <strong>Hypercare watch</strong>
+            <span>Keep tested standards tied to customers after project close.</span>
+          </article>
+          <article class="service-card">
+            <strong>Engagement planning</strong>
+            <span>Generate top cross-sell and upsell ideas for account teams.</span>
+          </article>
+        </div>
 
         <div class="metric-grid">
           <article class="metric">
@@ -569,9 +831,14 @@
             <p>Cybersecurity, functional safety, and regulatory references.</p>
           </article>
           <article class="metric">
+            <span>Saved customers</span>
+            <strong id="customerCount">0</strong>
+            <p>Profiles saved in this demo browser.</p>
+          </article>
+          <article class="metric">
             <span>Hypercare watch</span>
             <strong id="watchCount">0</strong>
-            <p>Customer projects monitored for post-project changes.</p>
+            <p>Customer accounts monitored for standard changes.</p>
           </article>
           <article class="metric">
             <span>Daily updates</span>
@@ -580,14 +847,161 @@
           </article>
         </div>
 
-        <section class="section-grid" id="compliance">
+        <section class="section-grid" id="customers">
+          <div>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Customer Lookup and AI Enrichment</h2>
+                  <p>
+                    Enter a customer name and any hints you already know. The
+                    hub resolves ambiguous names, estimates likely compliance
+                    exposure, and returns a practical account profile.
+                  </p>
+                </div>
+                <button class="button secondary" id="sampleBMW">Try BMW example</button>
+              </div>
+
+              <form class="lookup-form" id="lookupForm">
+                <div class="wide-split">
+                  <div class="field">
+                    <label for="lookupName">Customer Name</label>
+                    <input id="lookupName" required placeholder="Example: BMW, Siemens, Rockwell Automation" />
+                  </div>
+                  <div class="field">
+                    <label for="lookupSector">Known Sector</label>
+                    <select id="lookupSector">
+                      <option value="">Let AI infer</option>
+                      <option>Automotive</option>
+                      <option>Industrial / OT</option>
+                      <option>Medical Devices</option>
+                      <option>Energy / Utilities</option>
+                      <option>ICT / Connected Products</option>
+                      <option>Consumer & Industrial Goods</option>
+                      <option>Rail / Mobility</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="lookupSize">Known Size</label>
+                    <select id="lookupSize">
+                      <option value="">Let AI infer</option>
+                      <option>Startup</option>
+                      <option>Mid-market</option>
+                      <option>Enterprise</option>
+                      <option>Global enterprise</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="split">
+                  <div class="field">
+                    <label for="lookupWebsite">Website or Subsidiary Hint</label>
+                    <input id="lookupWebsite" placeholder="example.com, BMW Manufacturing, EU subsidiary, etc." />
+                  </div>
+                  <div class="field">
+                    <label>Operating Markets</label>
+                    <div class="region-picker" id="regionPicker">
+                      <button class="chip active" type="button" data-region="North America">North America</button>
+                      <button class="chip" type="button" data-region="EU">EU</button>
+                      <button class="chip" type="button" data-region="UK">UK</button>
+                      <button class="chip" type="button" data-region="China">China</button>
+                      <button class="chip" type="button" data-region="Global">Global</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="lookupNotes">What We Know Already</label>
+                  <textarea id="lookupNotes" placeholder="Products, subsidiaries, past projects, tested standards, known markets, or account notes."></textarea>
+                </div>
+
+                <div class="split">
+                  <button class="button" id="runLookup" type="submit">Lookup and enrich customer</button>
+                  <button class="button secondary" id="saveResult" type="button" disabled>Save enriched customer</button>
+                </div>
+              </form>
+
+              <div id="candidateBox" class="candidate-list hidden"></div>
+              <div id="resultBox" class="result-card hidden"></div>
+              <div class="status-line">
+                <span id="enrichmentStatus">Ready. Demo enrichment is available even before the AWS AI API is connected.</span>
+                <span id="apiMode">Mode: browser demo</span>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Saved Customers</h2>
+                  <p>
+                    Saved profiles keep confirmed data, AI guesses, hypercare
+                    status, and account engagement ideas together.
+                  </p>
+                </div>
+                <button class="button secondary" id="resetCustomers">Reset customers</button>
+              </div>
+              <div class="customer-list" id="customerList"></div>
+            </section>
+          </div>
+
+          <aside>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Engagement Lens</h3>
+                  <p>What the enrichment should help account teams answer.</p>
+                </div>
+              </div>
+              <div class="card-list" style="padding: 22px 26px;">
+                <article class="info-card">
+                  <strong>Who is the customer?</strong>
+                  <p>Headquarters, website, size, operating markets, sector, sub-sector, and product context.</p>
+                </article>
+                <article class="info-card">
+                  <strong>What may apply?</strong>
+                  <p>Likely standards and regulations based on sector, geography, product type, and market access needs.</p>
+                </article>
+                <article class="info-card">
+                  <strong>How should we engage?</strong>
+                  <p>Top 10 discussion ideas for assessment, testing, certification, hypercare, or global market access support.</p>
+                </article>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h3>Known Customer Signals</h3>
+                  <p>Use these as hints before enrichment.</p>
+                </div>
+              </div>
+              <div class="card-list" style="padding: 22px 26px;">
+                <article class="info-card">
+                  <strong>Global footprint</strong>
+                  <p>EU subsidiaries, US operations, global exports, or market entry plans can change the compliance picture.</p>
+                </article>
+                <article class="info-card">
+                  <strong>Product class</strong>
+                  <p>Vehicles, machinery, industrial controls, connected products, medical devices, and ICT each point to different standards.</p>
+                </article>
+                <article class="info-card">
+                  <strong>Project history</strong>
+                  <p>Standards already tested should move into hypercare so published changes can trigger customer outreach.</p>
+                </article>
+              </div>
+            </section>
+          </aside>
+        </section>
+
+        <section class="section-grid" id="compliance" style="margin-top: 38px;">
           <div class="panel">
             <div class="panel-head">
               <div>
                 <h2>Standards and Regulations</h2>
                 <p>
                   Short, readable descriptions for standards used in testing,
-                  assessments, gap analyses, and certifications.
+                  assessments, gap analyses, certifications, and market access
+                  planning.
                 </p>
               </div>
               <button class="button secondary" id="resetStandards">Reset sample data</button>
@@ -596,25 +1010,28 @@
             <div class="controls">
               <div class="field">
                 <label for="standardSearch">Search</label>
-                <input id="standardSearch" type="search" placeholder="Search name, topic, or description" />
+                <input id="standardSearch" type="search" placeholder="Search name, sector, topic, or description" />
               </div>
               <div class="field">
                 <label for="domainFilter">Domain</label>
                 <select id="domainFilter">
                   <option value="All">All</option>
-                  <option value="Cybersecurity">Cybersecurity</option>
-                  <option value="Functional Safety">Functional Safety</option>
-                  <option value="Regulation">Regulation</option>
+                  <option>Cybersecurity</option>
+                  <option>Functional Safety</option>
+                  <option>Regulation</option>
+                  <option>Market Access</option>
                 </select>
               </div>
               <div class="field">
-                <label for="regionFilter">Region</label>
-                <select id="regionFilter">
-                  <option value="All">All NA</option>
-                  <option value="US">US</option>
-                  <option value="Canada">Canada</option>
-                  <option value="Mexico">Mexico</option>
-                  <option value="Global">Global</option>
+                <label for="sectorFilter">Sector</label>
+                <select id="sectorFilter">
+                  <option value="All">All sectors</option>
+                  <option>Automotive</option>
+                  <option>Industrial / OT</option>
+                  <option>Medical Devices</option>
+                  <option>ICT / Connected Products</option>
+                  <option>Financial Services</option>
+                  <option>Consumer & Industrial Goods</option>
                 </select>
               </div>
             </div>
@@ -622,17 +1039,17 @@
             <div class="standards-list" id="standardsList"></div>
           </div>
 
-          <aside class="panel form-panel">
+          <aside class="panel">
             <div class="panel-head">
               <div>
                 <h3>Add New Standard</h3>
-                <p>Add the short description your team can understand quickly.</p>
+                <p>Keep the description short enough for account teams to use.</p>
               </div>
             </div>
-            <form id="standardForm">
+            <form class="lookup-form" id="standardForm">
               <div class="field">
                 <label for="stdName">Name</label>
-                <input id="stdName" required placeholder="Example: ISO/SAE 21434" />
+                <input id="stdName" required placeholder="Example: IEC 62443" />
               </div>
               <div class="split">
                 <div class="field">
@@ -641,21 +1058,28 @@
                     <option>Cybersecurity</option>
                     <option>Functional Safety</option>
                     <option>Regulation</option>
+                    <option>Market Access</option>
                   </select>
                 </div>
                 <div class="field">
-                  <label for="stdRegion">Region</label>
-                  <select id="stdRegion">
-                    <option>Global</option>
-                    <option>US</option>
-                    <option>Canada</option>
-                    <option>Mexico</option>
+                  <label for="stdSector">Sector</label>
+                  <select id="stdSector">
+                    <option>Industrial / OT</option>
+                    <option>Automotive</option>
+                    <option>Medical Devices</option>
+                    <option>ICT / Connected Products</option>
+                    <option>Financial Services</option>
+                    <option>Consumer & Industrial Goods</option>
                   </select>
                 </div>
               </div>
               <div class="field">
+                <label for="stdMarkets">Markets / Regions</label>
+                <input id="stdMarkets" placeholder="Global, EU, US, Canada, China" />
+              </div>
+              <div class="field">
                 <label for="stdTopics">Topics</label>
-                <input id="stdTopics" placeholder="automotive, medical, industrial" />
+                <input id="stdTopics" placeholder="automotive, machinery, OT security" />
               </div>
               <div class="field">
                 <label for="stdDescription">Plain-English Description</label>
@@ -666,95 +1090,64 @@
           </aside>
         </section>
 
-        <section class="section-grid customers-section" id="customers">
-          <div class="panel">
-            <div class="panel-head">
-              <div>
-                <h2>Customers</h2>
-                <p>
-                  Check which standards may apply, add new customers, and track
-                  standards tested during a hypercare phase.
-                </p>
-              </div>
-              <button class="button secondary" id="resetCustomers">Reset sample data</button>
-            </div>
-
-            <div class="applicability">
-              <div class="split">
-                <div class="field">
-                  <label for="customerProfile">Customer Profile</label>
-                  <textarea id="customerProfile" placeholder="Example: Automotive supplier building connected vehicle components for US OEMs."></textarea>
-                </div>
-                <div class="field">
-                  <label for="customerIndustry">Industry</label>
-                  <select id="customerIndustry">
-                    <option>Automotive</option>
-                    <option>Industrial</option>
-                    <option>Medical</option>
-                    <option>Energy</option>
-                    <option>Consumer IoT</option>
-                  </select>
-                </div>
-              </div>
-              <button class="button" id="runCheck">Check possible standards</button>
-              <div class="check-output" id="checkOutput">
-                Enter a customer profile and run a check to see likely applicable standards.
-              </div>
-            </div>
-
-            <div class="customer-list" id="customerList"></div>
-          </div>
-
-          <aside class="panel form-panel">
-            <div class="panel-head">
-              <div>
-                <h3>Add Customer</h3>
-                <p>Capture tested standards and mark the account for hypercare alerts.</p>
-              </div>
-            </div>
-            <form id="customerForm">
-              <div class="field">
-                <label for="custName">Customer Name</label>
-                <input id="custName" required placeholder="Example: Northstar Manufacturing" />
-              </div>
-              <div class="field">
-                <label for="custProfile">Profile</label>
-                <textarea id="custProfile" required placeholder="Short description of product, market, and context."></textarea>
-              </div>
-              <div class="field">
-                <label for="custStandards">Standards Tested</label>
-                <input id="custStandards" placeholder="Comma-separated names, e.g. ISO/SAE 21434, ISO 26262" />
-              </div>
-              <div class="split">
-                <div class="field">
-                  <label for="custHypercare">Hypercare</label>
-                  <select id="custHypercare">
-                    <option>Active</option>
-                    <option>Inactive</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="custOwner">Owner</label>
-                  <input id="custOwner" placeholder="Team owner" />
-                </div>
-              </div>
-              <button class="button" type="submit">Add customer</button>
-            </form>
-          </aside>
-        </section>
-
-        <section class="panel customers-section">
+        <section class="panel" id="watch" style="margin-top: 38px;">
           <div class="panel-head">
             <div>
               <h2>Daily Change Watch</h2>
               <p>
-                The live version should connect to official standards and
-                regulatory sources, run a daily check, and notify owners when
-                changes affect customers in hypercare.
+                The production workflow should check official standards and
+                regulatory sources every day, compare changes against hypercare
+                customers, and notify account owners when outreach is needed.
               </p>
             </div>
           </div>
           <div class="watch-list" id="watchList"></div>
+        </section>
+
+        <section style="margin-top: 38px;">
+          <div class="source-grid">
+            <article class="source-card">
+              <h3>Functional Safety</h3>
+              <p>Useful sectors include manufacturing, process industries, railway, automotive, and medical industries.</p>
+              <div class="tags"><span class="tag">IEC 61508</span><span class="tag">IEC 61511</span><span class="tag">ISO 13849</span><span class="tag">ISO 26262</span></div>
+            </article>
+            <article class="source-card">
+              <h3>Cybersecurity</h3>
+              <p>Relevant services include OT security, penetration testing, IT compliance, ISMS, TISAX, and cloud security.</p>
+              <div class="tags"><span class="tag">ISO 27001</span><span class="tag">NIST 800-115</span><span class="tag">TISAX</span><span class="tag">IEC 62443</span></div>
+            </article>
+            <article class="source-card">
+              <h3>Market Access</h3>
+              <p>Global product launches can require local legal requirements, conformity certificates, test marks, and approval support.</p>
+              <div class="tags"><span class="tag">UKCA</span><span class="tag">CE</span><span class="tag">PVoC</span><span class="tag">Certipedia</span></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel" id="setup" style="margin-top: 38px;">
+          <div class="panel-head">
+            <div>
+              <h2>AI Backend Setup</h2>
+              <p>
+                The browser page should never hold an AI API key. Point this
+                page at an API Gateway endpoint backed by Lambda, then store the
+                endpoint URL here for testing.
+              </p>
+            </div>
+          </div>
+          <div class="setup-box">
+            <div class="split">
+              <div class="field">
+                <label for="apiEndpoint">Customer Enrichment API URL</label>
+                <input id="apiEndpoint" placeholder="https://abc123.execute-api.us-east-1.amazonaws.com/enrich" />
+              </div>
+              <div class="field">
+                <label>&nbsp;</label>
+                <button class="button" id="saveApiEndpoint" type="button">Save API endpoint</button>
+              </div>
+            </div>
+            <div class="code">S3 / CloudFront site -> API Gateway -> Lambda -> AI model -> DynamoDB -> Daily EventBridge watch</div>
+          </div>
         </section>
       </section>
     </main>
@@ -764,278 +1157,760 @@
         {
           name: "ISO/SAE 21434",
           domain: "Cybersecurity",
-          region: "Global",
-          topics: ["automotive", "connected vehicle", "cybersecurity"],
-          description:
-            "Defines how to manage cybersecurity risks across the automotive product lifecycle. It is used to show that security was considered from concept through production and support.",
+          sector: "Automotive",
+          markets: ["Global", "EU"],
+          topics: ["automotive", "vehicle", "connected vehicle", "software-defined vehicle", "cybersecurity"],
+          description: "Defines cybersecurity engineering across the road-vehicle lifecycle. It is useful for OEMs, suppliers, and engineering providers working on connected vehicle systems.",
           status: "Watch"
+        },
+        {
+          name: "UNECE R155 / R156",
+          domain: "Regulation",
+          sector: "Automotive",
+          markets: ["EU", "Global"],
+          topics: ["vehicle", "type approval", "csms", "sums", "software update"],
+          description: "Sets vehicle type-approval expectations for cybersecurity management and software update management. It often matters when vehicles or components enter regulated markets.",
+          status: "Monitor"
         },
         {
           name: "ISO 26262",
           domain: "Functional Safety",
-          region: "Global",
-          topics: ["automotive", "safety", "electronics"],
-          description:
-            "Sets expectations for functional safety of electrical and electronic systems in road vehicles. It helps teams reduce risk from system failures that could cause harm.",
+          sector: "Automotive",
+          markets: ["Global"],
+          topics: ["automotive", "safety", "electronics", "ASIL"],
+          description: "Covers functional safety of electrical and electronic systems in road vehicles. It helps reduce risk from system failures that could cause harm.",
+          status: "Watch"
+        },
+        {
+          name: "IEC 61508",
+          domain: "Functional Safety",
+          sector: "Industrial / OT",
+          markets: ["Global"],
+          topics: ["industrial", "safety", "electronics", "programmable systems", "SIL"],
+          description: "The foundational functional safety standard for safety-related electrical, electronic, and programmable electronic systems. It supports product assessments and certification of safety-related devices.",
+          status: "Watch"
+        },
+        {
+          name: "IEC 61511",
+          domain: "Functional Safety",
+          sector: "Industrial / OT",
+          markets: ["Global"],
+          topics: ["process industry", "safety instrumented systems", "SIS", "SIL"],
+          description: "Applies functional safety practices to safety instrumented systems in process industries. It is relevant for chemical, energy, and other plant environments.",
+          status: "Watch"
+        },
+        {
+          name: "ISO 13849",
+          domain: "Functional Safety",
+          sector: "Industrial / OT",
+          markets: ["Global", "EU"],
+          topics: ["machinery", "machine safety", "performance level", "industrial"],
+          description: "Defines safety-related parts of control systems for machinery. It is a common fit for machine builders and manufacturing equipment suppliers.",
           status: "Watch"
         },
         {
           name: "IEC 62443",
           domain: "Cybersecurity",
-          region: "Global",
-          topics: ["industrial", "automation", "ot security"],
-          description:
-            "A family of standards for cybersecurity in industrial automation and control systems. It is often used for secure product development and OT environment assessments.",
+          sector: "Industrial / OT",
+          markets: ["Global"],
+          topics: ["industrial", "OT security", "automation", "control systems", "secure development"],
+          description: "A family of standards for cybersecurity in industrial automation and control systems. It is often used for secure product development and OT environment assessments.",
           status: "Watch"
         },
         {
-          name: "UL 2900",
+          name: "ISO 27001 / 27002",
           domain: "Cybersecurity",
-          region: "US",
-          topics: ["connected product", "medical", "iot"],
-          description:
-            "Covers cybersecurity testing for network-connectable products and systems. It is useful when customers need product security testing evidence for connected devices.",
-          status: "Review"
+          sector: "ICT / Connected Products",
+          markets: ["Global"],
+          topics: ["ISMS", "information security", "governance", "controls"],
+          description: "Provides an information security management system and control catalog. It is valuable for organizations that need structured security governance or certification evidence.",
+          status: "Watch"
         },
         {
-          name: "NIST Cybersecurity Framework 2.0",
+          name: "NIST SP 800-115",
           domain: "Cybersecurity",
-          region: "US",
-          topics: ["governance", "risk", "assessment"],
-          description:
-            "Provides a common way to organize cybersecurity risk management. It is often used for gap analyses, maturity checks, and executive reporting.",
+          sector: "ICT / Connected Products",
+          markets: ["US"],
+          topics: ["penetration testing", "technical security testing", "assessment"],
+          description: "Gives technical guidance for information security testing and assessment. It is a useful reference for penetration testing and IT security analysis work.",
+          status: "Watch"
+        },
+        {
+          name: "TISAX",
+          domain: "Cybersecurity",
+          sector: "Automotive",
+          markets: ["EU", "Global"],
+          topics: ["automotive", "supplier", "information security", "assessment"],
+          description: "An automotive industry assessment model for information security. It is often expected from suppliers working with European automotive customers.",
           status: "Watch"
         },
         {
           name: "EU Cyber Resilience Act",
           domain: "Regulation",
-          region: "Global",
-          topics: ["product security", "software", "market access"],
-          description:
-            "Introduces cybersecurity requirements for products with digital elements sold into the EU. North American manufacturers may need it when exporting connected products.",
+          sector: "ICT / Connected Products",
+          markets: ["EU"],
+          topics: ["product security", "software", "connected products", "market access"],
+          description: "Introduces cybersecurity requirements for products with digital elements sold into the EU. Non-EU manufacturers may still be affected when exporting connected products.",
+          status: "Monitor"
+        },
+        {
+          name: "NIS2",
+          domain: "Regulation",
+          sector: "ICT / Connected Products",
+          markets: ["EU"],
+          topics: ["critical sectors", "cybersecurity governance", "incident reporting"],
+          description: "Expands cybersecurity obligations for essential and important entities in the EU. It may matter for customers with EU operations or critical-sector subsidiaries.",
+          status: "Monitor"
+        },
+        {
+          name: "DORA",
+          domain: "Regulation",
+          sector: "Financial Services",
+          markets: ["EU"],
+          topics: ["operational resilience", "financial services", "third-party risk"],
+          description: "Sets digital operational resilience requirements for EU financial entities and key ICT providers. It is relevant for finance customers and vendors serving them.",
+          status: "Monitor"
+        },
+        {
+          name: "UL 2900",
+          domain: "Cybersecurity",
+          sector: "Medical Devices",
+          markets: ["US"],
+          topics: ["connected product", "medical", "IoT", "product security"],
+          description: "Covers cybersecurity testing for network-connectable products and systems. It can support product security evidence for connected medical or IoT devices.",
+          status: "Review"
+        },
+        {
+          name: "UKCA / CE Market Access",
+          domain: "Market Access",
+          sector: "Consumer & Industrial Goods",
+          markets: ["UK", "EU"],
+          topics: ["market access", "conformity", "test marks", "certification"],
+          description: "Market access marks and conformity paths can be required before products are placed in target markets. They are especially relevant for global launches and regulated product groups.",
           status: "Monitor"
         }
       ];
 
       const starterCustomers = [
         {
-          name: "Northstar Manufacturing",
-          profile: "Automotive supplier developing connected vehicle components for US and global OEMs.",
-          standards: ["ISO/SAE 21434", "ISO 26262"],
+          id: "cust-bmw",
+          name: "BMW Group",
+          website: "https://www.bmwgroup.com",
+          headquarters: "Munich, Germany",
+          sector: "Automotive",
+          subSector: "Premium vehicles, connected mobility, manufacturing",
+          size: "Global enterprise",
+          markets: ["North America", "EU", "China", "Global"],
+          summary: "BMW Group is a global automotive manufacturer with connected-vehicle, software, manufacturing, and supplier-chain exposure across multiple regions.",
+          knownStandards: ["ISO/SAE 21434", "ISO 26262"],
+          guessedStandards: ["UNECE R155 / R156", "TISAX", "IEC 62443"],
           hypercare: "Active",
-          owner: "NA Cybersecurity"
-        },
-        {
-          name: "ClearGrid Energy",
-          profile: "Industrial energy platform with remote monitoring and OT connectivity.",
-          standards: ["IEC 62443", "NIST Cybersecurity Framework 2.0"],
-          hypercare: "Active",
-          owner: "Industrial Security"
-        },
-        {
-          name: "MetroLab Devices",
-          profile: "Connected medical and lab equipment manufacturer preparing product security evidence.",
-          standards: ["UL 2900", "NIST Cybersecurity Framework 2.0"],
-          hypercare: "Inactive",
-          owner: "Product Security"
+          owner: "NA Cybersecurity",
+          actions: [
+            "Review connected-vehicle cybersecurity management against ISO/SAE 21434 and UNECE R155.",
+            "Position TISAX supplier-readiness support for North American suppliers working with EU automotive programs.",
+            "Discuss OT security and IEC 62443 alignment for manufacturing and plant environments."
+          ]
         }
       ];
 
       const store = {
         get(key, fallback) {
-          const raw = localStorage.getItem(key);
-          return raw ? JSON.parse(raw) : fallback;
+          try {
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : fallback;
+          } catch {
+            return fallback;
+          }
         },
         set(key, value) {
           localStorage.setItem(key, JSON.stringify(value));
         }
       };
 
-      let standards = store.get("assuranceStandards", starterStandards);
-      let customers = store.get("assuranceCustomers", starterCustomers);
+      let standards = store.get("assuranceStandardsV2", starterStandards);
+      let customers = store.get("assuranceCustomersV2", starterCustomers);
+      let selectedRegions = new Set(["North America"]);
+      let currentResult = null;
 
-      const standardsList = document.getElementById("standardsList");
-      const customerList = document.getElementById("customerList");
-      const watchList = document.getElementById("watchList");
-      const standardCount = document.getElementById("standardCount");
-      const watchCount = document.getElementById("watchCount");
+      const knownCompanies = {
+        bmw: [
+          {
+            name: "BMW Group",
+            website: "https://www.bmwgroup.com",
+            headquarters: "Munich, Germany",
+            sector: "Automotive",
+            subSector: "Premium vehicles, connected mobility, manufacturing",
+            size: "Global enterprise",
+            markets: ["North America", "EU", "China", "Global"],
+            summary: "Global automotive group with premium vehicle brands, connected mobility programs, software-defined vehicle exposure, and manufacturing operations."
+          },
+          {
+            name: "BMW Manufacturing Co.",
+            website: "https://www.bmwgroup-werke.com/spartanburg/en.html",
+            headquarters: "Spartanburg, South Carolina, US",
+            sector: "Automotive",
+            subSector: "Vehicle manufacturing and export operations",
+            size: "Enterprise",
+            markets: ["North America", "Global"],
+            summary: "US manufacturing operation with production, supplier, export, industrial automation, and plant resilience considerations."
+          }
+        ],
+        siemens: [
+          {
+            name: "Siemens AG",
+            website: "https://www.siemens.com",
+            headquarters: "Munich, Germany",
+            sector: "Industrial / OT",
+            subSector: "Automation, smart infrastructure, industrial software",
+            size: "Global enterprise",
+            markets: ["North America", "EU", "China", "Global"],
+            summary: "Global technology company with industrial automation, infrastructure, software, and OT security relevance."
+          }
+        ],
+        "rockwell automation": [
+          {
+            name: "Rockwell Automation",
+            website: "https://www.rockwellautomation.com",
+            headquarters: "Milwaukee, Wisconsin, US",
+            sector: "Industrial / OT",
+            subSector: "Industrial automation and control systems",
+            size: "Global enterprise",
+            markets: ["North America", "EU", "Global"],
+            summary: "Industrial automation provider with control systems, connected operations, secure product development, and OT cybersecurity exposure."
+          }
+        ],
+        philips: [
+          {
+            name: "Philips",
+            website: "https://www.philips.com",
+            headquarters: "Amsterdam, Netherlands",
+            sector: "Medical Devices",
+            subSector: "Health technology and connected medical systems",
+            size: "Global enterprise",
+            markets: ["North America", "EU", "China", "Global"],
+            summary: "Global health technology company with connected medical devices, software, privacy, and product security requirements."
+          }
+        ]
+      };
 
-      function renderStandards() {
-        const search = document.getElementById("standardSearch").value.toLowerCase();
-        const domain = document.getElementById("domainFilter").value;
-        const region = document.getElementById("regionFilter").value;
+      function normalize(value) {
+        return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      }
 
-        const filtered = standards.filter((standard) => {
-          const text = [
-            standard.name,
-            standard.domain,
-            standard.region,
-            standard.description,
-            standard.topics.join(" ")
-          ]
-            .join(" ")
-            .toLowerCase();
-          const matchesSearch = !search || text.includes(search);
-          const matchesDomain = domain === "All" || standard.domain === domain;
-          const matchesRegion = region === "All" || standard.region === region;
-          return matchesSearch && matchesDomain && matchesRegion;
+      function unique(values) {
+        const seen = new Set();
+        return values.filter((value) => {
+          const key = normalize(value);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
         });
+      }
 
-        standardsList.innerHTML = filtered
-          .map(
-            (standard) => `
-              <article class="standard-row">
-                <div class="row-top">
-                  <div class="row-title">
-                    <strong>${standard.name}</strong>
-                    <span>${standard.domain} | ${standard.region}</span>
+      function profileKey(profile) {
+        return normalize(`${profile.name} ${profile.website || ""}`);
+      }
+
+      function regionsText(regions) {
+        return (regions || []).join(", ") || "Unknown";
+      }
+
+      function getApiUrl() {
+        return localStorage.getItem("assuranceHubApiUrl") || "";
+      }
+
+      function setStatus(message, modeText) {
+        document.getElementById("enrichmentStatus").textContent = message;
+        document.getElementById("apiMode").textContent = modeText || (getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
+      }
+
+      function activeRegionList() {
+        return Array.from(selectedRegions);
+      }
+
+      function inferSector(name, hint, notes) {
+        if (hint) return hint;
+        const text = normalize(`${name} ${notes}`);
+        if (text.includes("bmw") || text.includes("audi") || text.includes("vehicle") || text.includes("automotive")) return "Automotive";
+        if (text.includes("siemens") || text.includes("rockwell") || text.includes("industrial") || text.includes("plant") || text.includes("automation")) return "Industrial / OT";
+        if (text.includes("medical") || text.includes("health") || text.includes("philips")) return "Medical Devices";
+        if (text.includes("bank") || text.includes("finance")) return "Financial Services";
+        if (text.includes("iot") || text.includes("software") || text.includes("connected")) return "ICT / Connected Products";
+        return "ICT / Connected Products";
+      }
+
+      function candidateMatches(name) {
+        const key = normalize(name);
+        if (!key) return [];
+        return Object.entries(knownCompanies)
+          .filter(([company]) => key === company || company.includes(key) || key.includes(company))
+          .flatMap(([, candidates]) => candidates);
+      }
+
+      function standardsForProfile(profile, notes = "") {
+        const text = normalize(`${profile.name} ${profile.sector} ${profile.subSector} ${profile.markets?.join(" ")} ${notes}`);
+        return standards
+          .map((standard) => {
+            const topicScore = standard.topics.filter((topic) => text.includes(normalize(topic))).length;
+            const sectorScore = normalize(standard.sector) === normalize(profile.sector) ? 2 : 0;
+            const marketScore = standard.markets.some((market) => (profile.markets || []).some((region) => normalize(region) === normalize(market) || normalize(region) === "global")) ? 1 : 0;
+            const score = topicScore + sectorScore + marketScore;
+            return {
+              ...standard,
+              confidence: score >= 4 ? "high" : score >= 2 ? "medium" : "low",
+              score
+            };
+          })
+          .filter((standard) => standard.score > 0)
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 8);
+      }
+
+      function engagementActions(profile, likelyStandards) {
+        const sector = profile.sector;
+        const names = likelyStandards.map((item) => item.name);
+        const actions = [
+          `Confirm the customer entity, subsidiaries, target markets, and product families before treating AI guesses as confirmed facts.`,
+          `Map known projects and tested standards into hypercare so future changes trigger outreach.`,
+          `Use the likely compliance list to prepare a short account briefing for ${profile.name}.`
+        ];
+
+        if (sector === "Automotive") {
+          actions.push(
+            "Offer an ISO/SAE 21434 readiness discussion for connected-vehicle programs and supplier deliverables.",
+            "Connect ISO 26262 and cybersecurity topics where safety goals depend on secure software or networks.",
+            "Discuss TISAX readiness for suppliers working with European OEM programs.",
+            "Review UNECE R155/R156 exposure for vehicles, components, software updates, and type approval."
+          );
+        }
+
+        if (sector === "Industrial / OT") {
+          actions.push(
+            "Position IEC 62443 assessment for OT environments, automation products, or secure development practices.",
+            "Discuss IEC 61508 or IEC 61511 if safety instrumented systems or process industry operations are involved.",
+            "Offer plant resilience and remote assessment options where site access or downtime is a constraint."
+          );
+        }
+
+        if (sector === "Medical Devices") {
+          actions.push(
+            "Review product cybersecurity evidence for connected medical devices and software-enabled systems.",
+            "Check whether UL 2900 or related product security testing can support market access or customer assurance.",
+            "Discuss privacy, vulnerability handling, and secure update expectations for connected healthcare products."
+          );
+        }
+
+        if ((profile.markets || []).some((market) => ["EU", "UK"].includes(market))) {
+          actions.push(
+            "Check EU and UK market-access exposure, including conformity marks, regulatory approvals, and product documentation.",
+            "Discuss the EU Cyber Resilience Act for products with digital elements sold into Europe."
+          );
+        }
+
+        if (names.includes("ISO 27001 / 27002")) {
+          actions.push("Explore ISMS maturity, certification readiness, or gap analysis if the customer needs security governance evidence.");
+        }
+
+        actions.push(
+          "Ask what standards customers or regulators are already requesting from them.",
+          "Identify one near-term assessment and one longer-term certification path to keep the engagement concrete."
+        );
+
+        return unique(actions).slice(0, 10);
+      }
+
+      function buildDemoProfile(input, confirmed = null) {
+        const base = confirmed || candidateMatches(input.name)[0] || {};
+        const sector = inferSector(input.name, input.sector, input.notes);
+        const markets = unique([...(base.markets || []), ...input.markets, ...(input.markets.includes("Global") ? ["North America", "EU"] : [])]);
+        const profile = {
+          id: `cust-${Date.now()}`,
+          name: base.name || input.name.trim(),
+          website: input.website || base.website || "",
+          headquarters: base.headquarters || (markets.includes("EU") ? "Unknown - verify EU headquarters or subsidiary" : "Unknown - verify with customer"),
+          sector: base.sector || sector,
+          subSector: base.subSector || sectorSubsector(sector, input.notes),
+          size: input.size || base.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"),
+          markets,
+          summary: base.summary || summaryFor(sector, input.name, markets),
+          knownStandards: [],
+          guessedStandards: [],
+          hypercare: "Active",
+          owner: "NA team",
+          evidenceNotes: [
+            "AI-assisted profile; verify against official customer sources before treating fields as confirmed.",
+            "Compliance guesses are based on sector, product context, and operating markets."
+          ]
+        };
+        const likely = standardsForProfile(profile, input.notes);
+        profile.guessedStandards = likely.map((item) => item.name);
+        profile.likelyStandards = likely.map((item) => ({
+          name: item.name,
+          domain: item.domain,
+          confidence: item.confidence,
+          why: reasonForStandard(item, profile)
+        }));
+        profile.actions = engagementActions(profile, likely);
+        profile.confidence = likely.some((item) => item.confidence === "high") ? "medium-high" : "medium";
+        return profile;
+      }
+
+      function sectorSubsector(sector, notes) {
+        const text = normalize(notes);
+        if (sector === "Automotive") return text.includes("supplier") ? "Automotive supplier / connected vehicle components" : "OEM, supplier, mobility, or vehicle systems";
+        if (sector === "Industrial / OT") return "Industrial automation, machinery, plant systems, or process operations";
+        if (sector === "Medical Devices") return "Connected medical devices, health technology, or regulated software";
+        if (sector === "Financial Services") return "Digital operational resilience, third-party risk, and information security";
+        if (sector === "Consumer & Industrial Goods") return "Product compliance, testing, certification, and market access";
+        return "Connected products, software, cloud, or digital services";
+      }
+
+      function summaryFor(sector, name, markets) {
+        return `${name} appears to fit the ${sector} context with operations or market exposure in ${regionsText(markets)}. The profile should be reviewed by the account team before using it as confirmed customer intelligence.`;
+      }
+
+      function reasonForStandard(standard, profile) {
+        const markets = regionsText(standard.markets);
+        if (standard.sector === profile.sector) return `${standard.name} fits the ${profile.sector} sector and is commonly relevant for ${markets} exposure.`;
+        return `${standard.name} may apply because of the customer's markets, product context, or adjacent assurance needs.`;
+      }
+
+      async function enrichWithApi(input, confirmed = null) {
+        const apiUrl = getApiUrl();
+        if (!apiUrl) return null;
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...input, confirmedEntity: confirmed, standards })
+        });
+        if (!response.ok) throw new Error(`API returned ${response.status}`);
+        return response.json();
+      }
+
+      async function runLookup(event, confirmed = null) {
+        if (event) event.preventDefault();
+        const input = {
+          name: document.getElementById("lookupName").value,
+          sector: document.getElementById("lookupSector").value,
+          size: document.getElementById("lookupSize").value,
+          website: document.getElementById("lookupWebsite").value,
+          markets: activeRegionList(),
+          notes: document.getElementById("lookupNotes").value
+        };
+        if (!input.name.trim()) return;
+
+        document.getElementById("runLookup").disabled = true;
+        document.getElementById("saveResult").disabled = true;
+        document.getElementById("candidateBox").classList.add("hidden");
+        setStatus(`Resolving ${input.name}...`, getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
+
+        const candidates = !confirmed ? candidateMatches(input.name) : [];
+        if (!getApiUrl() && candidates.length > 1 && normalize(input.name).length <= 5) {
+          renderCandidates(candidates, input);
+          document.getElementById("runLookup").disabled = false;
+          setStatus("Please confirm which organization you mean before enrichment continues.");
+          return;
+        }
+
+        try {
+          let result = null;
+          try {
+            result = await enrichWithApi(input, confirmed);
+          } catch (apiError) {
+            if (getApiUrl()) setStatus(`AWS API unavailable (${apiError.message}). Showing browser demo enrichment.`);
+          }
+          currentResult = normalizeApiResult(result) || buildDemoProfile(input, confirmed);
+          renderResult(currentResult);
+          document.getElementById("saveResult").disabled = false;
+          setStatus(`${currentResult.name} enriched. Review AI guesses before saving.`);
+        } finally {
+          document.getElementById("runLookup").disabled = false;
+        }
+      }
+
+      function normalizeApiResult(result) {
+        if (!result) return null;
+        const customer = result.customer || result.profile || result;
+        if (!customer.name) return null;
+        return {
+          id: customer.id || `cust-${Date.now()}`,
+          name: customer.name,
+          website: customer.website || customer.customer_profile?.website || "",
+          headquarters: customer.headquarters || customer.customer_profile?.headquarters || "",
+          sector: customer.sector || "",
+          subSector: customer.subSector || customer.sub_sector || customer.customer_profile?.market_position || "",
+          size: customer.size || customer.customer_profile?.employee_count || "",
+          markets: customer.markets || customer.operating_regions || [customer.region || "Global"],
+          summary: customer.summary || customer.notes || customer.customer_profile?.executive_summary || "",
+          knownStandards: customer.knownStandards || customer.known_compliance || customer.compliance || [],
+          guessedStandards: customer.guessedStandards || customer.guessed_compliance || [],
+          likelyStandards: customer.likelyStandards || customer.guessed_compliance_detail || [],
+          hypercare: customer.hypercare || "Active",
+          owner: customer.owner || "NA team",
+          actions: customer.actions || customer.engagement_actions || customer.suggested_tasks?.map((task) => task.title || task) || [],
+          evidenceNotes: customer.evidenceNotes || customer.evidence_notes || [],
+          confidence: customer.confidence || "medium"
+        };
+      }
+
+      function renderCandidates(candidates, input) {
+        const box = document.getElementById("candidateBox");
+        box.classList.remove("hidden");
+        box.innerHTML = `
+          <div class="info-card">
+            <strong>Confirm customer entity</strong>
+            <p>The name may refer to more than one organization. Choose the entity before enrichment continues.</p>
+          </div>
+          ${candidates.map((candidate, index) => `
+            <article class="candidate">
+              <div>
+                <strong>${candidate.name}</strong>
+                <p class="row-copy">${candidate.headquarters} | ${candidate.sector} | ${candidate.summary}</p>
+              </div>
+              <button class="button secondary" type="button" data-candidate="${index}">Use this entity</button>
+            </article>
+          `).join("")}
+        `;
+        box.querySelectorAll("[data-candidate]").forEach((button) => {
+          button.addEventListener("click", () => runLookup(null, candidates[Number(button.dataset.candidate)]));
+        });
+      }
+
+      function renderResult(profile) {
+        const box = document.getElementById("resultBox");
+        box.classList.remove("hidden");
+        box.innerHTML = `
+          <div class="result-hero">
+            <div>
+              <h3>${profile.name}</h3>
+              <p>${profile.summary}</p>
+              <div class="tags" style="margin-top: 14px;">${(profile.markets || []).map((market) => `<span class="tag">${market}</span>`).join("")}</div>
+            </div>
+            <div class="confidence">
+              <span>AI confidence</span>
+              <strong>${profile.confidence || "medium"}</strong>
+            </div>
+          </div>
+          <div class="profile-grid">
+            ${fact("Website", profile.website || "Unknown")}
+            ${fact("Headquarters", profile.headquarters || "Unknown")}
+            ${fact("Sector", profile.sector || "Unknown")}
+            ${fact("Sub-sector", profile.subSector || "Unknown")}
+            ${fact("Size", profile.size || "Unknown")}
+            ${fact("Markets", regionsText(profile.markets))}
+          </div>
+          <div class="subpanel">
+            <h4>Likely compliance and standards</h4>
+            <div class="card-list">
+              ${(profile.likelyStandards || []).map((item) => `
+                <article class="info-card">
+                  <div class="row-top">
+                    <strong>${item.name}</strong>
+                    <span class="tag ${item.confidence === "high" ? "ok" : "warn"}">${item.confidence || "medium"}</span>
                   </div>
-                  <span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${standard.status}</span>
-                </div>
-                <div class="row-copy">${standard.description}</div>
-                <div class="tags">${standard.topics.map((topic) => `<span class="tag">${topic}</span>`).join("")}</div>
-              </article>
-            `
-          )
-          .join("");
+                  <p>${item.why || "AI inferred this from sector, geography, and business model. Confirm before treating it as required."}</p>
+                </article>
+              `).join("") || `<p class="row-copy">No standards matched yet. Add more sector or market details.</p>`}
+            </div>
+          </div>
+          <div class="subpanel">
+            <h4>Top 10 engagement, cross-sell, and upsell ideas</h4>
+            <div class="action-list">${(profile.actions || []).map((action) => `<div class="action-row"><div><strong>${action.split(".")[0]}</strong><span>${action.includes(".") ? action.slice(action.indexOf(".") + 1).trim() : action}</span></div></div>`).join("")}</div>
+          </div>
+          <div class="subpanel">
+            <h4>Evidence and review notes</h4>
+            <div class="tags">${(profile.evidenceNotes || []).map((note) => `<span class="tag dark">${note}</span>`).join("")}</div>
+          </div>
+        `;
+      }
 
-        standardCount.textContent = standards.length;
+      function fact(label, value) {
+        return `<div class="profile-fact"><span>${label}</span><strong>${value}</strong></div>`;
+      }
+
+      function saveCurrentResult() {
+        if (!currentResult) return;
+        const existingIndex = customers.findIndex((customer) => profileKey(customer) === profileKey(currentResult));
+        if (existingIndex >= 0) customers[existingIndex] = { ...customers[existingIndex], ...currentResult };
+        else customers.unshift(currentResult);
+        store.set("assuranceCustomersV2", customers);
+        renderCustomers();
+        renderWatch();
+        document.getElementById("saveResult").disabled = true;
+        setStatus(`${currentResult.name} saved. Hypercare watch updated.`);
       }
 
       function renderCustomers() {
-        customerList.innerHTML = customers
-          .map(
-            (customer) => `
-              <article class="customer-row">
-                <div class="row-top">
-                  <div class="row-title">
-                    <strong>${customer.name}</strong>
-                    <span>${customer.owner || "Unassigned"} | Hypercare: ${customer.hypercare}</span>
-                  </div>
-                  <span class="tag ${customer.hypercare === "Active" ? "ok" : ""}">${customer.hypercare}</span>
+        const list = document.getElementById("customerList");
+        if (!customers.length) {
+          list.innerHTML = `<div class="customer-row"><p class="row-copy">No saved customers yet. Enrich and save the first profile.</p></div>`;
+        } else {
+          list.innerHTML = customers.map((customer, index) => `
+            <article class="customer-row">
+              <div class="row-top">
+                <div class="row-title">
+                  <strong>${customer.name}</strong>
+                  <span>${customer.sector || "Unknown sector"} | ${customer.size || "Unknown size"} | ${regionsText(customer.markets)}</span>
                 </div>
-                <div class="row-copy">${customer.profile}</div>
-                <div class="tags">${customer.standards.map((standard) => `<span class="tag">${standard}</span>`).join("")}</div>
-              </article>
-            `
-          )
-          .join("");
+                <span class="tag ${customer.hypercare === "Active" ? "ok" : ""}">${customer.hypercare || "Inactive"}</span>
+              </div>
+              <div class="row-copy">${customer.summary || "No summary saved yet."}</div>
+              <div class="tags">${[...(customer.knownStandards || []), ...(customer.guessedStandards || [])].slice(0, 8).map((standard) => `<span class="tag">${standard}</span>`).join("")}</div>
+              <div class="split">
+                <button class="button secondary" data-load-customer="${index}" type="button">Open profile</button>
+                <button class="button secondary" data-toggle-watch="${index}" type="button">${customer.hypercare === "Active" ? "Pause hypercare" : "Start hypercare"}</button>
+              </div>
+            </article>
+          `).join("");
+        }
+        document.getElementById("customerCount").textContent = customers.length;
+        document.getElementById("watchCount").textContent = customers.filter((customer) => customer.hypercare === "Active").length;
+        list.querySelectorAll("[data-load-customer]").forEach((button) => {
+          button.addEventListener("click", () => {
+            currentResult = customers[Number(button.dataset.loadCustomer)];
+            renderResult(currentResult);
+            document.getElementById("saveResult").disabled = false;
+            document.getElementById("customers").scrollIntoView();
+          });
+        });
+        list.querySelectorAll("[data-toggle-watch]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const customer = customers[Number(button.dataset.toggleWatch)];
+            customer.hypercare = customer.hypercare === "Active" ? "Inactive" : "Active";
+            store.set("assuranceCustomersV2", customers);
+            renderCustomers();
+            renderWatch();
+          });
+        });
+      }
 
-        watchCount.textContent = customers.filter((customer) => customer.hypercare === "Active").length;
+      function renderStandards() {
+        const search = normalize(document.getElementById("standardSearch").value);
+        const domain = document.getElementById("domainFilter").value;
+        const sector = document.getElementById("sectorFilter").value;
+        const filtered = standards.filter((standard) => {
+          const text = normalize(`${standard.name} ${standard.domain} ${standard.sector} ${standard.markets.join(" ")} ${standard.topics.join(" ")} ${standard.description}`);
+          return (!search || text.includes(search))
+            && (domain === "All" || standard.domain === domain)
+            && (sector === "All" || standard.sector === sector);
+        });
+
+        document.getElementById("standardsList").innerHTML = filtered.map((standard) => `
+          <article class="standard-row">
+            <div class="row-top">
+              <div class="row-title">
+                <strong>${standard.name}</strong>
+                <span>${standard.domain} | ${standard.sector} | ${regionsText(standard.markets)}</span>
+              </div>
+              <span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${standard.status}</span>
+            </div>
+            <div class="row-copy">${standard.description}</div>
+            <div class="tags">${standard.topics.map((topic) => `<span class="tag">${topic}</span>`).join("")}</div>
+          </article>
+        `).join("");
+        document.getElementById("standardCount").textContent = standards.length;
       }
 
       function renderWatch() {
         const active = customers.filter((customer) => customer.hypercare === "Active");
-        watchList.innerHTML = active
-          .map((customer) => {
-            const watched = standards.filter((standard) => customer.standards.includes(standard.name));
-            return `
-              <div class="watch-row">
-                <div>
-                  <strong>${customer.name}</strong>
-                  <span>Monitoring ${watched.length || customer.standards.length} standard(s): ${customer.standards.join(", ")}</span>
-                </div>
-                <span class="tag ok">Notify on change</span>
+        document.getElementById("watchList").innerHTML = active.length ? active.map((customer) => `
+          <article class="watch-row">
+            <div class="row-top">
+              <div class="row-title">
+                <strong>${customer.name}</strong>
+                <span>Monitoring ${[...(customer.knownStandards || []), ...(customer.guessedStandards || [])].length} standards across ${regionsText(customer.markets)}</span>
               </div>
-            `;
-          })
-          .join("");
+              <span class="tag ok">Notify on change</span>
+            </div>
+            <div class="row-copy">${customer.owner || "NA team"} should be alerted when watched standards publish meaningful changes.</div>
+          </article>
+        `).join("") : `<article class="watch-row"><p class="row-copy">No active hypercare customers yet.</p></article>`;
       }
 
-      function runApplicabilityCheck() {
-        const profile = `${document.getElementById("customerProfile").value} ${document.getElementById("customerIndustry").value}`.toLowerCase();
-        const hits = standards.filter((standard) => {
-          return standard.topics.some((topic) => profile.includes(topic.toLowerCase())) || profile.includes(standard.domain.toLowerCase());
-        });
+      document.getElementById("lookupForm").addEventListener("submit", runLookup);
+      document.getElementById("saveResult").addEventListener("click", saveCurrentResult);
+      document.getElementById("sampleBMW").addEventListener("click", () => {
+        document.getElementById("lookupName").value = "BMW";
+        document.getElementById("lookupSector").value = "Automotive";
+        document.getElementById("lookupSize").value = "Global enterprise";
+        document.getElementById("lookupWebsite").value = "BMW Group with US manufacturing and EU headquarters";
+        document.getElementById("lookupNotes").value = "Connected vehicles, software updates, supplier ecosystem, functional safety, manufacturing OT, and global market access.";
+        selectedRegions = new Set(["North America", "EU", "China", "Global"]);
+        renderRegionPicker();
+        document.getElementById("lookupName").focus();
+      });
 
-        const output = document.getElementById("checkOutput");
-        if (!profile.trim()) {
-          output.textContent = "Add a short customer profile first.";
-          return;
-        }
+      document.getElementById("resetCustomers").addEventListener("click", () => {
+        customers = starterCustomers;
+        store.set("assuranceCustomersV2", customers);
+        renderCustomers();
+        renderWatch();
+      });
 
-        if (!hits.length) {
-          output.textContent =
-            "No direct matches found from the current sample library. Add more standards or refine the customer profile.";
-          return;
-        }
-
-        output.innerHTML = `
-          <strong>Possible applicable standards:</strong>
-          <div class="tags" style="margin-top: 10px;">
-            ${hits.map((standard) => `<span class="tag">${standard.name}</span>`).join("")}
-          </div>
-          <div style="margin-top: 12px;">Review these with the delivery team before treating them as required.</div>
-        `;
-      }
+      document.getElementById("resetStandards").addEventListener("click", () => {
+        standards = starterStandards;
+        store.set("assuranceStandardsV2", standards);
+        renderStandards();
+      });
 
       document.getElementById("standardForm").addEventListener("submit", (event) => {
         event.preventDefault();
         standards.unshift({
           name: document.getElementById("stdName").value.trim(),
           domain: document.getElementById("stdDomain").value,
-          region: document.getElementById("stdRegion").value,
-          topics: document
-            .getElementById("stdTopics")
-            .value.split(",")
-            .map((topic) => topic.trim())
-            .filter(Boolean),
+          sector: document.getElementById("stdSector").value,
+          markets: document.getElementById("stdMarkets").value.split(",").map((item) => item.trim()).filter(Boolean),
+          topics: document.getElementById("stdTopics").value.split(",").map((item) => item.trim()).filter(Boolean),
           description: document.getElementById("stdDescription").value.trim(),
           status: "Watch"
         });
-        store.set("assuranceStandards", standards);
+        store.set("assuranceStandardsV2", standards);
         event.target.reset();
         renderStandards();
-        renderWatch();
-      });
-
-      document.getElementById("customerForm").addEventListener("submit", (event) => {
-        event.preventDefault();
-        customers.unshift({
-          name: document.getElementById("custName").value.trim(),
-          profile: document.getElementById("custProfile").value.trim(),
-          standards: document
-            .getElementById("custStandards")
-            .value.split(",")
-            .map((standard) => standard.trim())
-            .filter(Boolean),
-          hypercare: document.getElementById("custHypercare").value,
-          owner: document.getElementById("custOwner").value.trim()
-        });
-        store.set("assuranceCustomers", customers);
-        event.target.reset();
-        renderCustomers();
-        renderWatch();
       });
 
       document.getElementById("standardSearch").addEventListener("input", renderStandards);
       document.getElementById("domainFilter").addEventListener("change", renderStandards);
-      document.getElementById("regionFilter").addEventListener("change", renderStandards);
-      document.getElementById("runCheck").addEventListener("click", runApplicabilityCheck);
+      document.getElementById("sectorFilter").addEventListener("change", renderStandards);
 
-      document.getElementById("resetStandards").addEventListener("click", () => {
-        standards = starterStandards;
-        store.set("assuranceStandards", standards);
-        renderStandards();
-        renderWatch();
-      });
-
-      document.getElementById("resetCustomers").addEventListener("click", () => {
-        customers = starterCustomers;
-        store.set("assuranceCustomers", customers);
-        renderCustomers();
-        renderWatch();
+      document.getElementById("saveApiEndpoint").addEventListener("click", () => {
+        const value = document.getElementById("apiEndpoint").value.trim();
+        if (value) localStorage.setItem("assuranceHubApiUrl", value);
+        else localStorage.removeItem("assuranceHubApiUrl");
+        setStatus(value ? "AWS API endpoint saved. Future enrichments will try the backend first." : "API endpoint cleared. Browser demo enrichment is active.");
       });
 
       document.querySelectorAll("[data-jump]").forEach((button) => {
         button.addEventListener("click", () => {
-          document.getElementById(button.dataset.jump).scrollIntoView({ behavior: "smooth" });
+          document.querySelectorAll(".nav-tab").forEach((tab) => tab.classList.remove("active"));
+          button.classList.add("active");
+          document.getElementById(button.dataset.jump).scrollIntoView({ behavior: "smooth", block: "start" });
         });
       });
 
+      function renderRegionPicker() {
+        document.querySelectorAll("[data-region]").forEach((button) => {
+          button.classList.toggle("active", selectedRegions.has(button.dataset.region));
+        });
+      }
+
+      document.querySelectorAll("[data-region]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const region = button.dataset.region;
+          if (selectedRegions.has(region)) selectedRegions.delete(region);
+          else selectedRegions.add(region);
+          if (!selectedRegions.size) selectedRegions.add("North America");
+          renderRegionPicker();
+        });
+      });
+
+      document.getElementById("apiEndpoint").value = getApiUrl();
+      renderRegionPicker();
       renderStandards();
       renderCustomers();
       renderWatch();
+      setStatus("Ready. Demo enrichment is available even before the AWS AI API is connected.");
     </script>
   </body>
 </html>
