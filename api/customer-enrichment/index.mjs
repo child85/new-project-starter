@@ -33,11 +33,21 @@ export async function handler(event) {
       return response(400, { error: "Customer name is required." });
     }
 
-    const result = process.env.ANTHROPIC_API_KEY
-      ? await enrichWithClaude(body)
-      : process.env.OPENAI_API_KEY
-        ? await enrichWithAi(body)
-        : deterministicEnrichment(body);
+    let result;
+    try {
+      result = process.env.ANTHROPIC_API_KEY
+        ? await enrichWithClaude(body)
+        : process.env.OPENAI_API_KEY
+          ? await enrichWithAi(body)
+          : deterministicEnrichment(body);
+    } catch (aiError) {
+      result = deterministicEnrichment(body);
+      result.status = "ai_error_fallback";
+      result.customer.evidence_notes = [
+        ...(result.customer.evidence_notes || []),
+        `AI enrichment failed: ${aiError.message}`
+      ];
+    }
 
     await saveCustomerProfile(result.customer, result.status);
 
@@ -140,7 +150,7 @@ async function enrichWithClaude(body) {
     body: JSON.stringify({
       model: process.env.ANTHROPIC_MODEL || "claude-3-5-haiku-20241022",
       max_tokens: 2200,
-      system: "You enrich customer profiles for assurance, cybersecurity, functional safety, and market-access teams. Return valid JSON only.",
+      system: "You enrich customer profiles for assurance, cybersecurity, functional safety, and market-access teams. Return only a valid JSON object. Do not include markdown, comments, prose, or trailing commas.",
       messages: [
         {
           role: "user",
@@ -181,7 +191,7 @@ function parseJsonObject(text) {
 function buildEnrichmentPrompt(body, standards) {
   return `You enrich global B2B customer profiles for a testing, inspection, certification, cybersecurity, functional safety, and market access team.
 
-Return compact valid JSON only. Do not include markdown.
+Return compact valid JSON only. Do not include markdown, comments, or trailing commas. Use double quotes for every property name and string value.
 
 Customer input:
 ${JSON.stringify(body, null, 2)}
