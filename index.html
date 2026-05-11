@@ -1955,8 +1955,17 @@
         return [];
       }
 
+      function itemLabel(value) {
+        if (value && typeof value === "object") return value.name || value.standard || value.title || "";
+        return String(value || "");
+      }
+
       function renderTags(values, className = "tag") {
-        return safeList(values).map((value) => `<span class="${className}">${esc(value)}</span>`).join("");
+        return safeList(values)
+          .map(itemLabel)
+          .filter(Boolean)
+          .map((value) => `<span class="${className}">${esc(value)}</span>`)
+          .join("");
       }
 
       function normalizeCustomerRecord(customer) {
@@ -2941,9 +2950,9 @@
       function updateComplianceKpis() {
         const projectStandards = customers.flatMap((customer) => safeList(customer.projects).flatMap((project) => safeList(project.standards)));
         const guessed = customers.flatMap((customer) => safeList(customer.guessedStandards));
-        const allRefs = [...projectStandards, ...guessed];
+        const allRefs = [...projectStandards, ...guessed].map(itemLabel).filter(Boolean);
         const counts = allRefs.reduce((acc, name) => {
-          const key = String(name || "").trim();
+          const key = name.trim();
           if (key) acc[key] = (acc[key] || 0) + 1;
           return acc;
         }, {});
