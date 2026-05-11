@@ -508,6 +508,11 @@
         line-height: 1.5;
       }
 
+      .compact-head {
+        padding: 0 0 8px;
+        border-bottom: 0;
+      }
+
       .button {
         min-height: 42px;
         padding: 0 16px;
@@ -1497,13 +1502,33 @@
             <div>
               <h2>Settings</h2>
               <p>
-                The browser page should never hold an AI API key. Point this
-                page at an API Gateway endpoint backed by Lambda, then store the
-                endpoint URL here for testing.
+                Administrative controls for deletion requests, customer-list
+                maintenance, and AI backend connection settings. This area
+                should be restricted before the hub is shared broadly.
               </p>
             </div>
           </div>
+
+          <div class="panel-head" style="border-top: 1px solid var(--line);">
+            <div>
+              <h2>Admin Area</h2>
+              <p>Deletion actions are staged as requests here. In the production version, this area should require administrative rights.</p>
+            </div>
+            <button class="button secondary" id="requestClearCustomers" type="button">Request clear customer list</button>
+          </div>
+          <div class="admin-list" id="adminRequestList"></div>
+
           <div class="setup-box">
+            <div class="panel-head compact-head">
+              <div>
+                <h2>AI Backend Configuration</h2>
+                <p>
+                  API keys must stay in AWS Lambda environment variables. This
+                  browser page stores only the API Gateway endpoint URL used to
+                  call the secured customer-enrichment backend.
+                </p>
+              </div>
+            </div>
             <div class="setup-grid">
               <article class="setup-step">
                 <span>1</span>
@@ -1537,14 +1562,6 @@
             </div>
             <div class="code">S3 static site -> API Gateway HTTP API -> Lambda -> Claude Haiku -> optional DynamoDB -> future EventBridge watch</div>
           </div>
-          <div class="panel-head" style="border-top: 1px solid var(--line);">
-            <div>
-              <h2>Admin Area</h2>
-              <p>Deletion actions are staged as requests here. In the production version, this area should require administrative rights.</p>
-            </div>
-            <button class="button secondary" id="requestClearCustomers" type="button">Request clear customer list</button>
-          </div>
-          <div class="admin-list" id="adminRequestList"></div>
         </section>
           </section>
         </div>
