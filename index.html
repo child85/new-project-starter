@@ -331,6 +331,37 @@
         grid-column: 1 / -1;
       }
 
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(320px, 0.5fr);
+        gap: 28px;
+        padding: 24px 26px 28px;
+      }
+
+      .highlight-list {
+        display: grid;
+        gap: 14px;
+      }
+
+      .highlight-card {
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .highlight-card strong {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--blue-dark);
+        font-size: 1.05rem;
+      }
+
+      .highlight-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
       .standard-group h3 {
         margin: 0;
         padding: 18px 26px;
@@ -1076,7 +1107,8 @@
         .section-grid,
         .metric-grid,
         .service-strip,
-        .source-grid {
+        .source-grid,
+        .dashboard-grid {
           grid-template-columns: 1fr 1fr;
         }
 
@@ -1108,6 +1140,7 @@
         .metric-grid,
         .section-grid,
         .source-grid,
+        .dashboard-grid,
         .setup-grid,
         .split,
         .wide-split,
@@ -1147,9 +1180,9 @@
       </div>
 
       <nav class="primary-nav" aria-label="Main menu">
-        <button class="nav-tab active" data-view="customers">Customers</button>
-        <button class="nav-tab" data-view="compliance">Compliance</button>
-        <button class="nav-tab" data-view="watch">Daily Watch</button>
+        <button class="nav-tab active" data-view="watch">Daily Watch</button>
+        <button class="nav-tab" data-view="customers">Customers</button>
+        <button class="nav-tab" data-view="compliance">Standards</button>
         <button class="nav-tab" data-view="setup">Settings</button>
       </nav>
     </header>
@@ -1207,7 +1240,7 @@
           </article>
         </div>
 
-        <section class="section-grid customer-layout app-view active" id="customers">
+        <section class="section-grid customer-layout app-view" id="customers">
           <section class="panel customer-overview">
             <div class="panel-head">
               <div>
@@ -1463,18 +1496,49 @@
           </div>
         </section>
 
-        <section class="panel app-view" id="watch">
+        <section class="panel app-view active" id="watch">
           <div class="panel-head">
             <div>
-              <h2>Daily Change Watch</h2>
+              <h2>Daily Watch Dashboard</h2>
               <p>
-                The production workflow should check official standards and
-                regulatory sources every day, compare changes against hypercare
-                customers, and notify account owners when outreach is needed.
+                A daily highlight overview for standards changes, hypercare
+                accounts, and follow-up items. Use Standards for the full
+                library and detailed regulation records.
               </p>
             </div>
           </div>
-          <div class="watch-list" id="watchList"></div>
+          <div class="metric-grid compliance-kpis" style="padding: 22px 26px;">
+            <article class="metric">
+              <span>Watched standards</span>
+              <strong id="dashboardStandardCount">0</strong>
+              <p>Standards and regulations in the library.</p>
+            </article>
+            <article class="metric">
+              <span>Hypercare customers</span>
+              <strong id="dashboardHypercareCount">0</strong>
+              <p>Customers monitored for standard changes.</p>
+            </article>
+            <article class="metric">
+              <span>Recent changes</span>
+              <strong id="dashboardRecentChangeCount">0</strong>
+              <p>Saved public change notes to review.</p>
+            </article>
+            <article class="metric">
+              <span>Next AI check</span>
+              <strong>06:00</strong>
+              <p>Target workflow for automated daily scanning.</p>
+            </article>
+          </div>
+          <div class="dashboard-grid">
+            <section>
+              <h3>Today’s Highlights</h3>
+              <div class="highlight-list" id="watchHighlightList"></div>
+            </section>
+            <section>
+              <h3>Customer Watch</h3>
+              <div class="highlight-list" id="watchList"></div>
+            </section>
+          </div>
         </section>
 
         <section class="app-view" id="sources">
@@ -2686,6 +2750,7 @@
         document.getElementById("standardCount").textContent = standards.length;
         updateComplianceKpis();
         renderStandardOptions();
+        renderWatch();
       }
 
       function updateComplianceKpis() {
@@ -2720,8 +2785,30 @@
 
       function renderWatch() {
         const active = customers.filter((customer) => customer.hypercare === "Active");
-        document.getElementById("watchList").innerHTML = active.length ? active.map((customer) => `
-          <article class="watch-row">
+        const changes = standards.flatMap((standard) => safeList(standard.changes).map((change) => ({ ...change, standard: standard.name })));
+        const recent = changes
+          .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
+          .slice(0, 4);
+        document.getElementById("dashboardStandardCount").textContent = standards.length;
+        document.getElementById("dashboardHypercareCount").textContent = active.length;
+        document.getElementById("dashboardRecentChangeCount").textContent = changes.length;
+        document.getElementById("watchHighlightList").innerHTML = recent.length ? recent.map((change) => `
+          <article class="highlight-card">
+            <strong>${esc(change.standard)}: ${esc(change.title || "Public change")}</strong>
+            <p>${esc(change.summary || "Review this public change for potential customer impact.")}</p>
+            <div class="tags" style="margin-top: 10px;">
+              <span class="tag ${change.impact === "High" ? "warn" : "dark"}">${esc(change.impact || "Review")}</span>
+              <span class="tag">${esc(change.date || "Date unknown")}</span>
+            </div>
+          </article>
+        `).join("") : `
+          <article class="highlight-card">
+            <strong>No public changes queued</strong>
+            <p>Add change notes in the Standards tab. The daily watch dashboard will summarize them here.</p>
+          </article>
+        `;
+        document.getElementById("watchList").innerHTML = active.length ? active.slice(0, 4).map((customer) => `
+          <article class="highlight-card">
             <div class="row-top">
               <div class="row-title">
                 <strong>${esc(customer.name)}</strong>
@@ -2729,9 +2816,14 @@
               </div>
               <span class="tag ok">Notify on change</span>
             </div>
-            <div class="row-copy">${esc(customer.owner || "NA team")} should be alerted when watched standards publish meaningful changes.</div>
+            <p>${esc(customer.owner || "NA team")} should be alerted when watched standards publish meaningful changes.</p>
           </article>
-        `).join("") : `<article class="watch-row"><p class="row-copy">No active hypercare customers yet.</p></article>`;
+        `).join("") : `
+          <article class="highlight-card">
+            <strong>No hypercare customers yet</strong>
+            <p>Add a customer to hypercare from the Customers tab to include them in daily watch monitoring.</p>
+          </article>
+        `;
       }
 
       function saveAdminRequests() {
