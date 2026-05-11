@@ -1050,6 +1050,24 @@
         background: #ffffff;
       }
 
+      .last-change {
+        display: grid;
+        gap: 8px;
+        padding: 14px;
+        border: 1px solid var(--blue);
+        background: var(--soft-blue);
+      }
+
+      .last-change strong {
+        color: var(--blue-dark);
+      }
+
+      .last-change p {
+        margin: 0;
+        color: var(--ink);
+        line-height: 1.45;
+      }
+
       .project-card strong,
       .change-card strong {
         display: block;
@@ -2831,6 +2849,34 @@
         });
       }
 
+      function latestChangeFor(standard) {
+        return safeList(standard.changes)
+          .slice()
+          .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))[0] || null;
+      }
+
+      function renderLastChange(standard) {
+        const change = latestChangeFor(standard);
+        if (!change) {
+          return `
+            <div class="last-change">
+              <strong>Last change</strong>
+              <p>No public change has been saved for this standard or regulation yet.</p>
+            </div>
+          `;
+        }
+        return `
+          <div class="last-change">
+            <div class="row-top">
+              <strong>Last change: ${esc(change.title || "Public change")}</strong>
+              <span class="tag ${change.impact === "High" ? "warn" : "dark"}">${esc(change.date || "Date unknown")}</span>
+            </div>
+            <p>${esc(change.summary || "No change content saved yet.")}</p>
+            ${change.url ? `<div class="row-copy">Source: ${externalLink(change.url, "open source")}</div>` : ""}
+          </div>
+        `;
+      }
+
       function renderStandards() {
         const search = normalize(document.getElementById("standardSearch").value);
         const domain = document.getElementById("domainFilter").value;
@@ -2863,6 +2909,7 @@
             ${standard.sourceUrl ? `<div class="row-copy">Source: ${externalLink(standard.sourceUrl, standard.sourceUrl)}</div>` : ""}
             ${standard.internalNotes ? `<div class="row-copy">TUV Rheinland notes: ${esc(standard.internalNotes)}</div>` : ""}
             <div class="tags">${renderTags(standard.topics)}</div>
+            ${renderLastChange(standard)}
             <div class="change-list">
               ${standard.changes?.length ? standard.changes.map((change) => `
                 <div class="change-card">
