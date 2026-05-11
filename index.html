@@ -251,6 +251,23 @@
         grid-template-columns: minmax(0, 1fr) minmax(390px, 0.58fr);
       }
 
+      .customer-full {
+        grid-column: 1 / -1;
+      }
+
+      .customer-review.hidden,
+      .lookup-expanded-slot:empty {
+        display: none;
+      }
+
+      #customerLookupPanel {
+        transition: box-shadow 0.2s ease;
+      }
+
+      #customerLookupPanel.expanded {
+        box-shadow: var(--shadow);
+      }
+
       .compliance-intro {
         grid-column: 1 / -1;
       }
@@ -457,7 +474,7 @@
       .save-visual {
         display: grid;
         gap: 12px;
-        margin: 0 26px 22px;
+        margin: 0;
         padding: 18px;
         border: 1px solid var(--line);
         background: #ffffff;
@@ -741,6 +758,33 @@
         background: #ffffff;
       }
 
+      .dialog-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        padding: 28px;
+        background: rgba(20, 27, 34, 0.48);
+      }
+
+      .dialog-overlay.hidden {
+        display: none;
+      }
+
+      .dialog-panel {
+        width: min(760px, 100%);
+        max-height: 86vh;
+        overflow: auto;
+        border: 1px solid var(--line);
+        background: #ffffff;
+        box-shadow: var(--shadow);
+      }
+
+      .dialog-panel .candidate-list {
+        padding: 22px;
+      }
+
       .customer-list,
       .standards-list,
       .watch-list {
@@ -800,6 +844,26 @@
       .standard-picker {
         display: grid;
         gap: 10px;
+      }
+
+      .icon-button {
+        display: inline-grid;
+        width: 38px;
+        height: 38px;
+        min-height: 38px;
+        padding: 0;
+        place-items: center;
+        border: 1px solid var(--line);
+        color: var(--blue-dark);
+        background: #ffffff;
+        font-size: 1.08rem;
+        font-weight: 800;
+      }
+
+      .admin-list {
+        display: grid;
+        gap: 12px;
+        padding: 22px 26px;
       }
 
       .standard-choice {
@@ -1020,7 +1084,7 @@
         <button class="nav-tab active" data-view="customers">Customers</button>
         <button class="nav-tab" data-view="compliance">Compliance</button>
         <button class="nav-tab" data-view="watch">Daily Watch</button>
-        <button class="nav-tab" data-view="setup">AI Setup</button>
+        <button class="nav-tab" data-view="setup">Settings</button>
       </nav>
     </header>
 
@@ -1078,16 +1142,28 @@
         </div>
 
         <section class="section-grid customer-layout app-view active" id="customers">
+          <div class="customer-full lookup-expanded-slot" id="customerLookupExpanded"></div>
           <div>
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Saved Customers</h2>
+                  <p>
+                    Saved profiles keep confirmed data, AI guesses, project
+                    history, and account engagement ideas together.
+                  </p>
+                </div>
+              </div>
+              <div class="customer-list" id="customerList"></div>
+            </section>
+          </div>
+
+          <aside id="customerAddRail">
             <section class="panel" id="customerLookupPanel">
               <div class="panel-head">
                 <div>
-                  <h2>Customer Lookup and AI Enrichment</h2>
-                  <p>
-                    Enter a customer name and any hints you already know. The
-                    hub resolves ambiguous names, estimates likely compliance
-                    exposure, and returns a practical account profile.
-                  </p>
+                  <h2>Add Customer</h2>
+                  <p>Start with the basics. The form expands while you work and the review step uses the full page width.</p>
                 </div>
                 <button class="button secondary" id="sampleCustomer">Try fictional example</button>
               </div>
@@ -1095,63 +1171,63 @@
               <form class="lookup-form" id="lookupForm">
                 <div class="form-step">
                   <h4>1. Identify the customer</h4>
-                <div class="wide-split">
-                  <div class="field">
-                    <label for="lookupName">Customer Name</label>
-                    <input id="lookupName" required placeholder="Example: Aster Mobility Systems" />
+                  <div class="wide-split">
+                    <div class="field">
+                      <label for="lookupName">Customer Name</label>
+                      <input id="lookupName" required placeholder="Example: Aster Mobility Systems" />
+                    </div>
+                    <div class="field">
+                      <label for="lookupSector">Known Sector</label>
+                      <select id="lookupSector">
+                        <option value="">Suggest from customer context</option>
+                        <option>Automotive</option>
+                        <option>Industrial / OT</option>
+                        <option>Medical Devices</option>
+                        <option>Energy / Utilities</option>
+                        <option>ICT / Connected Products</option>
+                        <option>Consumer & Industrial Goods</option>
+                        <option>Rail / Mobility</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="lookupSize">Known Size</label>
+                      <select id="lookupSize">
+                        <option value="">Suggest from customer context</option>
+                        <option>Startup</option>
+                        <option>Mid-market</option>
+                        <option>Enterprise</option>
+                        <option>Global enterprise</option>
+                      </select>
+                    </div>
                   </div>
-                  <div class="field">
-                    <label for="lookupSector">Known Sector</label>
-                    <select id="lookupSector">
-                      <option value="">Suggest from customer context</option>
-                      <option>Automotive</option>
-                      <option>Industrial / OT</option>
-                      <option>Medical Devices</option>
-                      <option>Energy / Utilities</option>
-                      <option>ICT / Connected Products</option>
-                      <option>Consumer & Industrial Goods</option>
-                      <option>Rail / Mobility</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="lookupSize">Known Size</label>
-                    <select id="lookupSize">
-                      <option value="">Suggest from customer context</option>
-                      <option>Startup</option>
-                      <option>Mid-market</option>
-                      <option>Enterprise</option>
-                      <option>Global enterprise</option>
-                    </select>
-                  </div>
-                </div>
                 </div>
 
                 <div class="form-step">
                   <h4>2. Add market and entity hints</h4>
-                <div class="split">
-                  <div class="field">
-                    <label for="lookupWebsite">Website or Subsidiary Hint</label>
-                    <input id="lookupWebsite" placeholder="example.com, EU subsidiary, US plant, product line, etc." />
-                  </div>
-                  <div class="field">
-                    <label>Operating Markets</label>
-                    <div class="region-picker" id="regionPicker">
-                      <button class="chip active" type="button" data-region="North America">North America</button>
-                      <button class="chip" type="button" data-region="EU">EU</button>
-                      <button class="chip" type="button" data-region="UK">UK</button>
-                      <button class="chip" type="button" data-region="China">China</button>
-                      <button class="chip" type="button" data-region="Global">Global</button>
+                  <div class="split">
+                    <div class="field">
+                      <label for="lookupWebsite">Website or Subsidiary Hint</label>
+                      <input id="lookupWebsite" placeholder="example.com, EU subsidiary, US plant, product line, etc." />
+                    </div>
+                    <div class="field">
+                      <label>Operating Markets</label>
+                      <div class="region-picker" id="regionPicker">
+                        <button class="chip active" type="button" data-region="North America">North America</button>
+                        <button class="chip" type="button" data-region="EU">EU</button>
+                        <button class="chip" type="button" data-region="UK">UK</button>
+                        <button class="chip" type="button" data-region="China">China</button>
+                        <button class="chip" type="button" data-region="Global">Global</button>
+                      </div>
                     </div>
                   </div>
-                </div>
                 </div>
 
                 <div class="form-step">
                   <h4>3. Add what the team already knows</h4>
-                <div class="field">
-                  <label for="lookupNotes">What We Know Already</label>
-                  <textarea id="lookupNotes" placeholder="Products, subsidiaries, past projects, tested standards, known markets, or account notes."></textarea>
-                </div>
+                  <div class="field">
+                    <label for="lookupNotes">What We Know Already</label>
+                    <textarea id="lookupNotes" placeholder="Products, subsidiaries, past projects, tested standards, known markets, or account notes."></textarea>
+                  </div>
                 </div>
 
                 <div class="form-step">
@@ -1159,8 +1235,20 @@
                   <button class="button" id="runLookup" type="submit">Lookup and enrich customer</button>
                 </div>
               </form>
-
-              <div id="candidateBox" class="candidate-list hidden"></div>
+              <div class="status-line">
+                <span id="enrichmentStatus">Ready. Demo enrichment is available even before the AWS AI API is connected.</span>
+                <span id="apiMode">Mode: browser demo</span>
+              </div>
+            </section>
+          </aside>
+          <section class="panel customer-review customer-full hidden" id="customerReviewPanel">
+            <div class="panel-head">
+              <div>
+                <h2>Review and Save Customer</h2>
+                <p>Review the enrichment, edit the facts, choose which standards to keep, and then save the customer.</p>
+              </div>
+            </div>
+            <div style="padding: 22px 26px; display: grid; gap: 18px;">
               <div id="enrichmentProgress" class="work-visual hidden">
                 <strong>Enriching customer profile</strong>
                 <div class="progress-rail"><span></span></div>
@@ -1176,28 +1264,20 @@
                 <strong>Customer saved to this browser workspace.</strong>
                 <span class="row-copy">The current build stores customers locally in the browser. A shared team database is the next backend step.</span>
               </div>
-              <div class="status-line">
-                <span id="enrichmentStatus">Ready. Demo enrichment is available even before the AWS AI API is connected.</span>
-                <span id="apiMode">Mode: browser demo</span>
-              </div>
-            </section>
-
-            <section class="panel">
+            </div>
+          </section>
+          <div class="dialog-overlay hidden" id="candidateDialog" role="dialog" aria-modal="true" aria-labelledby="candidateDialogTitle">
+            <div class="dialog-panel">
               <div class="panel-head">
                 <div>
-                  <h2>Saved Customers</h2>
-                  <p>
-                    Saved profiles keep confirmed data, AI guesses, project
-                    history, and account engagement ideas together.
-                  </p>
+                  <h2 id="candidateDialogTitle">Confirm Customer</h2>
+                  <p>Select the organization you mean. Enrichment will start after your selection.</p>
                 </div>
-                <button class="button secondary" id="resetCustomers">Clear customer list</button>
+                <button class="button secondary" id="closeCandidateDialog" type="button">Close</button>
               </div>
-              <div class="customer-list" id="customerList"></div>
-            </section>
+              <div id="candidateBox" class="candidate-list"></div>
+            </div>
           </div>
-
-          <aside id="customerAddRail"></aside>
         </section>
 
         <section class="section-grid app-view" id="compliance">
@@ -1419,7 +1499,7 @@
         <section class="panel app-view" id="setup">
           <div class="panel-head">
             <div>
-              <h2>AI Backend Setup</h2>
+              <h2>Settings</h2>
               <p>
                 The browser page should never hold an AI API key. Point this
                 page at an API Gateway endpoint backed by Lambda, then store the
@@ -1461,6 +1541,14 @@
             </div>
             <div class="code">S3 static site -> API Gateway HTTP API -> Lambda -> Claude Haiku -> optional DynamoDB -> future EventBridge watch</div>
           </div>
+          <div class="panel-head" style="border-top: 1px solid var(--line);">
+            <div>
+              <h2>Admin Area</h2>
+              <p>Deletion actions are staged as requests here. In the production version, this area should require administrative rights.</p>
+            </div>
+            <button class="button secondary" id="requestClearCustomers" type="button">Request clear customer list</button>
+          </div>
+          <div class="admin-list" id="adminRequestList"></div>
         </section>
       </section>
     </main>
@@ -1671,9 +1759,11 @@
 
       let standards = store.get("assuranceStandardsV2", starterStandards);
       let customers = store.get("assuranceCustomersV2", starterCustomers);
+      let adminRequests = store.get("assuranceAdminRequestsV1", []);
       let selectedRegions = new Set(["North America"]);
       let currentResult = null;
       let expandedCustomerKey = "";
+      let lookupExpanded = false;
 
       const knownCompanies = {
         aster: [
@@ -1852,6 +1942,17 @@
         box.classList.remove("hidden");
         box.querySelector("strong").textContent = message;
         setTimeout(() => box.classList.add("hidden"), 4200);
+      }
+
+      function setLookupExpanded(expanded) {
+        lookupExpanded = expanded;
+        const panel = document.getElementById("customerLookupPanel");
+        const slot = document.getElementById("customerLookupExpanded");
+        const rail = document.getElementById("customerAddRail");
+        if (!panel || !slot || !rail) return;
+        panel.classList.toggle("expanded", expanded);
+        const target = expanded ? slot : rail;
+        if (panel.parentElement !== target) target.appendChild(panel);
       }
 
       function activeRegionList() {
@@ -2100,18 +2201,21 @@
         document.getElementById("runLookup").disabled = true;
         document.getElementById("saveResult")?.setAttribute("disabled", "disabled");
         document.getElementById("candidateBox").classList.add("hidden");
+        document.getElementById("candidateDialog").classList.add("hidden");
         document.getElementById("saveVisual").classList.add("hidden");
-        showEnrichmentProgress(true);
         setStatus(`Resolving ${input.name}...`, getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
 
         const candidates = !confirmed ? candidateMatches(input.name) : [];
         if (!confirmed && candidates.length > 1 && normalize(input.name).length <= 12) {
           renderCandidates(candidates, input);
           document.getElementById("runLookup").disabled = false;
-          showEnrichmentProgress(false);
           setStatus("Please confirm which organization you mean before enrichment continues.");
           return;
         }
+
+        document.getElementById("customerReviewPanel").classList.remove("hidden");
+        showEnrichmentProgress(true);
+        document.getElementById("customerReviewPanel").scrollIntoView({ behavior: "smooth", block: "start" });
 
         try {
           let result = null;
@@ -2122,6 +2226,7 @@
           }
           currentResult = normalizeCustomerRecord(normalizeApiResult(result) || buildDemoProfile(input, confirmed));
           renderResult(currentResult);
+          document.getElementById("customerReviewPanel").scrollIntoView({ behavior: "smooth", block: "start" });
           setStatus(`${currentResult.name} enriched. Review AI guesses before saving.`);
         } finally {
           showEnrichmentProgress(false);
@@ -2158,6 +2263,7 @@
 
       function renderCandidates(candidates, input) {
         const box = document.getElementById("candidateBox");
+        document.getElementById("candidateDialog").classList.remove("hidden");
         box.classList.remove("hidden");
         box.innerHTML = `
           <div class="info-card">
@@ -2175,7 +2281,10 @@
           `).join("")}
         `;
         box.querySelectorAll("[data-candidate]").forEach((button) => {
-          button.addEventListener("click", () => runLookup(null, candidates[Number(button.dataset.candidate)]));
+          button.addEventListener("click", () => {
+            document.getElementById("candidateDialog").classList.add("hidden");
+            runLookup(null, candidates[Number(button.dataset.candidate)]);
+          });
         });
       }
 
@@ -2390,6 +2499,7 @@
         renderWatch();
         showSaveVisual(`${currentResult.name} added to the customer list.`);
         document.getElementById("saveResult")?.setAttribute("disabled", "disabled");
+        setLookupExpanded(false);
         setStatus(`${currentResult.name} saved locally. Shared database storage is not connected yet.`);
       }
 
@@ -2437,6 +2547,7 @@
                   <button class="button secondary" data-load-customer="${index}" type="button">Edit profile</button>
                   <button class="button secondary" data-toggle-watch="${index}" type="button">${customer.hypercare === "Active" ? "Remove from hypercare" : "Add to hypercare"}</button>
                 </div>
+                <button class="icon-button" data-delete-request="${index}" type="button" title="Request customer deletion" aria-label="Request customer deletion">&#128465;</button>
               </div>
             </article>
           `).join("");
@@ -2469,6 +2580,9 @@
             renderCustomers();
             renderWatch();
           });
+        });
+        list.querySelectorAll("[data-delete-request]").forEach((button) => {
+          button.addEventListener("click", () => requestCustomerDeletion(customers[Number(button.dataset.deleteRequest)]));
         });
       }
 
@@ -2548,7 +2662,9 @@
       function moveCustomerLookupPanel() {
         const rail = document.getElementById("customerAddRail");
         const panel = document.getElementById("customerLookupPanel");
-        if (rail && panel && panel.parentElement !== rail) rail.appendChild(panel);
+        const slot = document.getElementById("customerLookupExpanded");
+        const target = lookupExpanded ? slot : rail;
+        if (target && panel && panel.parentElement !== target) target.appendChild(panel);
       }
 
       function renderStandardOptions() {
@@ -2573,8 +2689,80 @@
         `).join("") : `<article class="watch-row"><p class="row-copy">No active hypercare customers yet.</p></article>`;
       }
 
+      function saveAdminRequests() {
+        store.set("assuranceAdminRequestsV1", adminRequests);
+        renderAdminRequests();
+      }
+
+      function requestCustomerDeletion(customer) {
+        if (!customer) return;
+        const key = profileKey(customer);
+        if (!adminRequests.some((request) => request.type === "delete-customer" && request.customerKey === key && request.status === "Pending")) {
+          adminRequests.unshift({
+            id: `req-${Date.now()}`,
+            type: "delete-customer",
+            status: "Pending",
+            customerKey: key,
+            customerName: customer.name,
+            createdAt: new Date().toISOString()
+          });
+          saveAdminRequests();
+        }
+        setStatus(`Deletion request for ${customer.name} sent to Settings.`);
+      }
+
+      function renderAdminRequests() {
+        const list = document.getElementById("adminRequestList");
+        if (!list) return;
+        if (!adminRequests.length) {
+          list.innerHTML = `<article class="info-card"><strong>No admin requests</strong><p>Delete and clear-list requests will appear here for an administrator to review.</p></article>`;
+          return;
+        }
+        list.innerHTML = adminRequests.map((request, index) => `
+          <article class="info-card">
+            <div class="row-top">
+              <strong>${request.type === "clear-customers" ? "Clear customer list" : `Delete customer: ${esc(request.customerName)}`}</strong>
+              <span class="tag warn">${esc(request.status)}</span>
+            </div>
+            <p>${esc(new Date(request.createdAt).toLocaleString())}</p>
+            <div class="split">
+              <button class="button secondary" data-dismiss-request="${index}" type="button">Dismiss request</button>
+              <button class="button" data-approve-request="${index}" type="button">Admin approve</button>
+            </div>
+          </article>
+        `).join("");
+        list.querySelectorAll("[data-dismiss-request]").forEach((button) => {
+          button.addEventListener("click", () => {
+            adminRequests.splice(Number(button.dataset.dismissRequest), 1);
+            saveAdminRequests();
+          });
+        });
+        list.querySelectorAll("[data-approve-request]").forEach((button) => {
+          button.addEventListener("click", () => approveAdminRequest(Number(button.dataset.approveRequest)));
+        });
+      }
+
+      function approveAdminRequest(index) {
+        const request = adminRequests[index];
+        if (!request) return;
+        if (request.type === "clear-customers") {
+          customers = [];
+          expandedCustomerKey = "";
+        }
+        if (request.type === "delete-customer") {
+          customers = customers.filter((customer) => profileKey(customer) !== request.customerKey);
+          if (expandedCustomerKey === request.customerKey) expandedCustomerKey = "";
+        }
+        store.set("assuranceCustomersV2", customers);
+        adminRequests.splice(index, 1);
+        saveAdminRequests();
+        renderCustomers();
+        renderWatch();
+      }
+
       document.getElementById("lookupForm").addEventListener("submit", runLookup);
       document.getElementById("sampleCustomer").addEventListener("click", () => {
+        setLookupExpanded(true);
         document.getElementById("lookupName").value = "Aster";
         document.getElementById("lookupSector").value = "Automotive";
         document.getElementById("lookupSize").value = "Mid-market";
@@ -2585,12 +2773,23 @@
         document.getElementById("lookupName").focus();
       });
 
-      document.getElementById("resetCustomers").addEventListener("click", () => {
-        customers = [];
-        expandedCustomerKey = "";
-        store.set("assuranceCustomersV2", customers);
-        renderCustomers();
-        renderWatch();
+      ["lookupName", "lookupSector", "lookupSize", "lookupWebsite", "lookupNotes"].forEach((id) => {
+        document.getElementById(id).addEventListener("focus", () => setLookupExpanded(true));
+        document.getElementById(id).addEventListener("input", () => setLookupExpanded(true));
+      });
+
+      document.getElementById("closeCandidateDialog").addEventListener("click", () => {
+        document.getElementById("candidateDialog").classList.add("hidden");
+      });
+
+      document.getElementById("requestClearCustomers").addEventListener("click", () => {
+        adminRequests.unshift({
+          id: `req-${Date.now()}`,
+          type: "clear-customers",
+          status: "Pending",
+          createdAt: new Date().toISOString()
+        });
+        saveAdminRequests();
       });
 
       document.getElementById("resetStandards").addEventListener("click", () => {
@@ -2691,6 +2890,7 @@
       renderStandards();
       renderCustomers();
       renderWatch();
+      renderAdminRequests();
       setStatus("Ready. Demo enrichment is available even before the AWS AI API is connected.");
     </script>
   </body>
