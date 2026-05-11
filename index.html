@@ -309,6 +309,12 @@
         background: #ffffff;
       }
 
+      .customer-card.open {
+        grid-column: 1 / -1;
+        min-height: auto;
+        align-content: start;
+      }
+
       .customer-card h3 {
         margin: 0 0 10px;
         color: var(--blue-dark);
@@ -951,11 +957,21 @@
       .customer-detail {
         display: none;
         gap: 14px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
       }
 
       .customer-row.open .customer-detail,
       .customer-card.open .customer-detail {
         display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+      }
+
+      .customer-card.open .customer-detail > .row-copy,
+      .customer-card.open .customer-detail > .project-list,
+      .customer-card.open .customer-detail > .split {
+        grid-column: 1 / -1;
       }
 
       .standard-picker {
@@ -1143,6 +1159,7 @@
         .split,
         .wide-split,
         .profile-grid,
+        .customer-card.open .customer-detail,
         .controls {
           grid-template-columns: 1fr;
         }
@@ -1217,7 +1234,7 @@
               <div class="panel-head">
                 <div>
                   <h2 id="candidateDialogTitle">Add Customer</h2>
-                  <p id="candidateDialogCopy">Enter a customer name. The hub will resolve the entity, enrich the profile, save it, and return you to the overview.</p>
+                  <p id="candidateDialogCopy">Enter a customer name. The hub will resolve the entity, enrich the profile, and show a summary before anything is saved.</p>
                 </div>
                 <button class="button secondary" id="closeCandidateDialog" type="button">Close</button>
               </div>
