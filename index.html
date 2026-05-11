@@ -327,6 +327,10 @@
         border-bottom: 1px solid var(--line);
       }
 
+      .standards-overview {
+        grid-column: 1 / -1;
+      }
+
       .standard-group h3 {
         margin: 0;
         padding: 18px 26px;
@@ -1302,7 +1306,7 @@
               </div>
             </section>
           </div>
-          <div class="panel">
+          <div class="panel standards-overview">
             <div class="panel-head">
               <div>
                 <h2>Standards and Regulations</h2>
@@ -1312,7 +1316,11 @@
                   planning.
                 </p>
               </div>
-              <button class="button secondary" id="resetStandards">Reset sample data</button>
+              <div class="customer-card-actions">
+                <button class="button" id="openStandardDialog" type="button">Add Standard</button>
+                <button class="button secondary" id="openChangeDialog" type="button">Add Change / News</button>
+                <button class="button secondary" id="resetStandards" type="button">Reset sample data</button>
+              </div>
             </div>
 
             <div class="controls">
@@ -1347,104 +1355,112 @@
             <div class="standards-list" id="standardsList"></div>
           </div>
 
-          <aside class="panel">
-            <div class="panel-head">
-              <div>
-                <h3>Add New Standard</h3>
-                <p>Keep the description short enough for account teams to use.</p>
+          <div class="dialog-overlay hidden" id="standardDialog" role="dialog" aria-modal="true" aria-labelledby="standardDialogTitle">
+            <div class="dialog-panel">
+              <div class="panel-head">
+                <div>
+                  <h2 id="standardDialogTitle">Add Standard</h2>
+                  <p>Save the standard with a short plain-English description account teams can use.</p>
+                </div>
+                <button class="button secondary" id="closeStandardDialog" type="button">Close</button>
               </div>
+              <form class="lookup-form" id="standardForm">
+                <div class="field">
+                  <label for="stdName">Name</label>
+                  <input id="stdName" required placeholder="Example: IEC 62443" />
+                </div>
+                <div class="split">
+                  <div class="field">
+                    <label for="stdDomain">Domain</label>
+                    <select id="stdDomain">
+                      <option>Cybersecurity</option>
+                      <option>Functional Safety</option>
+                      <option>Regulation</option>
+                      <option>Market Access</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="stdSector">Sector</label>
+                    <select id="stdSector">
+                      <option>Industrial / OT</option>
+                      <option>Automotive</option>
+                      <option>Medical Devices</option>
+                      <option>ICT / Connected Products</option>
+                      <option>Financial Services</option>
+                      <option>Consumer & Industrial Goods</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="stdMarkets">Markets / Regions</label>
+                  <input id="stdMarkets" placeholder="Global, EU, US, Canada, China" />
+                </div>
+                <div class="field">
+                  <label for="stdTopics">Topics</label>
+                  <input id="stdTopics" placeholder="automotive, machinery, OT security" />
+                </div>
+                <div class="field">
+                  <label for="stdSourceUrl">Official / Reference URL</label>
+                  <input id="stdSourceUrl" placeholder="https://..." />
+                </div>
+                <div class="field">
+                  <label for="stdDescription">Plain-English Description</label>
+                  <textarea id="stdDescription" required placeholder="One or two short sentences."></textarea>
+                </div>
+                <div class="field">
+                  <label for="stdInternalNotes">TUV Rheinland Notes</label>
+                  <textarea id="stdInternalNotes" placeholder="Internal service notes, assessment angles, useful customer questions, or delivery considerations."></textarea>
+                </div>
+                <button class="button" type="submit">Save standard</button>
+              </form>
             </div>
-            <form class="lookup-form" id="standardForm">
-              <div class="field">
-                <label for="stdName">Name</label>
-                <input id="stdName" required placeholder="Example: IEC 62443" />
-              </div>
-              <div class="split">
-                <div class="field">
-                  <label for="stdDomain">Domain</label>
-                  <select id="stdDomain">
-                    <option>Cybersecurity</option>
-                    <option>Functional Safety</option>
-                    <option>Regulation</option>
-                    <option>Market Access</option>
-                  </select>
-                </div>
-                <div class="field">
-                  <label for="stdSector">Sector</label>
-                  <select id="stdSector">
-                    <option>Industrial / OT</option>
-                    <option>Automotive</option>
-                    <option>Medical Devices</option>
-                    <option>ICT / Connected Products</option>
-                    <option>Financial Services</option>
-                    <option>Consumer & Industrial Goods</option>
-                  </select>
-                </div>
-              </div>
-              <div class="field">
-                <label for="stdMarkets">Markets / Regions</label>
-                <input id="stdMarkets" placeholder="Global, EU, US, Canada, China" />
-              </div>
-              <div class="field">
-                <label for="stdTopics">Topics</label>
-                <input id="stdTopics" placeholder="automotive, machinery, OT security" />
-              </div>
-              <div class="field">
-                <label for="stdSourceUrl">Official / Reference URL</label>
-                <input id="stdSourceUrl" placeholder="https://..." />
-              </div>
-              <div class="field">
-                <label for="stdDescription">Plain-English Description</label>
-                <textarea id="stdDescription" required placeholder="One or two short sentences."></textarea>
-              </div>
-              <div class="field">
-                <label for="stdInternalNotes">TUV Rheinland Notes</label>
-                <textarea id="stdInternalNotes" placeholder="Internal service notes, assessment angles, useful customer questions, or delivery considerations."></textarea>
-              </div>
-              <button class="button" type="submit">Add standard</button>
-            </form>
+          </div>
 
-            <div class="panel-head" style="border-top: 1px solid var(--line);">
-              <div>
-                <h3>Add Public Change / News</h3>
-                <p>Track public updates that should be reviewed for customer impact.</p>
+          <div class="dialog-overlay hidden" id="changeDialog" role="dialog" aria-modal="true" aria-labelledby="changeDialogTitle">
+            <div class="dialog-panel">
+              <div class="panel-head">
+                <div>
+                  <h2 id="changeDialogTitle">Add Change / News</h2>
+                  <p>Track a public update that should be reviewed for customer impact.</p>
+                </div>
+                <button class="button secondary" id="closeChangeDialog" type="button">Close</button>
               </div>
+              <form class="lookup-form" id="standardChangeForm">
+                <div class="field">
+                  <label for="changeStandard">Standard</label>
+                  <select id="changeStandard"></select>
+                </div>
+                <div class="split">
+                  <div class="field">
+                    <label for="changeDate">Date</label>
+                    <input id="changeDate" type="date" />
+                  </div>
+                  <div class="field">
+                    <label for="changeImpact">Impact</label>
+                    <select id="changeImpact">
+                      <option>Review</option>
+                      <option>Low</option>
+                      <option>Medium</option>
+                      <option>High</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="changeTitle">Change Title</label>
+                  <input id="changeTitle" required placeholder="Example: Draft update published" />
+                </div>
+                <div class="field">
+                  <label for="changeUrl">Public Source URL</label>
+                  <input id="changeUrl" placeholder="https://..." />
+                </div>
+                <div class="field">
+                  <label for="changeSummary">What changed?</label>
+                  <textarea id="changeSummary" required placeholder="Short summary for account and technical teams."></textarea>
+                </div>
+                <button class="button" type="submit">Save change note</button>
+              </form>
             </div>
-            <form class="lookup-form" id="standardChangeForm">
-              <div class="field">
-                <label for="changeStandard">Standard</label>
-                <select id="changeStandard"></select>
-              </div>
-              <div class="split">
-                <div class="field">
-                  <label for="changeDate">Date</label>
-                  <input id="changeDate" type="date" />
-                </div>
-                <div class="field">
-                  <label for="changeImpact">Impact</label>
-                  <select id="changeImpact">
-                    <option>Review</option>
-                    <option>Low</option>
-                    <option>Medium</option>
-                    <option>High</option>
-                  </select>
-                </div>
-              </div>
-              <div class="field">
-                <label for="changeTitle">Change Title</label>
-                <input id="changeTitle" required placeholder="Example: Draft update published" />
-              </div>
-              <div class="field">
-                <label for="changeUrl">Public Source URL</label>
-                <input id="changeUrl" placeholder="https://..." />
-              </div>
-              <div class="field">
-                <label for="changeSummary">What changed?</label>
-                <textarea id="changeSummary" required placeholder="Short summary for account and technical teams."></textarea>
-              </div>
-              <button class="button" type="submit">Add change note</button>
-            </form>
-          </aside>
+          </div>
         </section>
 
         <section class="panel app-view" id="watch">
@@ -2827,6 +2843,27 @@
         renderStandards();
       });
 
+      document.getElementById("openStandardDialog").addEventListener("click", () => {
+        document.getElementById("standardDialog").classList.remove("hidden");
+        document.getElementById("stdName").focus();
+      });
+
+      document.getElementById("closeStandardDialog").addEventListener("click", () => {
+        document.getElementById("standardDialog").classList.add("hidden");
+        document.getElementById("standardForm").reset();
+      });
+
+      document.getElementById("openChangeDialog").addEventListener("click", () => {
+        renderStandardOptions();
+        document.getElementById("changeDialog").classList.remove("hidden");
+        document.getElementById("changeStandard").focus();
+      });
+
+      document.getElementById("closeChangeDialog").addEventListener("click", () => {
+        document.getElementById("changeDialog").classList.add("hidden");
+        document.getElementById("standardChangeForm").reset();
+      });
+
       document.getElementById("standardForm").addEventListener("submit", (event) => {
         event.preventDefault();
         standards.unshift(normalizeStandardRecord({
@@ -2844,6 +2881,7 @@
         store.set("assuranceStandardsV2", standards);
         event.target.reset();
         renderStandards();
+        document.getElementById("standardDialog").classList.add("hidden");
       });
 
       document.getElementById("standardChangeForm").addEventListener("submit", (event) => {
@@ -2863,6 +2901,7 @@
         store.set("assuranceStandardsV2", standards);
         event.target.reset();
         renderStandards();
+        document.getElementById("changeDialog").classList.add("hidden");
       });
 
       document.getElementById("standardSearch").addEventListener("input", renderStandards);
