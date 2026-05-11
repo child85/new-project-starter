@@ -1307,7 +1307,7 @@
               </div>
               <div class="customer-card-actions">
                 <button class="button" id="openStandardDialog" type="button">Add Standard</button>
-                <button class="button secondary" id="openChangeDialog" type="button">Add Change / News</button>
+                <button class="button secondary" id="runAiStandardUpdate" type="button">Run AI update scan</button>
                 <button class="button secondary" id="resetStandards" type="button">Reset sample data</button>
               </div>
             </div>
@@ -1401,52 +1401,6 @@
                   <textarea id="stdInternalNotes" placeholder="Internal service notes, assessment angles, useful customer questions, or delivery considerations."></textarea>
                 </div>
                 <button class="button" type="submit">Save standard</button>
-              </form>
-            </div>
-          </div>
-
-          <div class="dialog-overlay hidden" id="changeDialog" role="dialog" aria-modal="true" aria-labelledby="changeDialogTitle">
-            <div class="dialog-panel">
-              <div class="panel-head">
-                <div>
-                  <h2 id="changeDialogTitle">Add Change / News</h2>
-                  <p>Track a public update that should be reviewed for customer impact.</p>
-                </div>
-                <button class="button secondary" id="closeChangeDialog" type="button">Close</button>
-              </div>
-              <form class="lookup-form" id="standardChangeForm">
-                <div class="field">
-                  <label for="changeStandard">Standard</label>
-                  <select id="changeStandard"></select>
-                </div>
-                <div class="split">
-                  <div class="field">
-                    <label for="changeDate">Date</label>
-                    <input id="changeDate" type="date" />
-                  </div>
-                  <div class="field">
-                    <label for="changeImpact">Impact</label>
-                    <select id="changeImpact">
-                      <option>Review</option>
-                      <option>Low</option>
-                      <option>Medium</option>
-                      <option>High</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="field">
-                  <label for="changeTitle">Change Title</label>
-                  <input id="changeTitle" required placeholder="Example: Draft update published" />
-                </div>
-                <div class="field">
-                  <label for="changeUrl">Public Source URL</label>
-                  <input id="changeUrl" placeholder="https://..." />
-                </div>
-                <div class="field">
-                  <label for="changeSummary">What changed?</label>
-                  <textarea id="changeSummary" required placeholder="Short summary for account and technical teams."></textarea>
-                </div>
-                <button class="button" type="submit">Save change note</button>
               </form>
             </div>
           </div>
@@ -2910,7 +2864,6 @@
         `).join("");
         setText("standardCount", standards.length);
         updateComplianceKpis();
-        renderStandardOptions();
         renderWatch();
       }
 
@@ -2938,10 +2891,39 @@
         return;
       }
 
-      function renderStandardOptions() {
-        const select = document.getElementById("changeStandard");
-        if (!select) return;
-        select.innerHTML = standards.map((standard, index) => `<option value="${index}">${esc(standard.name)}</option>`).join("");
+      function runAiStandardUpdateScan() {
+        const button = document.getElementById("runAiStandardUpdate");
+        if (!standards.length) return;
+        button.disabled = true;
+        button.textContent = "AI scan running...";
+        const today = new Date().toISOString().slice(0, 10);
+        const targets = standards
+          .filter((standard) => ["Cybersecurity", "Functional Safety", "Regulation"].includes(standard.domain))
+          .slice(0, 4);
+        const updates = targets.map((standard) => ({
+          standard,
+          change: {
+            date: today,
+            title: "AI watch demo: public update review queued",
+            impact: standard.domain === "Regulation" ? "High" : "Review",
+            url: standard.sourceUrl || "",
+            summary: `Demo AI scan flagged ${standard.name} for review. Check official publications, interpretation notes, and customer project impact before notifying account teams.`
+          }
+        }));
+        updates.forEach(({ standard, change }) => {
+          const exists = safeList(standard.changes).some((item) => item.title === change.title && item.date === change.date);
+          if (!exists) standard.changes = [change, ...(standard.changes || [])];
+        });
+        store.set("assuranceStandardsV2", standards);
+        renderStandards();
+        renderWatch();
+        setTimeout(() => {
+          const refreshedButton = document.getElementById("runAiStandardUpdate");
+          if (refreshedButton) {
+            refreshedButton.disabled = false;
+            refreshedButton.textContent = "Run AI update scan";
+          }
+        }, 600);
       }
 
       function renderDailySchedule() {
@@ -2997,7 +2979,7 @@
         `).join("") : `
           <article class="highlight-card">
             <strong>No public changes queued</strong>
-            <p>Add change notes in the Standards tab. The daily watch dashboard will summarize them here.</p>
+            <p>Run the AI update scan from the Standards tab. The daily watch dashboard will summarize review items here.</p>
           </article>
         `;
         document.getElementById("watchList").innerHTML = active.length ? active.slice(0, 4).map((customer) => `
@@ -3137,17 +3119,7 @@
         document.getElementById("standardDialog").classList.add("hidden");
         document.getElementById("standardForm").reset();
       });
-
-      document.getElementById("openChangeDialog").addEventListener("click", () => {
-        renderStandardOptions();
-        document.getElementById("changeDialog").classList.remove("hidden");
-        document.getElementById("changeStandard").focus();
-      });
-
-      document.getElementById("closeChangeDialog").addEventListener("click", () => {
-        document.getElementById("changeDialog").classList.add("hidden");
-        document.getElementById("standardChangeForm").reset();
-      });
+      document.getElementById("runAiStandardUpdate").addEventListener("click", runAiStandardUpdateScan);
 
       document.getElementById("standardForm").addEventListener("submit", (event) => {
         event.preventDefault();
@@ -3167,26 +3139,6 @@
         event.target.reset();
         renderStandards();
         document.getElementById("standardDialog").classList.add("hidden");
-      });
-
-      document.getElementById("standardChangeForm").addEventListener("submit", (event) => {
-        event.preventDefault();
-        const index = Number(document.getElementById("changeStandard").value);
-        if (!standards[index]) return;
-        standards[index].changes = [
-          {
-            date: document.getElementById("changeDate").value,
-            title: document.getElementById("changeTitle").value.trim(),
-            impact: document.getElementById("changeImpact").value,
-            url: document.getElementById("changeUrl").value.trim(),
-            summary: document.getElementById("changeSummary").value.trim()
-          },
-          ...(standards[index].changes || [])
-        ];
-        store.set("assuranceStandardsV2", standards);
-        event.target.reset();
-        renderStandards();
-        document.getElementById("changeDialog").classList.add("hidden");
       });
 
       document.getElementById("standardSearch").addEventListener("input", renderStandards);
