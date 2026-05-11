@@ -1288,9 +1288,9 @@
                   <p>Public change notes saved in the standards library.</p>
                 </article>
                 <article class="metric">
-                  <span>AI daily watch</span>
-                  <strong>06:00</strong>
-                  <p>Target workflow: check standards and regulations every day.</p>
+                  <span>Watch administration</span>
+                  <strong>Admin</strong>
+                  <p>Daily update schedule is managed from Settings.</p>
                 </article>
               </div>
             </section>
@@ -1480,9 +1480,9 @@
               <p>Saved public change notes to review.</p>
             </article>
             <article class="metric">
-              <span>Next AI check</span>
-              <strong>06:00</strong>
-              <p>Target workflow for automated daily scanning.</p>
+              <span>Daily update setup</span>
+              <strong id="dashboardScheduleStatus">Admin demo</strong>
+              <p>Schedule controls live in Settings.</p>
             </article>
           </div>
           <div class="dashboard-grid">
@@ -1517,6 +1517,70 @@
             <button class="button secondary" id="requestClearCustomers" type="button">Request clear customer list</button>
           </div>
           <div class="admin-list" id="adminRequestList"></div>
+
+          <div class="setup-box">
+            <div class="panel-head compact-head">
+              <div>
+                <h2>Daily Update Demo</h2>
+                <p>
+                  Admin-only schedule controls for a future daily standards and
+                  customer-watch update. This saves the demo preference in the
+                  browser only; it does not start an AWS automation yet.
+                </p>
+              </div>
+            </div>
+            <div class="split">
+              <div class="field">
+                <label for="dailyUpdateStatus">Status</label>
+                <select id="dailyUpdateStatus">
+                  <option>Paused</option>
+                  <option>Active</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="dailyUpdateFrequency">Frequency</label>
+                <select id="dailyUpdateFrequency">
+                  <option>Daily</option>
+                  <option>Weekdays</option>
+                  <option>Weekly</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="dailyUpdateTime">Run Time</label>
+                <input id="dailyUpdateTime" type="time" />
+              </div>
+              <div class="field">
+                <label for="dailyUpdateTimezone">Timezone</label>
+                <select id="dailyUpdateTimezone">
+                  <option>America/Denver</option>
+                  <option>America/New_York</option>
+                  <option>America/Chicago</option>
+                  <option>America/Los_Angeles</option>
+                  <option>UTC</option>
+                </select>
+              </div>
+            </div>
+            <div class="standard-picker">
+              <label class="standard-choice">
+                <input id="dailyUpdateStandards" type="checkbox" />
+                <span>
+                  <strong>Standards and regulations</strong>
+                  <span class="row-copy">Check saved standards for public changes and internal follow-up notes.</span>
+                </span>
+              </label>
+              <label class="standard-choice">
+                <input id="dailyUpdateCustomers" type="checkbox" />
+                <span>
+                  <strong>Hypercare customers</strong>
+                  <span class="row-copy">Compare customer watched standards against new change notes.</span>
+                </span>
+              </label>
+            </div>
+            <div class="split">
+              <button class="button" id="saveDailySchedule" type="button">Save demo schedule</button>
+              <div class="code" id="dailyScheduleStatus">Daily update automation is not connected yet.</div>
+            </div>
+          </div>
 
           <div class="setup-box">
             <div class="panel-head compact-head">
@@ -1772,9 +1836,19 @@
         }
       };
 
+      const defaultWatchSchedule = {
+        status: "Paused",
+        frequency: "Daily",
+        time: "06:00",
+        timezone: "America/Denver",
+        includeStandards: true,
+        includeCustomers: true
+      };
+
       let standards = store.get("assuranceStandardsV2", starterStandards);
       let customers = store.get("assuranceCustomersV2", starterCustomers);
       let adminRequests = store.get("assuranceAdminRequestsV1", []);
+      let watchSchedule = { ...defaultWatchSchedule, ...store.get("assuranceWatchScheduleV1", {}) };
       let selectedRegions = new Set(["Global"]);
       let currentResult = null;
       let expandedCustomerKey = "";
@@ -2738,6 +2812,37 @@
         select.innerHTML = standards.map((standard, index) => `<option value="${index}">${esc(standard.name)}</option>`).join("");
       }
 
+      function renderDailySchedule() {
+        setText("dashboardScheduleStatus", watchSchedule.status === "Active" ? "Admin active" : "Admin demo");
+        const status = document.getElementById("dailyUpdateStatus");
+        if (!status) return;
+        document.getElementById("dailyUpdateStatus").value = watchSchedule.status;
+        document.getElementById("dailyUpdateFrequency").value = watchSchedule.frequency;
+        document.getElementById("dailyUpdateTime").value = watchSchedule.time;
+        document.getElementById("dailyUpdateTimezone").value = watchSchedule.timezone;
+        document.getElementById("dailyUpdateStandards").checked = Boolean(watchSchedule.includeStandards);
+        document.getElementById("dailyUpdateCustomers").checked = Boolean(watchSchedule.includeCustomers);
+        const scope = [
+          watchSchedule.includeStandards ? "standards" : "",
+          watchSchedule.includeCustomers ? "hypercare customers" : ""
+        ].filter(Boolean).join(" and ") || "no sources";
+        document.getElementById("dailyScheduleStatus").textContent =
+          `${watchSchedule.status} demo: ${watchSchedule.frequency.toLowerCase()} at ${watchSchedule.time} ${watchSchedule.timezone}, covering ${scope}. Not connected to AWS automation yet.`;
+      }
+
+      function saveDailySchedule() {
+        watchSchedule = {
+          status: document.getElementById("dailyUpdateStatus").value,
+          frequency: document.getElementById("dailyUpdateFrequency").value,
+          time: document.getElementById("dailyUpdateTime").value || "06:00",
+          timezone: document.getElementById("dailyUpdateTimezone").value,
+          includeStandards: document.getElementById("dailyUpdateStandards").checked,
+          includeCustomers: document.getElementById("dailyUpdateCustomers").checked
+        };
+        store.set("assuranceWatchScheduleV1", watchSchedule);
+        renderDailySchedule();
+      }
+
       function renderWatch() {
         const active = customers.filter((customer) => customer.hypercare === "Active");
         const changes = standards.flatMap((standard) => safeList(standard.changes).map((change) => ({ ...change, standard: standard.name })));
@@ -2747,6 +2852,7 @@
         setText("dashboardStandardCount", standards.length);
         setText("dashboardHypercareCount", active.length);
         setText("dashboardRecentChangeCount", changes.length);
+        renderDailySchedule();
         document.getElementById("watchHighlightList").innerHTML = recent.length ? recent.map((change) => `
           <article class="highlight-card">
             <strong>${esc(change.standard)}: ${esc(change.title || "Public change")}</strong>
@@ -2972,6 +3078,7 @@
       });
 
       document.getElementById("testApiEndpoint").addEventListener("click", testSavedEndpoint);
+      document.getElementById("saveDailySchedule").addEventListener("click", saveDailySchedule);
 
       document.querySelectorAll("[data-view]").forEach((button) => {
         button.addEventListener("click", () => {
