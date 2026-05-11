@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Assurance Hub</title>
+    <title>TRNA AI Hub</title>
     <style>
       :root {
         --blue: #0079bf;
@@ -69,27 +69,16 @@
       }
 
       .brand-mark {
-        position: relative;
-        width: 44px;
-        height: 36px;
-        flex: 0 0 auto;
-      }
-
-      .brand-mark::before,
-      .brand-mark::after {
-        position: absolute;
-        content: "";
-        clip-path: polygon(50% 0, 100% 100%, 0 100%);
-      }
-
-      .brand-mark::before {
-        inset: 0;
+        display: grid;
+        width: 58px;
+        height: 42px;
+        place-items: center;
+        color: #ffffff;
         background: var(--blue);
-      }
-
-      .brand-mark::after {
-        inset: 10px 11px 8px;
-        background: var(--panel);
+        font-size: 0.94rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        flex: 0 0 auto;
       }
 
       .brand-title {
@@ -1013,11 +1002,11 @@
 
     <header class="site-header">
       <div class="header-inner">
-        <div class="brand" aria-label="Assurance Hub">
-          <div class="brand-mark"></div>
+        <div class="brand" aria-label="TRNA AI Hub">
+          <div class="brand-mark">TRNA</div>
           <div class="brand-title">
-            <strong>TUV Rheinland</strong>
-            <span>Assurance Hub NA</span>
+            <strong>Assurance Intelligence Hub</strong>
+            <span>TRNA AI Hub</span>
           </div>
         </div>
         <div class="utility">
@@ -1064,25 +1053,6 @@
             practical outreach.
           </p>
         </section>
-
-        <div class="service-strip view-overview active hidden" id="customerServices">
-          <article class="service-card">
-            <strong>Customer lookup</strong>
-            <span>Resolve ambiguous names, enrich metadata, and save confirmed customer context.</span>
-          </article>
-          <article class="service-card">
-            <strong>Compliance fit</strong>
-            <span>Guess likely standards from sector, product type, and operating markets.</span>
-          </article>
-          <article class="service-card">
-            <strong>Hypercare watch</strong>
-            <span>Keep tested standards tied to customers after project close.</span>
-          </article>
-          <article class="service-card">
-            <strong>Engagement planning</strong>
-            <span>Generate top cross-sell and upsell ideas for account teams.</span>
-          </article>
-        </div>
 
         <div class="metric-grid view-overview active" id="customerMetrics">
           <article class="metric">
