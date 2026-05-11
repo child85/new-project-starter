@@ -247,8 +247,13 @@
         color: #ffffff;
       }
 
+      #customersOverview,
+      #customerMetrics {
+        display: none !important;
+      }
+
       .customer-layout {
-        grid-template-columns: minmax(0, 1fr) minmax(390px, 0.58fr);
+        grid-template-columns: 1fr;
       }
 
       .customer-full {
@@ -266,6 +271,52 @@
 
       #customerLookupPanel.expanded {
         box-shadow: var(--shadow);
+      }
+
+      .customer-overview {
+        grid-column: 1 / -1;
+      }
+
+      .customer-overview .customer-list {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 18px;
+        padding: 26px;
+      }
+
+      .customer-card {
+        min-height: 210px;
+        display: grid;
+        align-content: space-between;
+        gap: 18px;
+        padding: 24px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .customer-card h3 {
+        margin: 0 0 10px;
+        color: var(--blue-dark);
+        font-size: 1.35rem;
+      }
+
+      .customer-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .customer-card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .lookup-dialog-body {
+        display: grid;
+        gap: 18px;
+        padding: 22px;
       }
 
       .compliance-intro {
@@ -371,6 +422,10 @@
         grid-template-columns: minmax(0, 1.04fr) minmax(360px, 0.66fr);
         gap: 34px;
         align-items: start;
+      }
+
+      .section-grid.app-view {
+        display: none;
       }
 
       .panel {
@@ -523,6 +578,12 @@
         color: #ffffff;
         background: var(--blue);
         border-color: var(--blue);
+      }
+
+      .progress-steps span.done {
+        color: var(--blue-dark);
+        border-color: var(--blue);
+        background: var(--soft-blue);
       }
 
       .record-editor {
@@ -837,7 +898,8 @@
         gap: 14px;
       }
 
-      .customer-row.open .customer-detail {
+      .customer-row.open .customer-detail,
+      .customer-card.open .customer-detail {
         display: grid;
       }
 
@@ -1142,142 +1204,65 @@
         </div>
 
         <section class="section-grid customer-layout app-view active" id="customers">
-          <div class="customer-full lookup-expanded-slot" id="customerLookupExpanded"></div>
-          <div>
-            <section class="panel">
-              <div class="panel-head">
-                <div>
-                  <h2>Saved Customers</h2>
-                  <p>
-                    Saved profiles keep confirmed data, AI guesses, project
-                    history, and account engagement ideas together.
-                  </p>
-                </div>
-              </div>
-              <div class="customer-list" id="customerList"></div>
-            </section>
-          </div>
-
-          <aside id="customerAddRail">
-            <section class="panel" id="customerLookupPanel">
-              <div class="panel-head">
-                <div>
-                  <h2>Add Customer</h2>
-                  <p>Start with the basics. The form expands while you work and the review step uses the full page width.</p>
-                </div>
-                <button class="button secondary" id="sampleCustomer">Try fictional example</button>
-              </div>
-
-              <form class="lookup-form" id="lookupForm">
-                <div class="form-step">
-                  <h4>1. Identify the customer</h4>
-                  <div class="wide-split">
-                    <div class="field">
-                      <label for="lookupName">Customer Name</label>
-                      <input id="lookupName" required placeholder="Example: Aster Mobility Systems" />
-                    </div>
-                    <div class="field">
-                      <label for="lookupSector">Known Sector</label>
-                      <select id="lookupSector">
-                        <option value="">Suggest from customer context</option>
-                        <option>Automotive</option>
-                        <option>Industrial / OT</option>
-                        <option>Medical Devices</option>
-                        <option>Energy / Utilities</option>
-                        <option>ICT / Connected Products</option>
-                        <option>Consumer & Industrial Goods</option>
-                        <option>Rail / Mobility</option>
-                      </select>
-                    </div>
-                    <div class="field">
-                      <label for="lookupSize">Known Size</label>
-                      <select id="lookupSize">
-                        <option value="">Suggest from customer context</option>
-                        <option>Startup</option>
-                        <option>Mid-market</option>
-                        <option>Enterprise</option>
-                        <option>Global enterprise</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-step">
-                  <h4>2. Add market and entity hints</h4>
-                  <div class="split">
-                    <div class="field">
-                      <label for="lookupWebsite">Website or Subsidiary Hint</label>
-                      <input id="lookupWebsite" placeholder="example.com, EU subsidiary, US plant, product line, etc." />
-                    </div>
-                    <div class="field">
-                      <label>Operating Markets</label>
-                      <div class="region-picker" id="regionPicker">
-                        <button class="chip active" type="button" data-region="North America">North America</button>
-                        <button class="chip" type="button" data-region="EU">EU</button>
-                        <button class="chip" type="button" data-region="UK">UK</button>
-                        <button class="chip" type="button" data-region="China">China</button>
-                        <button class="chip" type="button" data-region="Global">Global</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-step">
-                  <h4>3. Add what the team already knows</h4>
-                  <div class="field">
-                    <label for="lookupNotes">What We Know Already</label>
-                    <textarea id="lookupNotes" placeholder="Products, subsidiaries, past projects, tested standards, known markets, or account notes."></textarea>
-                  </div>
-                </div>
-
-                <div class="form-step">
-                  <h4>4. Run enrichment, review, then save at the end</h4>
-                  <button class="button" id="runLookup" type="submit">Lookup and enrich customer</button>
-                </div>
-              </form>
-              <div class="status-line">
-                <span id="enrichmentStatus">Ready. Demo enrichment is available even before the AWS AI API is connected.</span>
-                <span id="apiMode">Mode: browser demo</span>
-              </div>
-            </section>
-          </aside>
-          <section class="panel customer-review customer-full hidden" id="customerReviewPanel">
+          <section class="panel customer-overview">
             <div class="panel-head">
               <div>
-                <h2>Review and Save Customer</h2>
-                <p>Review the enrichment, edit the facts, choose which standards to keep, and then save the customer.</p>
+                <h2>Saved Customers</h2>
+                <p>
+                  Customer profiles are shown here as simple cards with a short
+                  account description. Open a card only when you need the saved
+                  standards, projects, website, or hypercare controls.
+                </p>
               </div>
+              <button class="button" id="openCustomerDialog" type="button">Add Customer</button>
             </div>
-            <div style="padding: 22px 26px; display: grid; gap: 18px;">
-              <div id="enrichmentProgress" class="work-visual hidden">
-                <strong>Enriching customer profile</strong>
-                <div class="progress-rail"><span></span></div>
-                <div class="progress-steps">
-                  <span class="active">Resolving entity</span>
-                  <span>Reading context</span>
-                  <span>Mapping standards</span>
-                  <span>Preparing editable profile</span>
-                </div>
-              </div>
-              <div id="resultBox" class="result-card hidden"></div>
-              <div id="saveVisual" class="save-visual hidden">
-                <strong>Customer saved to this browser workspace.</strong>
-                <span class="row-copy">The current build stores customers locally in the browser. A shared team database is the next backend step.</span>
-              </div>
-            </div>
+            <div class="customer-list" id="customerList"></div>
           </section>
+
           <div class="dialog-overlay hidden" id="candidateDialog" role="dialog" aria-modal="true" aria-labelledby="candidateDialogTitle">
             <div class="dialog-panel">
               <div class="panel-head">
                 <div>
-                  <h2 id="candidateDialogTitle">Confirm Customer</h2>
-                  <p>Select the organization you mean. Enrichment will start after your selection.</p>
+                  <h2 id="candidateDialogTitle">Add Customer</h2>
+                  <p id="candidateDialogCopy">Enter a customer name. The hub will resolve the entity, enrich the profile, save it, and return you to the overview.</p>
                 </div>
                 <button class="button secondary" id="closeCandidateDialog" type="button">Close</button>
               </div>
-              <div id="candidateBox" class="candidate-list"></div>
+              <div class="lookup-dialog-body">
+                <form class="lookup-form" id="lookupForm">
+                  <div class="field">
+                    <label for="lookupName">Customer Name</label>
+                    <input id="lookupName" required placeholder="Example: Amazon Robotics" />
+                  </div>
+                  <input id="lookupSector" type="hidden" value="" />
+                  <input id="lookupSize" type="hidden" value="" />
+                  <input id="lookupWebsite" type="hidden" value="" />
+                  <textarea id="lookupNotes" hidden></textarea>
+                  <button class="button" id="runLookup" type="submit">Find and add customer</button>
+                </form>
+                <div id="enrichmentProgress" class="work-visual hidden">
+                  <strong id="lookupStepTitle">Preparing customer lookup</strong>
+                  <div class="progress-rail"><span></span></div>
+                  <div class="progress-steps" id="lookupSteps">
+                    <span class="active">Resolving entity</span>
+                    <span>Checking customer context</span>
+                    <span>Inferring compliance exposure</span>
+                    <span>Saving profile</span>
+                  </div>
+                </div>
+                <div id="candidateBox" class="candidate-list hidden"></div>
+                <div id="saveVisual" class="save-visual hidden">
+                  <strong>Customer saved.</strong>
+                  <span class="row-copy">Returning to the saved-customer overview.</span>
+                </div>
+                <div class="status-line">
+                  <span id="enrichmentStatus">Ready to add a customer.</span>
+                  <span id="apiMode">Mode: browser demo</span>
+                </div>
+              </div>
             </div>
           </div>
+          <div id="resultBox" class="result-card hidden"></div>
         </section>
 
         <section class="section-grid app-view" id="compliance">
@@ -1760,10 +1745,9 @@
       let standards = store.get("assuranceStandardsV2", starterStandards);
       let customers = store.get("assuranceCustomersV2", starterCustomers);
       let adminRequests = store.get("assuranceAdminRequestsV1", []);
-      let selectedRegions = new Set(["North America"]);
+      let selectedRegions = new Set(["Global"]);
       let currentResult = null;
       let expandedCustomerKey = "";
-      let lookupExpanded = false;
 
       const knownCompanies = {
         aster: [
@@ -1933,6 +1917,15 @@
         document.getElementById("apiMode").textContent = modeText || (getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
       }
 
+      function setLookupStep(activeIndex, message) {
+        const title = document.getElementById("lookupStepTitle");
+        if (title && message) title.textContent = message;
+        document.querySelectorAll("#lookupSteps span").forEach((step, index) => {
+          step.classList.toggle("active", index === activeIndex);
+          step.classList.toggle("done", index < activeIndex);
+        });
+      }
+
       function showEnrichmentProgress(show) {
         document.getElementById("enrichmentProgress").classList.toggle("hidden", !show);
       }
@@ -1944,15 +1937,14 @@
         setTimeout(() => box.classList.add("hidden"), 4200);
       }
 
-      function setLookupExpanded(expanded) {
-        lookupExpanded = expanded;
-        const panel = document.getElementById("customerLookupPanel");
-        const slot = document.getElementById("customerLookupExpanded");
-        const rail = document.getElementById("customerAddRail");
-        if (!panel || !slot || !rail) return;
-        panel.classList.toggle("expanded", expanded);
-        const target = expanded ? slot : rail;
-        if (panel.parentElement !== target) target.appendChild(panel);
+      function closeCustomerDialog() {
+        document.getElementById("candidateDialog").classList.add("hidden");
+        document.getElementById("candidateBox").classList.add("hidden");
+        showEnrichmentProgress(false);
+        document.getElementById("lookupForm").reset();
+        selectedRegions = new Set(["Global"]);
+        setLookupStep(0, "Preparing customer lookup");
+        setStatus("Ready to add a customer.");
       }
 
       function activeRegionList() {
@@ -2189,46 +2181,70 @@
       async function runLookup(event, confirmed = null) {
         if (event) event.preventDefault();
         const input = {
-          name: document.getElementById("lookupName").value,
-          sector: document.getElementById("lookupSector").value,
-          size: document.getElementById("lookupSize").value,
-          website: document.getElementById("lookupWebsite").value,
+          name: document.getElementById("lookupName")?.value || confirmed?.name || "",
+          sector: document.getElementById("lookupSector")?.value || confirmed?.sector || "",
+          size: document.getElementById("lookupSize")?.value || confirmed?.size || "",
+          website: document.getElementById("lookupWebsite")?.value || confirmed?.website || "",
           markets: activeRegionList(),
-          notes: document.getElementById("lookupNotes").value
+          notes: document.getElementById("lookupNotes")?.value || ""
         };
         if (!input.name.trim()) return;
 
         document.getElementById("runLookup").disabled = true;
         document.getElementById("saveResult")?.setAttribute("disabled", "disabled");
         document.getElementById("candidateBox").classList.add("hidden");
-        document.getElementById("candidateDialog").classList.add("hidden");
         document.getElementById("saveVisual").classList.add("hidden");
-        setStatus(`Resolving ${input.name}...`, getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
+        document.getElementById("candidateDialog").classList.remove("hidden");
+        document.getElementById("candidateDialogTitle").textContent = "Adding Customer";
+        document.getElementById("candidateDialogCopy").textContent = "The hub is resolving the customer and building a saved profile.";
+        setLookupStep(0, "Resolving customer entity");
+        setStatus(`Looking for ${input.name}...`, getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
 
         const candidates = !confirmed ? candidateMatches(input.name) : [];
         if (!confirmed && candidates.length > 1 && normalize(input.name).length <= 12) {
           renderCandidates(candidates, input);
           document.getElementById("runLookup").disabled = false;
-          setStatus("Please confirm which organization you mean before enrichment continues.");
+          showEnrichmentProgress(false);
+          setStatus("Choose the matching customer before enrichment continues.");
           return;
         }
 
-        document.getElementById("customerReviewPanel").classList.remove("hidden");
         showEnrichmentProgress(true);
-        document.getElementById("customerReviewPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+        const progressMessages = [
+          ["Resolving customer entity", "Checking whether the name maps to a known organization."],
+          ["Checking customer context", "Looking for sector, size, headquarters, website, and market clues."],
+          ["Inferring compliance exposure", "Matching the customer profile against cybersecurity and functional safety topics."],
+          ["Saving profile", "Preparing the saved customer card for the overview."]
+        ];
+        let progressIndex = 0;
+        const progressTimer = setInterval(() => {
+          progressIndex = Math.min(progressIndex + 1, progressMessages.length - 1);
+          setLookupStep(progressIndex, progressMessages[progressIndex][0]);
+          setStatus(progressMessages[progressIndex][1]);
+        }, 1800);
 
         try {
           let result = null;
+          setLookupStep(1, "Checking customer context and available profile data");
           try {
+            setStatus("Calling the AI enrichment backend and checking customer context...");
             result = await enrichWithApi(input, confirmed);
           } catch (apiError) {
             if (getApiUrl()) setStatus(`AWS API unavailable (${apiError.message}). Showing browser demo enrichment.`);
           }
+          setLookupStep(2, "Inferring likely standards and compliance exposure");
           currentResult = normalizeCustomerRecord(normalizeApiResult(result) || buildDemoProfile(input, confirmed));
-          renderResult(currentResult);
-          document.getElementById("customerReviewPanel").scrollIntoView({ behavior: "smooth", block: "start" });
-          setStatus(`${currentResult.name} enriched. Review AI guesses before saving.`);
+          setLookupStep(3, "Saving customer profile to the overview");
+          await new Promise((resolve) => setTimeout(resolve, 800));
+          saveLookupProfile(currentResult);
+          showSaveVisual(`${currentResult.name} saved.`);
+          setStatus(`${currentResult.name} added to saved customers.`);
+          setTimeout(() => {
+            closeCustomerDialog();
+            document.getElementById("customers").scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 950);
         } finally {
+          clearInterval(progressTimer);
           showEnrichmentProgress(false);
           document.getElementById("runLookup").disabled = false;
         }
@@ -2264,11 +2280,13 @@
       function renderCandidates(candidates, input) {
         const box = document.getElementById("candidateBox");
         document.getElementById("candidateDialog").classList.remove("hidden");
+        document.getElementById("candidateDialogTitle").textContent = "Which customer do you mean?";
+        document.getElementById("candidateDialogCopy").textContent = "Choose the matching organization. The hub will start enrichment immediately after your selection.";
         box.classList.remove("hidden");
         box.innerHTML = `
           <div class="info-card">
-            <strong>Confirm customer entity</strong>
-            <p>The name may refer to more than one organization. Choose the entity before enrichment continues.</p>
+            <strong>Possible customer matches</strong>
+            <p>The name may refer to more than one organization. Select the best match.</p>
           </div>
           ${candidates.map((candidate, index) => `
             <article class="candidate">
@@ -2276,7 +2294,7 @@
                 <strong>${esc(candidate.name)}</strong>
                 <p class="row-copy">${esc(candidate.headquarters)} | ${esc(candidate.sector)} | ${esc(candidate.summary)}</p>
               </div>
-              <button class="button secondary" type="button" data-candidate="${index}">Use this entity</button>
+              <button class="button secondary" type="button" data-candidate="${index}">Use this customer</button>
             </article>
           `).join("")}
         `;
@@ -2449,6 +2467,17 @@
         return `<div class="profile-fact"><span>${esc(label)}</span><strong>${html ? value : esc(value)}</strong></div>`;
       }
 
+      function saveLookupProfile(profile) {
+        const normalized = normalizeCustomerRecord(profile);
+        const existingIndex = customers.findIndex((customer) => profileKey(customer) === profileKey(normalized));
+        if (existingIndex >= 0) customers[existingIndex] = { ...customers[existingIndex], ...normalized };
+        else customers.unshift(normalized);
+        expandedCustomerKey = "";
+        store.set("assuranceCustomersV2", customers);
+        renderCustomers();
+        renderWatch();
+      }
+
       function saveCurrentResult() {
         if (!currentResult) return;
         const existingIndex = customers.findIndex((customer) => profileKey(customer) === profileKey(currentResult));
@@ -2499,7 +2528,6 @@
         renderWatch();
         showSaveVisual(`${currentResult.name} added to the customer list.`);
         document.getElementById("saveResult")?.setAttribute("disabled", "disabled");
-        setLookupExpanded(false);
         setStatus(`${currentResult.name} saved locally. Shared database storage is not connected yet.`);
       }
 
@@ -2507,22 +2535,28 @@
         moveCustomerLookupPanel();
         const list = document.getElementById("customerList");
         if (!customers.length) {
-          list.innerHTML = `<div class="customer-row"><p class="row-copy">No saved customers yet. Enrich and save the first profile.</p></div>`;
+          list.innerHTML = `<div class="customer-card"><h3>No saved customers yet</h3><p>Use Add Customer to look up and save the first profile.</p></div>`;
         } else {
           const sortedCustomers = customers
             .map((customer, index) => ({ customer, index }))
             .sort((a, b) => String(a.customer.name || "").localeCompare(String(b.customer.name || "")));
           list.innerHTML = sortedCustomers.map(({ customer, index }) => `
-            <article class="customer-row ${expandedCustomerKey === profileKey(customer) ? "open" : ""}">
-              <div class="row-top">
-                <div class="row-title">
-                  <button class="customer-name-button" data-toggle-customer="${index}" type="button">${esc(customer.name)}</button>
-                </div>
-                <span class="tag ${customer.hypercare === "Active" ? "ok" : ""}">${esc(customer.hypercare || "Inactive")}</span>
+            <article class="customer-card ${expandedCustomerKey === profileKey(customer) ? "open" : ""}">
+              <div>
+                <h3>${esc(customer.name)}</h3>
+                <p>${esc(customer.summary || "No short customer description saved yet.")}</p>
+              </div>
+              <div class="tags">
+                <span class="tag">${esc(customer.sector || "Unknown sector")}</span>
+                <span class="tag">${esc(regionsText(customer.markets))}</span>
+                ${customer.hypercare === "Active" ? `<span class="tag ok">Hypercare</span>` : ""}
+              </div>
+              <div class="customer-card-actions">
+                <button class="button secondary" data-toggle-customer="${index}" type="button">${expandedCustomerKey === profileKey(customer) ? "Hide details" : "View details"}</button>
+                <button class="icon-button" data-delete-request="${index}" type="button" title="Request customer deletion" aria-label="Request customer deletion">&#128465;</button>
               </div>
               <div class="customer-detail">
-                <span class="row-copy">${esc(customer.sector || "Unknown sector")} | ${esc(customer.size || "Unknown size")} | ${esc(regionsText(customer.markets))}</span>
-                <div class="row-copy">${esc(customer.summary || "No summary saved yet.")}</div>
+                <span class="row-copy">${esc(customer.size || "Unknown size")} | ${esc(customer.headquarters || "Headquarters not saved")}</span>
                 <div class="row-copy">Website: ${externalLink(customer.website, customer.website || "Not saved")}</div>
                 ${customer.userNotes ? `<div class="row-copy">Notes: ${esc(customer.userNotes)}</div>` : ""}
                 <div class="info-card">
@@ -2547,7 +2581,6 @@
                   <button class="button secondary" data-load-customer="${index}" type="button">Edit profile</button>
                   <button class="button secondary" data-toggle-watch="${index}" type="button">${customer.hypercare === "Active" ? "Remove from hypercare" : "Add to hypercare"}</button>
                 </div>
-                <button class="icon-button" data-delete-request="${index}" type="button" title="Request customer deletion" aria-label="Request customer deletion">&#128465;</button>
               </div>
             </article>
           `).join("");
@@ -2660,11 +2693,7 @@
       }
 
       function moveCustomerLookupPanel() {
-        const rail = document.getElementById("customerAddRail");
-        const panel = document.getElementById("customerLookupPanel");
-        const slot = document.getElementById("customerLookupExpanded");
-        const target = lookupExpanded ? slot : rail;
-        if (target && panel && panel.parentElement !== target) target.appendChild(panel);
+        return;
       }
 
       function renderStandardOptions() {
@@ -2761,25 +2790,25 @@
       }
 
       document.getElementById("lookupForm").addEventListener("submit", runLookup);
-      document.getElementById("sampleCustomer").addEventListener("click", () => {
-        setLookupExpanded(true);
-        document.getElementById("lookupName").value = "Aster";
-        document.getElementById("lookupSector").value = "Automotive";
-        document.getElementById("lookupSize").value = "Mid-market";
-        document.getElementById("lookupWebsite").value = "Fictional EU subsidiary and US engineering team";
-        document.getElementById("lookupNotes").value = "Connected mobility components, vehicle software, supplier ecosystem, functional safety, and EU market access.";
-        selectedRegions = new Set(["North America", "EU"]);
-        renderRegionPicker();
+      document.getElementById("openCustomerDialog").addEventListener("click", () => {
+        document.getElementById("candidateDialogTitle").textContent = "Add Customer";
+        document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity, enrich the profile, save it, and return you to the overview.";
+        document.getElementById("candidateBox").classList.add("hidden");
+        document.getElementById("saveVisual").classList.add("hidden");
+        showEnrichmentProgress(false);
+        selectedRegions = new Set(["Global"]);
+        document.getElementById("candidateDialog").classList.remove("hidden");
         document.getElementById("lookupName").focus();
       });
 
       ["lookupName", "lookupSector", "lookupSize", "lookupWebsite", "lookupNotes"].forEach((id) => {
-        document.getElementById(id).addEventListener("focus", () => setLookupExpanded(true));
-        document.getElementById(id).addEventListener("input", () => setLookupExpanded(true));
+        document.getElementById(id)?.addEventListener("input", () => {
+          document.getElementById("candidateBox").classList.add("hidden");
+        });
       });
 
       document.getElementById("closeCandidateDialog").addEventListener("click", () => {
-        document.getElementById("candidateDialog").classList.add("hidden");
+        closeCustomerDialog();
       });
 
       document.getElementById("requestClearCustomers").addEventListener("click", () => {
@@ -2891,7 +2920,7 @@
       renderCustomers();
       renderWatch();
       renderAdminRequests();
-      setStatus("Ready. Demo enrichment is available even before the AWS AI API is connected.");
+      setStatus("Ready to add a customer.");
     </script>
   </body>
 </html>
