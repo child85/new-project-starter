@@ -1231,7 +1231,7 @@
                   <input id="lookupSize" type="hidden" value="" />
                   <input id="lookupWebsite" type="hidden" value="" />
                   <textarea id="lookupNotes" hidden></textarea>
-                  <button class="button" id="runLookup" type="submit">Find and add customer</button>
+                  <button class="button" id="runLookup" type="submit">Find customer</button>
                 </form>
                 <div id="enrichmentProgress" class="work-visual hidden">
                   <strong id="lookupStepTitle">Preparing customer lookup</strong>
@@ -1240,7 +1240,7 @@
                     <span class="active">Resolving entity</span>
                     <span>Checking customer context</span>
                     <span>Inferring compliance exposure</span>
-                    <span>Saving profile</span>
+                    <span>Preparing summary</span>
                   </div>
                 </div>
                 <div id="candidateBox" class="candidate-list hidden"></div>
@@ -2305,7 +2305,7 @@
         document.getElementById("saveVisual").classList.add("hidden");
         document.getElementById("candidateDialog").classList.remove("hidden");
         document.getElementById("candidateDialogTitle").textContent = "Adding Customer";
-        document.getElementById("candidateDialogCopy").textContent = "The hub is resolving the customer and building a saved profile.";
+        document.getElementById("candidateDialogCopy").textContent = "The hub is resolving the customer and building a profile summary for review.";
         setLookupStep(0, "Resolving customer entity");
         setStatus(`Looking for ${input.name}...`, getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
 
@@ -2323,7 +2323,7 @@
           ["Resolving customer entity", "Checking whether the name maps to a known organization."],
           ["Checking customer context", "Looking for sector, size, headquarters, website, and market clues."],
           ["Inferring compliance exposure", "Matching the customer profile against cybersecurity and functional safety topics."],
-          ["Saving profile", "Preparing the saved customer card for the overview."]
+          ["Preparing summary", "Organizing the findings so you can review them before saving."]
         ];
         let progressIndex = 0;
         const progressTimer = setInterval(() => {
@@ -2343,15 +2343,10 @@
           }
           setLookupStep(2, "Inferring likely standards and compliance exposure");
           currentResult = normalizeCustomerRecord(normalizeApiResult(result) || buildDemoProfile(input, confirmed));
-          setLookupStep(3, "Saving customer profile to the overview");
+          setLookupStep(3, "Preparing customer summary for review");
           await new Promise((resolve) => setTimeout(resolve, 800));
-          saveLookupProfile(currentResult);
-          showSaveVisual(`${currentResult.name} saved.`);
-          setStatus(`${currentResult.name} added to saved customers.`);
-          setTimeout(() => {
-            closeCustomerDialog();
-            document.getElementById("customers").scrollIntoView({ behavior: "smooth", block: "start" });
-          }, 950);
+          renderFoundCustomerSummary(currentResult);
+          setStatus(`Review the summary for ${currentResult.name}, then save it if it looks right.`);
         } finally {
           clearInterval(progressTimer);
           showEnrichmentProgress(false);
@@ -2412,6 +2407,75 @@
             document.getElementById("candidateDialog").classList.add("hidden");
             runLookup(null, candidates[Number(button.dataset.candidate)]);
           });
+        });
+      }
+
+      function renderFoundCustomerSummary(profile) {
+        const box = document.getElementById("candidateBox");
+        document.getElementById("candidateDialog").classList.remove("hidden");
+        document.getElementById("candidateDialogTitle").textContent = "Customer summary";
+        document.getElementById("candidateDialogCopy").textContent = "Review what the hub found. Save the customer only if this is the right organization and the profile is useful.";
+        box.classList.remove("hidden");
+        const likely = safeList(profile.likelyStandards).length
+          ? safeList(profile.likelyStandards).map((item) => typeof item === "string" ? item : item.name)
+          : safeList(profile.guessedStandards);
+        box.innerHTML = `
+          <article class="info-card">
+            <div class="row-top">
+              <div class="row-title">
+                <strong>${esc(profile.name)}</strong>
+                <span>${esc(profile.summary || "No summary returned. Add notes after saving if needed.")}</span>
+              </div>
+              <span class="tag ${profile.confidence === "high" || profile.confidence === "medium-high" ? "ok" : "warn"}">${esc(profile.confidence || "medium")} confidence</span>
+            </div>
+          </article>
+          <div class="profile-grid">
+            ${fact("Website", externalLink(profile.website, profile.website || "Unknown"), true)}
+            ${fact("Headquarters", profile.headquarters || "Unknown")}
+            ${fact("Sector", profile.sector || "Unknown")}
+            ${fact("Sub-sector", profile.subSector || "Unknown")}
+            ${fact("Size", profile.size || "Unknown")}
+            ${fact("Markets", regionsText(profile.markets))}
+          </div>
+          <article class="info-card">
+            <strong>Likely standards and regulations</strong>
+            <div class="tags">${renderTags(likely.slice(0, 8)) || `<span class="row-copy">No standards suggested yet.</span>`}</div>
+          </article>
+          <article class="info-card">
+            <strong>First engagement ideas</strong>
+            <div class="card-list">
+              ${safeList(profile.actions).slice(0, 4).map((action) => `<p>${esc(action)}</p>`).join("") || `<p>No engagement ideas returned yet.</p>`}
+            </div>
+          </article>
+          <div class="split">
+            <button class="button" id="confirmSaveCustomer" type="button">Save this customer</button>
+            <button class="button secondary" id="reviewFullCustomer" type="button">Review and edit first</button>
+          </div>
+          <button class="button secondary" id="searchAnotherCustomer" type="button">Search another customer</button>
+        `;
+        document.getElementById("confirmSaveCustomer").addEventListener("click", () => {
+          saveLookupProfile(profile);
+          showSaveVisual(`${profile.name} saved.`);
+          setStatus(`${profile.name} added to saved customers.`);
+          setTimeout(() => {
+            closeCustomerDialog();
+            document.getElementById("customers").scrollIntoView({ behavior: "smooth", block: "start" });
+          }, 950);
+        });
+        document.getElementById("reviewFullCustomer").addEventListener("click", () => {
+          currentResult = normalizeCustomerRecord(profile);
+          closeCustomerDialog();
+          renderResult(currentResult);
+          document.getElementById("resultBox").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        document.getElementById("searchAnotherCustomer").addEventListener("click", () => {
+          box.classList.add("hidden");
+          document.getElementById("saveVisual").classList.add("hidden");
+          document.getElementById("candidateDialogTitle").textContent = "Add Customer";
+          document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity and show a summary before anything is saved.";
+          document.getElementById("lookupForm").reset();
+          document.getElementById("lookupName").focus();
+          setStatus("Ready to add a customer.");
         });
       }
 
@@ -2961,7 +3025,7 @@
       document.getElementById("lookupForm").addEventListener("submit", runLookup);
       document.getElementById("openCustomerDialog").addEventListener("click", () => {
         document.getElementById("candidateDialogTitle").textContent = "Add Customer";
-        document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity, enrich the profile, save it, and return you to the overview.";
+        document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity, enrich the profile, and show a summary before anything is saved.";
         document.getElementById("candidateBox").classList.add("hidden");
         document.getElementById("saveVisual").classList.add("hidden");
         showEnrichmentProgress(false);
