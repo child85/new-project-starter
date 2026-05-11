@@ -157,6 +157,21 @@
         font-weight: 800;
       }
 
+      .nav-section-label {
+        margin: 10px 12px 2px;
+        color: var(--muted);
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .nav-tab.subtab {
+        min-height: 42px;
+        padding-left: 26px;
+        font-size: 0.98rem;
+      }
+
       .hero {
         position: relative;
         min-height: 540px;
@@ -391,6 +406,48 @@
         color: #ffffff;
         background: var(--blue-dark);
         font-size: 1.08rem;
+      }
+
+      .standards-route-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 18px;
+        padding: 26px;
+      }
+
+      .standards-route {
+        display: grid;
+        min-height: 170px;
+        padding: 24px;
+        border: 1px solid var(--line);
+        color: var(--ink);
+        background: #ffffff;
+        text-align: left;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .standards-route strong {
+        color: var(--blue-dark);
+        font-size: 1.45rem;
+      }
+
+      .standards-route span {
+        color: var(--copy);
+        font-size: 1.03rem;
+        line-height: 1.45;
+      }
+
+      .standard-page .controls {
+        grid-template-columns: minmax(220px, 1fr) 230px;
+      }
+
+      .empty-state {
+        padding: 24px 26px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        background: #ffffff;
+        font-size: 1rem;
       }
 
       .intro-copy {
@@ -1181,7 +1238,8 @@
         .profile-grid,
         .customer-card.open .customer-detail,
         .customer-card,
-        .controls {
+        .controls,
+        .standards-route-grid {
           grid-template-columns: 1fr;
         }
 
@@ -1232,7 +1290,11 @@
             <nav class="primary-nav" aria-label="Main menu">
               <button class="nav-tab active" data-view="watch">Daily Watch</button>
               <button class="nav-tab" data-view="customers">Customers</button>
-              <button class="nav-tab" data-view="compliance">Standards</button>
+              <button class="nav-tab" data-view="compliance">Standards Overview</button>
+              <div class="nav-section-label">Standards Library</div>
+              <button class="nav-tab subtab" data-view="cybersecurityStandards">Cybersecurity</button>
+              <button class="nav-tab subtab" data-view="functionalSafetyStandards">Functional Safety</button>
+              <button class="nav-tab subtab" data-view="marketAccessStandards">Market Access &amp; Other</button>
               <button class="nav-tab" data-view="setup">Settings</button>
             </nav>
           </aside>
@@ -1354,36 +1416,20 @@
               </div>
             </div>
 
-            <div class="controls">
-              <div class="field">
-                <label for="standardSearch">Search</label>
-                <input id="standardSearch" type="search" placeholder="Search name, sector, topic, or description" />
-              </div>
-              <div class="field">
-                <label for="domainFilter">Domain</label>
-                <select id="domainFilter">
-                  <option value="All">All</option>
-                  <option>Cybersecurity</option>
-                  <option>Functional Safety</option>
-                  <option>Regulation</option>
-                  <option>Market Access</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="sectorFilter">Sector</label>
-                <select id="sectorFilter">
-                  <option value="All">All sectors</option>
-                  <option>Automotive</option>
-                  <option>Industrial / OT</option>
-                  <option>Medical Devices</option>
-                  <option>ICT / Connected Products</option>
-                  <option>Financial Services</option>
-                  <option>Consumer & Industrial Goods</option>
-                </select>
-              </div>
+            <div class="standards-route-grid">
+              <button class="standards-route" type="button" data-route-view="cybersecurityStandards">
+                <strong>Cybersecurity</strong>
+                <span>Vehicle, product, OT, connected-device, and information-security standards and regulations.</span>
+              </button>
+              <button class="standards-route" type="button" data-route-view="functionalSafetyStandards">
+                <strong>Functional Safety</strong>
+                <span>Safety lifecycle, machinery, automotive, process, and product safety references.</span>
+              </button>
+              <button class="standards-route" type="button" data-route-view="marketAccessStandards">
+                <strong>Market Access &amp; Other</strong>
+                <span>Conformity, regional market-entry, and other regulatory items that do not belong in the two main domains.</span>
+              </button>
             </div>
-
-            <div class="standards-list" id="standardsList"></div>
           </div>
 
           <div class="dialog-overlay hidden" id="standardDialog" role="dialog" aria-modal="true" aria-labelledby="standardDialogTitle">
@@ -1446,6 +1492,104 @@
               </form>
             </div>
           </div>
+        </section>
+
+        <section class="panel app-view standard-page" id="cybersecurityStandards">
+          <div class="panel-head">
+            <div>
+              <h2>Cybersecurity Standards and Regulations</h2>
+              <p>
+                Cybersecurity references for connected products, vehicles, OT,
+                information security, software-defined systems, and market
+                access requirements.
+              </p>
+            </div>
+            <button class="button" id="openStandardDialogCyber" type="button">Add Standard</button>
+          </div>
+          <div class="controls">
+            <div class="field">
+              <label for="cybersecuritySearch">Search</label>
+              <input id="cybersecuritySearch" type="search" placeholder="Search cybersecurity standards, sectors, topics, or descriptions" />
+            </div>
+            <div class="field">
+              <label for="cybersecuritySectorFilter">Sector</label>
+              <select id="cybersecuritySectorFilter">
+                <option value="All">All sectors</option>
+                <option>Automotive</option>
+                <option>Industrial / OT</option>
+                <option>Medical Devices</option>
+                <option>ICT / Connected Products</option>
+                <option>Financial Services</option>
+                <option>Consumer & Industrial Goods</option>
+              </select>
+            </div>
+          </div>
+          <div class="standards-list" id="cybersecurityStandardsList"></div>
+        </section>
+
+        <section class="panel app-view standard-page" id="functionalSafetyStandards">
+          <div class="panel-head">
+            <div>
+              <h2>Functional Safety Standards</h2>
+              <p>
+                Functional safety references for vehicles, machinery, process
+                systems, medical devices, and safety lifecycle assessments.
+              </p>
+            </div>
+            <button class="button" id="openStandardDialogSafety" type="button">Add Standard</button>
+          </div>
+          <div class="controls">
+            <div class="field">
+              <label for="functionalSafetySearch">Search</label>
+              <input id="functionalSafetySearch" type="search" placeholder="Search functional safety standards, sectors, topics, or descriptions" />
+            </div>
+            <div class="field">
+              <label for="functionalSafetySectorFilter">Sector</label>
+              <select id="functionalSafetySectorFilter">
+                <option value="All">All sectors</option>
+                <option>Automotive</option>
+                <option>Industrial / OT</option>
+                <option>Medical Devices</option>
+                <option>ICT / Connected Products</option>
+                <option>Financial Services</option>
+                <option>Consumer & Industrial Goods</option>
+              </select>
+            </div>
+          </div>
+          <div class="standards-list" id="functionalSafetyStandardsList"></div>
+        </section>
+
+        <section class="panel app-view standard-page" id="marketAccessStandards">
+          <div class="panel-head">
+            <div>
+              <h2>Market Access and Other References</h2>
+              <p>
+                Regional conformity, market-entry, and regulatory references
+                that support assessments, certifications, and customer
+                engagement planning.
+              </p>
+            </div>
+            <button class="button" id="openStandardDialogMarket" type="button">Add Standard</button>
+          </div>
+          <div class="controls">
+            <div class="field">
+              <label for="marketAccessSearch">Search</label>
+              <input id="marketAccessSearch" type="search" placeholder="Search regulations, market access topics, sectors, or descriptions" />
+            </div>
+            <div class="field">
+              <label for="marketAccessSectorFilter">Sector</label>
+              <select id="marketAccessSectorFilter">
+                <option value="All">All sectors</option>
+                <option>Automotive</option>
+                <option>Industrial / OT</option>
+                <option>Medical Devices</option>
+                <option>ICT / Connected Products</option>
+                <option>Financial Services</option>
+                <option>Consumer & Industrial Goods</option>
+              </select>
+            </div>
+          </div>
+          <div class="standards-list" id="marketAccessStandardsList"></div>
         </section>
 
         <section class="panel app-view active" id="watch">
@@ -2912,26 +3056,8 @@
         `;
       }
 
-      function renderStandards() {
-        const search = normalize(document.getElementById("standardSearch").value);
-        const domain = document.getElementById("domainFilter").value;
-        const sector = document.getElementById("sectorFilter").value;
-        const filtered = standards.filter((standard) => {
-          const text = normalize(`${standard.name} ${standard.domain} ${standard.sector} ${safeList(standard.markets).join(" ")} ${safeList(standard.topics).join(" ")} ${standard.description}`);
-          return (!search || text.includes(search))
-            && (domain === "All" || standard.domain === domain)
-            && (sector === "All" || standard.sector === sector);
-        });
-
-        const groups = [
-          ["Cybersecurity", filtered.filter((standard) => standard.domain === "Cybersecurity")],
-          ["Functional Safety", filtered.filter((standard) => standard.domain === "Functional Safety")],
-          ["Market Access and Other", filtered.filter((standard) => !["Cybersecurity", "Functional Safety"].includes(standard.domain))]
-        ].filter(([, items]) => items.length);
-        document.getElementById("standardsList").innerHTML = groups.map(([groupName, items]) => `
-          <section class="standard-group">
-            <h3>${esc(groupName)}</h3>
-            ${items.map((standard) => `
+      function standardCard(standard) {
+        return `
           <article class="standard-row">
             <div class="row-top">
               <div class="row-title">
@@ -2961,9 +3087,48 @@
               `).join("") : `<p class="row-copy">No public changes saved yet.</p>`}
             </div>
           </article>
-            `).join("")}
-          </section>
-        `).join("");
+        `;
+      }
+
+      function renderStandardPage({ listId, searchId, sectorId, predicate, emptyText }) {
+        const list = document.getElementById(listId);
+        if (!list) return;
+        const search = normalize(document.getElementById(searchId)?.value || "");
+        const sector = document.getElementById(sectorId)?.value || "All";
+        const filtered = standards
+          .filter(predicate)
+          .filter((standard) => {
+            const text = normalize(`${standard.name} ${standard.domain} ${standard.sector} ${safeList(standard.markets).join(" ")} ${safeList(standard.topics).join(" ")} ${standard.description}`);
+            return (!search || text.includes(search)) && (sector === "All" || standard.sector === sector);
+          })
+          .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        list.innerHTML = filtered.length
+          ? filtered.map(standardCard).join("")
+          : `<div class="empty-state">${esc(emptyText)}</div>`;
+      }
+
+      function renderStandards() {
+        renderStandardPage({
+          listId: "cybersecurityStandardsList",
+          searchId: "cybersecuritySearch",
+          sectorId: "cybersecuritySectorFilter",
+          predicate: (standard) => standard.domain === "Cybersecurity" || standard.domain === "Regulation",
+          emptyText: "No cybersecurity standards or regulations match this search yet."
+        });
+        renderStandardPage({
+          listId: "functionalSafetyStandardsList",
+          searchId: "functionalSafetySearch",
+          sectorId: "functionalSafetySectorFilter",
+          predicate: (standard) => standard.domain === "Functional Safety",
+          emptyText: "No functional safety standards match this search yet."
+        });
+        renderStandardPage({
+          listId: "marketAccessStandardsList",
+          searchId: "marketAccessSearch",
+          sectorId: "marketAccessSectorFilter",
+          predicate: (standard) => !["Cybersecurity", "Functional Safety", "Regulation"].includes(standard.domain),
+          emptyText: "No market access or other regulatory records match this search yet."
+        });
         setText("standardCount", standards.length);
         updateComplianceKpis();
         renderWatch();
@@ -3212,9 +3377,11 @@
         renderStandards();
       });
 
-      document.getElementById("openStandardDialog").addEventListener("click", () => {
-        document.getElementById("standardDialog").classList.remove("hidden");
-        document.getElementById("stdName").focus();
+      ["openStandardDialog", "openStandardDialogCyber", "openStandardDialogSafety", "openStandardDialogMarket"].forEach((id) => {
+        document.getElementById(id)?.addEventListener("click", () => {
+          document.getElementById("standardDialog").classList.remove("hidden");
+          document.getElementById("stdName").focus();
+        });
       });
 
       document.getElementById("closeStandardDialog").addEventListener("click", () => {
@@ -3243,9 +3410,17 @@
         document.getElementById("standardDialog").classList.add("hidden");
       });
 
-      document.getElementById("standardSearch").addEventListener("input", renderStandards);
-      document.getElementById("domainFilter").addEventListener("change", renderStandards);
-      document.getElementById("sectorFilter").addEventListener("change", renderStandards);
+      [
+        "cybersecuritySearch",
+        "cybersecuritySectorFilter",
+        "functionalSafetySearch",
+        "functionalSafetySectorFilter",
+        "marketAccessSearch",
+        "marketAccessSectorFilter"
+      ].forEach((id) => {
+        document.getElementById(id)?.addEventListener("input", renderStandards);
+        document.getElementById(id)?.addEventListener("change", renderStandards);
+      });
 
       document.getElementById("saveApiEndpoint").addEventListener("click", () => {
         const rawValue = document.getElementById("apiEndpoint").value;
@@ -3266,14 +3441,24 @@
       document.getElementById("testApiEndpoint").addEventListener("click", testSavedEndpoint);
       document.getElementById("saveDailySchedule").addEventListener("click", saveDailySchedule);
 
-      document.querySelectorAll("[data-view]").forEach((button) => {
-        button.addEventListener("click", () => {
+      function activateView(viewId) {
           document.querySelectorAll(".nav-tab").forEach((tab) => tab.classList.remove("active"));
           document.querySelectorAll(".app-view").forEach((view) => view.classList.remove("active"));
-          document.querySelectorAll(".view-overview").forEach((view) => view.classList.toggle("active", button.dataset.view === "customers"));
-          button.classList.add("active");
-          document.getElementById(button.dataset.view).classList.add("active");
+          document.querySelectorAll(".view-overview").forEach((view) => view.classList.toggle("active", viewId === "customers"));
+          document.querySelector(`[data-view="${viewId}"]`)?.classList.add("active");
+          document.getElementById(viewId)?.classList.add("active");
           document.querySelector(".content").scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      document.querySelectorAll("[data-view]").forEach((button) => {
+        button.addEventListener("click", () => {
+          activateView(button.dataset.view);
+        });
+      });
+
+      document.querySelectorAll("[data-route-view]").forEach((button) => {
+        button.addEventListener("click", () => {
+          activateView(button.dataset.routeView);
         });
       });
 
