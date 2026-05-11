@@ -1797,6 +1797,7 @@
           sector: "Automotive",
           subSector: "Connected mobility components and fleet software",
           size: "Mid-market",
+          employeeEstimate: "250-1,000 employees",
           markets: ["North America", "EU"],
           summary: "Aster Mobility Systems is a fictional connected-mobility supplier with software, vehicle connectivity, and export exposure. Use it as sample data only.",
           knownStandards: ["ISO/SAE 21434", "ISO 26262"],
@@ -1862,6 +1863,7 @@
             sector: "Automotive",
             subSector: "Connected mobility components and fleet software",
             size: "Mid-market",
+            employeeEstimate: "250-1,000 employees",
             markets: ["North America", "EU"],
             summary: "Fictional connected-mobility supplier with vehicle software, components, export exposure, and cybersecurity readiness needs."
           },
@@ -1872,6 +1874,7 @@
             sector: "Industrial / OT",
             subSector: "Machine control systems and remote monitoring",
             size: "Mid-market",
+            employeeEstimate: "250-1,000 employees",
             markets: ["North America", "EU"],
             summary: "Fictional industrial controls company with machinery safety, OT cybersecurity, and market-access exposure."
           },
@@ -1882,6 +1885,7 @@
             sector: "Medical Devices",
             subSector: "Connected diagnostics and care devices",
             size: "Enterprise",
+            employeeEstimate: "1,000-10,000 employees",
             markets: ["North America", "EU"],
             summary: "Fictional connected medical device maker with software, product cybersecurity, and regulatory assessment needs."
           }
@@ -1894,6 +1898,7 @@
             sector: "Automotive",
             subSector: "Rail and mobility electronics",
             size: "Enterprise",
+            employeeEstimate: "1,000-10,000 employees",
             markets: ["North America", "EU", "UK"],
             summary: "Fictional rail electronics supplier with safety, cybersecurity, and market-access exposure."
           },
@@ -1904,6 +1909,7 @@
             sector: "ICT / Connected Products",
             subSector: "Cloud security and managed services",
             size: "Mid-market",
+            employeeEstimate: "250-1,000 employees",
             markets: ["North America", "EU"],
             summary: "Fictional cloud security provider with ISMS, assessment, and EU customer assurance needs."
           }
@@ -2090,6 +2096,7 @@
               sector: "Automotive",
               subSector: "Connected mobility or vehicle systems",
               size: "Unknown",
+              employeeEstimate: "500-5,000 employees",
               markets: ["North America", "EU"],
               summary: "Possible customer entity generated from the search term. Confirm before enrichment."
             },
@@ -2100,6 +2107,7 @@
               sector: "Industrial / OT",
               subSector: "Industrial automation or connected products",
               size: "Unknown",
+              employeeEstimate: "500-5,000 employees",
               markets: ["North America", "Global"],
               summary: "Possible customer entity generated from the search term. Confirm before enrichment."
             },
@@ -2110,6 +2118,7 @@
               sector: "Medical Devices",
               subSector: "Connected medical products or regulated software",
               size: "Unknown",
+              employeeEstimate: "250-1,000 employees",
               markets: ["North America", "EU"],
               summary: "Possible customer entity generated from the search term. Confirm before enrichment."
             }
@@ -2202,6 +2211,7 @@
           sector: base.sector || sector,
           subSector: base.subSector || sectorSubsector(sector, input.notes),
           size: input.size || base.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"),
+          employeeEstimate: base.employeeEstimate || employeeEstimateFor(input.size || base.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"), sector, markets),
           markets,
           summary: base.summary || summaryFor(sector, input.name, markets),
           knownStandards: [],
@@ -2226,6 +2236,17 @@
         return profile;
       }
 
+      function employeeEstimateFor(size, sector, markets = []) {
+        const text = normalize(`${size} ${sector} ${regionsText(markets)}`);
+        if (text.includes("global enterprise")) return "10,000+ employees";
+        if (text.includes("enterprise")) return "1,000-10,000 employees";
+        if (text.includes("mid market") || text.includes("mid-market")) return "250-1,000 employees";
+        if (text.includes("small")) return "50-250 employees";
+        if (text.includes("startup")) return "10-100 employees";
+        if (text.includes("automotive") || text.includes("industrial")) return "500-5,000 employees";
+        return "Unknown - estimate during account review";
+      }
+
       function sectorSubsector(sector, notes) {
         const text = normalize(notes);
         if (sector === "Automotive") return text.includes("supplier") ? "Automotive supplier / connected vehicle components" : "OEM, supplier, mobility, or vehicle systems";
@@ -2238,6 +2259,17 @@
 
       function summaryFor(sector, name, markets) {
         return `${name} appears to fit the ${sector} context with operations or market exposure in ${regionsText(markets)}. The profile should be reviewed by the account team before using it as confirmed customer intelligence.`;
+      }
+
+      function customerBrief(profile, likelyStandards, notes, sourceSummary = "") {
+        const standardNames = likelyStandards.slice(0, 3).map((item) => item.name).filter(Boolean);
+        const base = sourceSummary || summaryFor(profile.sector, profile.name, profile.markets);
+        const employeeText = profile.employeeEstimate ? ` Estimated employee range: ${profile.employeeEstimate}.` : "";
+        const standardsText = standardNames.length
+          ? ` The most important initial standards to review are ${standardNames.join(", ")} because of the customer's sector, product context, and market exposure.`
+          : " No strong standard match was found yet; add products, subsidiaries, or market details to improve the fit.";
+        const noteText = notes ? ` User hint considered: ${notes.trim()}` : "";
+        return `${base}${employeeText}${standardsText}${noteText}`;
       }
 
       function reasonForStandard(standard, profile) {
@@ -2343,6 +2375,10 @@
           }
           setLookupStep(2, "Inferring likely standards and compliance exposure");
           currentResult = normalizeCustomerRecord(normalizeApiResult(result) || buildDemoProfile(input, confirmed));
+          if (!currentResult.employeeEstimate) {
+            currentResult.employeeEstimate = employeeEstimateFor(currentResult.size, currentResult.sector, currentResult.markets);
+          }
+          currentResult.summary = customerBrief(currentResult, standardSummaryItems(currentResult), input.notes, currentResult.summary);
           setLookupStep(3, "Preparing customer summary for review");
           await new Promise((resolve) => setTimeout(resolve, 800));
           renderFoundCustomerSummary(currentResult);
@@ -2365,7 +2401,8 @@
           headquarters: customer.headquarters || customer.customer_profile?.headquarters || "",
           sector: customer.sector || "",
           subSector: customer.subSector || customer.sub_sector || customer.customer_profile?.market_position || "",
-          size: customer.size || customer.customer_profile?.employee_count || "",
+          size: customer.size || customer.customer_profile?.company_size || "",
+          employeeEstimate: customer.employeeEstimate || customer.employee_estimate || customer.employee_count || customer.customer_profile?.employee_count || "",
           markets: customer.markets || customer.operating_regions || [customer.region || "Global"],
           summary: customer.summary || customer.notes || customer.customer_profile?.executive_summary || "",
           knownStandards: customer.knownStandards || customer.known_compliance || customer.compliance || [],
@@ -2410,15 +2447,29 @@
         });
       }
 
+      function standardSummaryItems(profile) {
+        const likely = safeList(profile.likelyStandards);
+        const guessed = safeList(profile.guessedStandards).map((name) => ({ name }));
+        const sourceItems = likely.length ? likely : guessed;
+        return sourceItems.map((item) => {
+          const name = typeof item === "string" ? item : (item.name || item.standard || item.title);
+          const matched = standards.find((standard) => normalize(standard.name) === normalize(name));
+          return {
+            name,
+            domain: item.domain || matched?.domain || "Compliance",
+            confidence: item.confidence || matched?.confidence || "medium",
+            why: item.why || (matched ? reasonForStandard(matched, profile) : `${name} may be relevant based on the customer's sector, markets, or product context.`)
+          };
+        }).filter((item) => item.name).slice(0, 8);
+      }
+
       function renderFoundCustomerSummary(profile) {
         const box = document.getElementById("candidateBox");
         document.getElementById("candidateDialog").classList.remove("hidden");
         document.getElementById("candidateDialogTitle").textContent = "Customer summary";
         document.getElementById("candidateDialogCopy").textContent = "Review what the hub found. Save the customer only if this is the right organization and the profile is useful.";
         box.classList.remove("hidden");
-        const likely = safeList(profile.likelyStandards).length
-          ? safeList(profile.likelyStandards).map((item) => typeof item === "string" ? item : item.name)
-          : safeList(profile.guessedStandards);
+        const likely = standardSummaryItems(profile);
         box.innerHTML = `
           <article class="info-card">
             <div class="row-top">
@@ -2435,11 +2486,22 @@
             ${fact("Sector", profile.sector || "Unknown")}
             ${fact("Sub-sector", profile.subSector || "Unknown")}
             ${fact("Size", profile.size || "Unknown")}
+            ${fact("Employee estimate", profile.employeeEstimate || "Unknown - verify")}
             ${fact("Markets", regionsText(profile.markets))}
           </div>
           <article class="info-card">
-            <strong>Likely standards and regulations</strong>
-            <div class="tags">${renderTags(likely.slice(0, 8)) || `<span class="row-copy">No standards suggested yet.</span>`}</div>
+            <strong>Important standards to review first</strong>
+            <div class="card-list">
+              ${likely.length ? likely.slice(0, 6).map((item) => `
+                <div class="info-card">
+                  <div class="row-top">
+                    <strong>${esc(item.name)}</strong>
+                    <span class="tag ${item.confidence === "high" ? "ok" : "warn"}">${esc(item.confidence)} confidence</span>
+                  </div>
+                  <p>${esc(item.why)}</p>
+                </div>
+              `).join("") : `<p>No standards suggested yet. Add product, subsidiary, or target-market context to improve the match.</p>`}
+            </div>
           </article>
           <article class="info-card">
             <strong>First engagement ideas</strong>
@@ -2500,6 +2562,7 @@
             ${fact("Sector", profile.sector || "Unknown")}
             ${fact("Sub-sector", profile.subSector || "Unknown")}
             ${fact("Size", profile.size || "Unknown")}
+            ${fact("Employee estimate", profile.employeeEstimate || "Unknown - verify")}
             ${fact("Markets", regionsText(profile.markets))}
           </div>
           <div class="subpanel">
@@ -2554,6 +2617,10 @@
               <div class="field">
                 <label for="editCustomerSize">Size</label>
                 <input id="editCustomerSize" value="${esc(profile.size || "")}" />
+              </div>
+              <div class="field">
+                <label for="editCustomerEmployees">Employee Estimate</label>
+                <input id="editCustomerEmployees" value="${esc(profile.employeeEstimate || "")}" />
               </div>
             </div>
             <div class="split">
@@ -2673,6 +2740,7 @@
           sector: document.getElementById("editCustomerSector")?.value.trim() || "",
           subSector: document.getElementById("editCustomerSubSector")?.value.trim() || "",
           size: document.getElementById("editCustomerSize")?.value.trim() || "",
+          employeeEstimate: document.getElementById("editCustomerEmployees")?.value.trim() || "",
           markets: document.getElementById("editCustomerMarkets")?.value.split(",").map((item) => item.trim()).filter(Boolean) || currentResult.markets,
           summary: document.getElementById("editCustomerSummary")?.value.trim() || "",
           owner: document.getElementById("customerOwner")?.value.trim() || currentResult.owner || "NA team",
@@ -2729,7 +2797,7 @@
                 <button class="icon-button" data-delete-request="${index}" type="button" title="Request customer deletion" aria-label="Request customer deletion">&#128465;</button>
               </div>
               <div class="customer-detail">
-                <span class="row-copy">${esc(customer.size || "Unknown size")} | ${esc(customer.headquarters || "Headquarters not saved")}</span>
+                <span class="row-copy">${esc(customer.size || "Unknown size")} | ${esc(customer.employeeEstimate || "Employee estimate not saved")} | ${esc(customer.headquarters || "Headquarters not saved")}</span>
                 <div class="row-copy">Website: ${externalLink(customer.website, customer.website || "Not saved")}</div>
                 ${customer.userNotes ? `<div class="row-copy">Notes: ${esc(customer.userNotes)}</div>` : ""}
                 <div class="info-card">
