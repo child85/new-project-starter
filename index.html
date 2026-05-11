@@ -241,6 +241,43 @@
         display: grid;
       }
 
+      #customerMetrics .metric,
+      .compliance-kpis .metric {
+        min-height: 178px;
+        color: #ffffff;
+        background: var(--blue);
+        border-color: var(--blue);
+      }
+
+      #customerMetrics .metric span,
+      #customerMetrics .metric strong,
+      #customerMetrics .metric p,
+      .compliance-kpis .metric span,
+      .compliance-kpis .metric strong,
+      .compliance-kpis .metric p {
+        color: #ffffff;
+      }
+
+      .customer-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(390px, 0.58fr);
+      }
+
+      .compliance-intro {
+        grid-column: 1 / -1;
+      }
+
+      .standard-group {
+        border-bottom: 1px solid var(--line);
+      }
+
+      .standard-group h3 {
+        margin: 0;
+        padding: 18px 26px;
+        color: #ffffff;
+        background: var(--blue-dark);
+        font-size: 1.08rem;
+      }
+
       .intro-copy {
         max-width: 1160px;
         margin-bottom: 48px;
@@ -999,7 +1036,7 @@
     </header>
 
     <main>
-      <section class="hero view-overview active" id="heroOverview" aria-label="Assurance Hub overview">
+      <section class="hero hidden" id="heroOverview" aria-label="Assurance Hub overview">
         <div class="hero-copy">
           <h1>Activate customer assurance intelligence.</h1>
           <p>
@@ -1012,21 +1049,23 @@
 
       <section class="content">
         <section class="intro-copy view-overview active" id="customersOverview">
-          <h1>Your standards and customer assurance work - one click away.</h1>
+          <h1>Customer assurance intelligence for global account teams.</h1>
           <p>
-            This hub is built for NA-based team members working with customers
-            worldwide. A customer can be headquartered in one region, sell into
-            another, and operate subsidiaries elsewhere, so the lookup considers
-            global market access, cybersecurity, and functional safety exposure.
+            This hub helps NA-based team members work with customers anywhere
+            in the world. Use it to capture account context, enrich customer
+            profiles, connect subsidiaries and operating markets, and identify
+            cybersecurity, functional safety, and market-access topics that may
+            need follow-up.
           </p>
           <p>
-            The demo enrichment works in the browser today. When the AWS API is
-            connected, the same screen will call a secure backend that uses AI,
-            stores the profile, and keeps an audit trail.
+            The goal state is a shared customer and standards knowledge base:
+            AI assists with research, team members confirm the facts, completed
+            projects are tied to customers, and standards changes can trigger
+            practical outreach.
           </p>
         </section>
 
-        <div class="service-strip view-overview active" id="customerServices">
+        <div class="service-strip view-overview active hidden" id="customerServices">
           <article class="service-card">
             <strong>Customer lookup</strong>
             <span>Resolve ambiguous names, enrich metadata, and save confirmed customer context.</span>
@@ -1068,9 +1107,9 @@
           </article>
         </div>
 
-        <section class="section-grid app-view active" id="customers">
+        <section class="section-grid customer-layout app-view active" id="customers">
           <div>
-            <section class="panel">
+            <section class="panel" id="customerLookupPanel">
               <div class="panel-head">
                 <div>
                   <h2>Customer Lookup and AI Enrichment</h2>
@@ -1122,7 +1161,7 @@
                 <div class="split">
                   <div class="field">
                     <label for="lookupWebsite">Website or Subsidiary Hint</label>
-                    <input id="lookupWebsite" placeholder="example.com, BMW Manufacturing, EU subsidiary, etc." />
+                    <input id="lookupWebsite" placeholder="example.com, EU subsidiary, US plant, product line, etc." />
                   </div>
                   <div class="field">
                     <label>Operating Markets</label>
@@ -1188,56 +1227,46 @@
             </section>
           </div>
 
-          <aside>
-            <section class="panel">
-              <div class="panel-head">
-                <div>
-                  <h3>Engagement Lens</h3>
-                  <p>What the enrichment should help account teams answer.</p>
-                </div>
-              </div>
-              <div class="card-list" style="padding: 22px 26px;">
-                <article class="info-card">
-                  <strong>Who is the customer?</strong>
-                  <p>Headquarters, website, size, operating markets, sector, sub-sector, and product context.</p>
-                </article>
-                <article class="info-card">
-                  <strong>What may apply?</strong>
-                  <p>Likely standards and regulations based on sector, geography, product type, and market access needs.</p>
-                </article>
-                <article class="info-card">
-                  <strong>How should we engage?</strong>
-                  <p>Top 10 discussion ideas for assessment, testing, certification, hypercare, or global market access support.</p>
-                </article>
-              </div>
-            </section>
-
-            <section class="panel">
-              <div class="panel-head">
-                <div>
-                  <h3>Known Customer Signals</h3>
-                  <p>Use these as hints before enrichment.</p>
-                </div>
-              </div>
-              <div class="card-list" style="padding: 22px 26px;">
-                <article class="info-card">
-                  <strong>Global footprint</strong>
-                  <p>EU subsidiaries, US operations, global exports, or market entry plans can change the compliance picture.</p>
-                </article>
-                <article class="info-card">
-                  <strong>Product class</strong>
-                  <p>Vehicles, machinery, industrial controls, connected products, medical devices, and ICT each point to different standards.</p>
-                </article>
-                <article class="info-card">
-                  <strong>Project history</strong>
-                  <p>Standards already tested should move into hypercare so published changes can trigger customer outreach.</p>
-                </article>
-              </div>
-            </section>
-          </aside>
+          <aside id="customerAddRail"></aside>
         </section>
 
         <section class="section-grid app-view" id="compliance">
+          <div class="compliance-intro">
+            <section class="panel">
+              <div class="panel-head">
+                <div>
+                  <h2>Standards and Compliance Intelligence</h2>
+                  <p>
+                    Track cybersecurity and functional safety standards, add
+                    internal service notes, and watch public changes that may
+                    affect customer projects or hypercare outreach.
+                  </p>
+                </div>
+              </div>
+              <div class="metric-grid compliance-kpis" style="padding: 22px 26px;">
+                <article class="metric">
+                  <span>Certified this year</span>
+                  <strong id="certifiedYearCount">0</strong>
+                  <p>Saved project records marked as certification work.</p>
+                </article>
+                <article class="metric">
+                  <span>Most sought after</span>
+                  <strong id="topStandardName">-</strong>
+                  <p>Based on saved customer suggestions and project records.</p>
+                </article>
+                <article class="metric">
+                  <span>Recently changed</span>
+                  <strong id="recentChangeCount">0</strong>
+                  <p>Public change notes saved in the standards library.</p>
+                </article>
+                <article class="metric">
+                  <span>AI daily watch</span>
+                  <strong>06:00</strong>
+                  <p>Target workflow: check standards and regulations every day.</p>
+                </article>
+              </div>
+            </section>
+          </div>
           <div class="panel">
             <div class="panel-head">
               <div>
@@ -1576,30 +1605,30 @@
           status: "Watch"
         },
         {
-          name: "EU Cyber Resilience Act",
-          domain: "Regulation",
+          name: "EU Cyber Resilience Act (CRA)",
+          domain: "Cybersecurity",
           sector: "ICT / Connected Products",
           markets: ["EU"],
-          topics: ["product security", "software", "connected products", "market access"],
+          topics: ["product security", "software", "connected products", "market access", "CRA"],
           description: "Introduces cybersecurity requirements for products with digital elements sold into the EU. Non-EU manufacturers may still be affected when exporting connected products.",
           status: "Monitor"
         },
         {
+          name: "EU RED Delegated Act (RED DA)",
+          domain: "Cybersecurity",
+          sector: "ICT / Connected Products",
+          markets: ["EU"],
+          topics: ["radio equipment", "wireless products", "cybersecurity", "privacy", "fraud protection", "RED DA"],
+          description: "Adds cybersecurity-related requirements for many internet-connected radio products sold into the EU. It is relevant for wireless and connected products that need EU market access.",
+          status: "Monitor"
+        },
+        {
           name: "NIS2",
-          domain: "Regulation",
+          domain: "Cybersecurity",
           sector: "ICT / Connected Products",
           markets: ["EU"],
           topics: ["critical sectors", "cybersecurity governance", "incident reporting"],
           description: "Expands cybersecurity obligations for essential and important entities in the EU. It may matter for customers with EU operations or critical-sector subsidiaries.",
-          status: "Monitor"
-        },
-        {
-          name: "DORA",
-          domain: "Regulation",
-          sector: "Financial Services",
-          markets: ["EU"],
-          topics: ["operational resilience", "financial services", "third-party risk"],
-          description: "Sets digital operational resilience requirements for EU financial entities and key ICT providers. It is relevant for finance customers and vendors serving them.",
           status: "Monitor"
         },
         {
@@ -1802,7 +1831,14 @@
         };
       }
 
-      standards = standards.map(normalizeStandardRecord);
+      standards = standards
+        .map(normalizeStandardRecord)
+        .filter((standard) => normalize(standard.name) !== "dora");
+      starterStandards.map(normalizeStandardRecord).forEach((starter) => {
+        if (normalize(starter.name) !== "dora" && !standards.some((standard) => normalize(standard.name) === normalize(starter.name))) {
+          standards.push(starter);
+        }
+      });
       customers = customers.map(normalizeCustomerRecord);
 
       function externalLink(url, label = url) {
@@ -2388,6 +2424,7 @@
       }
 
       function renderCustomers() {
+        moveCustomerLookupPanel();
         const list = document.getElementById("customerList");
         if (!customers.length) {
           list.innerHTML = `<div class="customer-row"><p class="row-copy">No saved customers yet. Enrich and save the first profile.</p></div>`;
@@ -2436,6 +2473,7 @@
         }
         document.getElementById("customerCount").textContent = customers.length;
         document.getElementById("watchCount").textContent = customers.filter((customer) => customer.hypercare === "Active").length;
+        updateComplianceKpis();
         list.querySelectorAll("[data-toggle-customer]").forEach((button) => {
           button.addEventListener("click", () => {
             const customer = customers[Number(button.dataset.toggleCustomer)];
@@ -2475,7 +2513,15 @@
             && (sector === "All" || standard.sector === sector);
         });
 
-        document.getElementById("standardsList").innerHTML = filtered.map((standard) => `
+        const groups = [
+          ["Cybersecurity", filtered.filter((standard) => standard.domain === "Cybersecurity")],
+          ["Functional Safety", filtered.filter((standard) => standard.domain === "Functional Safety")],
+          ["Market Access and Other", filtered.filter((standard) => !["Cybersecurity", "Functional Safety"].includes(standard.domain))]
+        ].filter(([, items]) => items.length);
+        document.getElementById("standardsList").innerHTML = groups.map(([groupName, items]) => `
+          <section class="standard-group">
+            <h3>${esc(groupName)}</h3>
+            ${items.map((standard) => `
           <article class="standard-row">
             <div class="row-top">
               <div class="row-title">
@@ -2501,9 +2547,38 @@
               `).join("") : `<p class="row-copy">No public changes saved yet.</p>`}
             </div>
           </article>
+            `).join("")}
+          </section>
         `).join("");
         document.getElementById("standardCount").textContent = standards.length;
+        updateComplianceKpis();
         renderStandardOptions();
+      }
+
+      function updateComplianceKpis() {
+        const projectStandards = customers.flatMap((customer) => safeList(customer.projects).flatMap((project) => safeList(project.standards)));
+        const guessed = customers.flatMap((customer) => safeList(customer.guessedStandards));
+        const allRefs = [...projectStandards, ...guessed];
+        const counts = allRefs.reduce((acc, name) => {
+          const key = String(name || "").trim();
+          if (key) acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
+        const certifiedThisYear = customers.flatMap((customer) => safeList(customer.projects)).filter((project) => {
+          const year = new Date().getFullYear().toString();
+          return normalize(`${project.type} ${project.status}`).includes("cert") && String(project.date || "").startsWith(year);
+        }).length;
+        const changes = standards.reduce((total, standard) => total + safeList(standard.changes).length, 0);
+        document.getElementById("certifiedYearCount").textContent = certifiedThisYear;
+        document.getElementById("topStandardName").textContent = top.length > 16 ? `${top.slice(0, 16)}...` : top;
+        document.getElementById("recentChangeCount").textContent = changes;
+      }
+
+      function moveCustomerLookupPanel() {
+        const rail = document.getElementById("customerAddRail");
+        const panel = document.getElementById("customerLookupPanel");
+        if (rail && panel && panel.parentElement !== rail) rail.appendChild(panel);
       }
 
       function renderStandardOptions() {
