@@ -29,6 +29,11 @@ export async function handler(event) {
 
   try {
     const body = parseRequestBody(event);
+    if (body.task === "standards-update") {
+      const result = await enrichStandardsUpdate(body);
+      return response(200, result);
+    }
+
     if (!body.name || !String(body.name).trim()) {
       return response(400, { error: "Customer name is required." });
     }
@@ -186,6 +191,293 @@ function parseJsonObject(text) {
     if (start >= 0 && end > start) return JSON.parse(trimmed.slice(start, end + 1));
     throw new Error("AI provider returned text that was not valid JSON.");
   }
+}
+
+async function enrichStandardsUpdate(body) {
+  const checkedAt = new Date().toISOString();
+  const batchSize = Math.max(1, Math.min(Number(process.env.STANDARDS_BATCH_SIZE || 6), 12));
+  const inputStandards = Array.isArray(body.standards) ? body.standards : [];
+  const standards = inputStandards
+    .filter((standard) => standard?.name)
+    .slice(0, batchSize)
+    .map(sanitizeStandardInput);
+
+  if (!standards.length) {
+    return {
+      status: "no_standards",
+      checkedAt,
+      standards: []
+    };
+  }
+
+  const sourceSnapshots = await Promise.all(standards.map((standard) => fetchStandardSource(standard, checkedAt)));
+
+  let result;
+  try {
+    result = process.env.ANTHROPIC_API_KEY
+      ? await enrichStandardsWithClaude(sourceSnapshots, checkedAt)
+      : process.env.OPENAI_API_KEY
+        ? await enrichStandardsWithOpenAi(sourceSnapshots, checkedAt)
+        : deterministicStandardsUpdate(sourceSnapshots, checkedAt);
+  } catch (aiError) {
+    result = deterministicStandardsUpdate(sourceSnapshots, checkedAt);
+    result.status = "ai_error_source_review";
+    result.notice = `AI standards enrichment failed: ${aiError.message}`;
+  }
+
+  await saveStandards(result.standards || [], checkedAt, result.status);
+  return result;
+}
+
+function sanitizeStandardInput(standard) {
+  return {
+    name: String(standard.name || "").trim(),
+    domain: String(standard.domain || "Cybersecurity").trim(),
+    sector: String(standard.sector || "General").trim(),
+    markets: normalizeList(standard.markets),
+    topics: normalizeList(standard.topics),
+    description: String(standard.description || "").trim(),
+    status: String(standard.status || "Watch").trim(),
+    sourceUrl: String(standard.sourceUrl || "").trim(),
+    internalNotes: String(standard.internalNotes || "").trim(),
+    changes: Array.isArray(standard.changes) ? standard.changes.slice(0, 5) : []
+  };
+}
+
+async function fetchStandardSource(standard, checkedAt) {
+  const snapshot = {
+    ...standard,
+    sourceCheckedAt: checkedAt,
+    sourceStatus: standard.sourceUrl ? "pending" : "missing_source_url",
+    sourceHttpStatus: "",
+    sourceTitle: "",
+    sourceExtract: ""
+  };
+  if (!standard.sourceUrl) return snapshot;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), Number(process.env.SOURCE_FETCH_TIMEOUT_MS || 9000));
+    const sourceResponse = await fetch(standard.sourceUrl, {
+      method: "GET",
+      redirect: "follow",
+      signal: controller.signal,
+      headers: {
+        "Accept": "text/html,application/xhtml+xml,application/xml,text/plain;q=0.9,*/*;q=0.8",
+        "User-Agent": "AssuranceIntelligenceHub/1.0 standards-source-review"
+      }
+    });
+    clearTimeout(timeout);
+
+    const raw = await sourceResponse.text();
+    const title = extractTitle(raw);
+    snapshot.sourceHttpStatus = sourceResponse.status;
+    snapshot.sourceTitle = title;
+    snapshot.sourceStatus = sourceResponse.ok ? "source_fetched" : `source_http_${sourceResponse.status}`;
+    snapshot.sourceExtract = htmlToText(raw).slice(0, Number(process.env.SOURCE_EXTRACT_CHARS || 5000));
+  } catch (error) {
+    snapshot.sourceStatus = `source_fetch_failed: ${error.name === "AbortError" ? "timeout" : error.message}`;
+  }
+  return snapshot;
+}
+
+function extractTitle(html) {
+  const title = String(html || "").match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
+    || String(html || "").match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)?.[1]
+    || "";
+  return decodeEntities(stripTags(title)).trim().slice(0, 180);
+}
+
+function htmlToText(html) {
+  return decodeEntities(
+    stripTags(
+      String(html || "")
+        .replace(/<script[\s\S]*?<\/script>/gi, " ")
+        .replace(/<style[\s\S]*?<\/style>/gi, " ")
+        .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
+        .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+    )
+  ).replace(/\s+/g, " ").trim();
+}
+
+function stripTags(value) {
+  return String(value || "").replace(/<[^>]+>/g, " ");
+}
+
+function decodeEntities(value) {
+  return String(value || "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+async function enrichStandardsWithClaude(sourceSnapshots, checkedAt) {
+  const prompt = buildStandardsPrompt(sourceSnapshots, checkedAt);
+  const aiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: process.env.ANTHROPIC_MODEL || "claude-3-5-haiku-20241022",
+      max_tokens: 3500,
+      system: "You enrich a standards and regulations library for assurance, cybersecurity, functional safety, and market-access teams. Use only the provided source extracts and prior user-provided record data. Return only valid JSON.",
+      messages: [
+        {
+          role: "user",
+          content: prompt
+        }
+      ]
+    })
+  });
+
+  if (!aiResponse.ok) {
+    const text = await aiResponse.text();
+    throw new Error(`Anthropic returned ${aiResponse.status}: ${text}`);
+  }
+
+  const payload = await aiResponse.json();
+  const text = (payload.content || [])
+    .map((part) => part.type === "text" ? part.text : "")
+    .join("")
+    .trim();
+  if (!text) throw new Error("Anthropic returned no JSON text.");
+  return parseJsonObject(text);
+}
+
+async function enrichStandardsWithOpenAi(sourceSnapshots, checkedAt) {
+  const prompt = buildStandardsPrompt(sourceSnapshots, checkedAt);
+  const aiResponse = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+      input: prompt,
+      text: { format: { type: "json_object" } }
+    })
+  });
+
+  if (!aiResponse.ok) {
+    const text = await aiResponse.text();
+    throw new Error(`OpenAI returned ${aiResponse.status}: ${text}`);
+  }
+
+  const payload = await aiResponse.json();
+  const text = payload.output_text || payload.output?.flatMap((item) => item.content || []).map((part) => part.text || "").join("");
+  if (!text) throw new Error("OpenAI returned no JSON text.");
+  return parseJsonObject(text);
+}
+
+function buildStandardsPrompt(sourceSnapshots, checkedAt) {
+  return `Update a standards/regulations library using source pages fetched live by the backend.
+
+Checked at: ${checkedAt}
+
+Source snapshots:
+${JSON.stringify(sourceSnapshots, null, 2)}
+
+Return compact valid JSON only. Do not include markdown, comments, or trailing commas.
+
+Return this exact top-level shape:
+{
+  "status": "completed",
+  "checkedAt": "${checkedAt}",
+  "standards": [
+    {
+      "name": "standard or regulation name",
+      "domain": "Cybersecurity | Functional Safety | Regulation | Market Access",
+      "sector": "sector",
+      "markets": ["Global"],
+      "topics": ["topic"],
+      "description": "one or two plain-English sentences explaining what it is for",
+      "status": "Watch | Review | Monitor",
+      "sourceUrl": "https://...",
+      "sourceTitle": "title from source",
+      "sourceCheckedAt": "${checkedAt}",
+      "sourceStatus": "source_fetched | source_http_... | source_fetch_failed: ... | missing_source_url",
+      "sourceEvidence": "short note describing what source material was available",
+      "changes": [
+        {
+          "date": "${checkedAt.slice(0, 10)}",
+          "title": "AI source review",
+          "impact": "Low | Review | High",
+          "url": "https://...",
+          "summary": "what changed or what the latest public source review found"
+        }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Use only the source extracts and existing record fields. Do not invent publication dates or official changes.
+- If the source extract does not state a new amendment/change, create one change entry titled "AI source review" with impact "Review" and summarize what the current source page says.
+- If the source could not be fetched, keep the prior description if present and set sourceEvidence to the failure reason.
+- Keep descriptions short, practical, and useful for customer-facing assurance teams.
+- Keep names stable unless the source clearly indicates the better official name.
+- Preserve sourceUrl from the input whenever present.`;
+}
+
+function deterministicStandardsUpdate(sourceSnapshots, checkedAt) {
+  return {
+    status: "source_review_without_ai",
+    checkedAt,
+    standards: sourceSnapshots.map((standard) => ({
+      name: standard.name,
+      domain: standard.domain,
+      sector: standard.sector,
+      markets: standard.markets,
+      topics: standard.topics,
+      description: standard.description,
+      status: standard.status,
+      sourceUrl: standard.sourceUrl,
+      sourceTitle: standard.sourceTitle,
+      sourceCheckedAt: standard.sourceCheckedAt,
+      sourceStatus: standard.sourceStatus,
+      sourceEvidence: standard.sourceStatus === "source_fetched"
+        ? `Fetched live source page${standard.sourceTitle ? `: ${standard.sourceTitle}` : ""}. AI key not configured, so the existing description was retained.`
+        : `Source review could not fetch the page: ${standard.sourceStatus}.`,
+      changes: [
+        {
+          date: checkedAt.slice(0, 10),
+          title: "Live source review",
+          impact: standard.sourceStatus === "source_fetched" ? "Review" : "Low",
+          url: standard.sourceUrl,
+          summary: standard.sourceStatus === "source_fetched"
+            ? `The backend fetched the official/reference source for ${standard.name}. Add an AI key to summarize public updates from the source content.`
+            : `The backend attempted to check ${standard.name}, but the source was not available to the Lambda fetcher.`
+        },
+        ...standard.changes
+      ].slice(0, 6)
+    }))
+  };
+}
+
+async function saveStandards(standards, checkedAt, status) {
+  if (!process.env.STANDARDS_TABLE) return;
+
+  const { DynamoDBClient } = await import("@aws-sdk/client-dynamodb");
+  const { DynamoDBDocumentClient, PutCommand } = await import("@aws-sdk/lib-dynamodb");
+  const dynamo = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+
+  await Promise.all(standards.map((standard) => dynamo.send(new PutCommand({
+    TableName: process.env.STANDARDS_TABLE,
+    Item: {
+      pk: `STANDARD#${slug(standard.name)}`,
+      sk: `SOURCE_REVIEW#${checkedAt}`,
+      ...standard,
+      enrichment_status: status,
+      checked_at: checkedAt
+    }
+  }))));
 }
 
 function buildEnrichmentPrompt(body, standards) {

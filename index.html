@@ -1434,10 +1434,11 @@
               </div>
               <div class="customer-card-actions">
                 <button class="button" id="openStandardDialog" type="button">Add Standard</button>
-                <button class="button secondary" id="runAiStandardUpdate" type="button">Run AI update scan</button>
+                <button class="button secondary" id="runAiStandardUpdate" type="button">Run live AI source update</button>
                 <button class="button secondary" id="resetStandards" type="button">Reset sample data</button>
               </div>
             </div>
+            <div class="code" id="standardsUpdateStatus">Live standards enrichment uses the saved AWS API endpoint, fetches official source links in Lambda, and asks AI to summarize the source material.</div>
 
             <div class="standards-route-grid">
               <button class="standards-route" type="button" data-route-view="cybersecurityStandards">
@@ -1752,7 +1753,8 @@
                 <p>
                   API keys must stay in AWS Lambda environment variables. This
                   browser page stores only the API Gateway endpoint URL used to
-                  call the secured customer-enrichment backend.
+                  call the secured enrichment backend for customers and
+                  standards source checks.
                 </p>
               </div>
             </div>
@@ -1775,7 +1777,7 @@
             </div>
             <div class="split">
               <div class="field">
-                <label for="apiEndpoint">Customer Enrichment API URL</label>
+                <label for="apiEndpoint">Assurance Hub API URL</label>
                 <input id="apiEndpoint" placeholder="https://abc123.execute-api.us-east-1.amazonaws.com/default/assurance-hub-customer-enrichment" />
               </div>
               <div class="field">
@@ -1785,7 +1787,7 @@
             </div>
             <div class="split">
               <button class="button secondary" id="testApiEndpoint" type="button">Test saved endpoint</button>
-              <div class="code" id="apiSetupStatus">Use the API Gateway endpoint connected to the customer enrichment Lambda.</div>
+            <div class="code" id="apiSetupStatus">Use the API Gateway endpoint connected to the enrichment Lambda.</div>
             </div>
             <div class="code">S3 static site -> API Gateway HTTP API -> Lambda -> Claude Haiku -> optional DynamoDB -> future EventBridge watch</div>
           </div>
@@ -2166,6 +2168,10 @@
       function normalizeStandardRecord(standard) {
         return {
           sourceUrl: "",
+          sourceTitle: "",
+          sourceCheckedAt: "",
+          sourceStatus: "",
+          sourceEvidence: "",
           internalNotes: "",
           changes: [],
           ...standard,
@@ -2475,6 +2481,32 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...input, confirmedEntity: confirmed, standards })
+        });
+        if (!response.ok) throw new Error(`API returned ${response.status}`);
+        return response.json();
+      }
+
+      async function enrichStandardsWithApi() {
+        const apiUrl = getApiUrl();
+        if (!apiUrl) throw new Error("No AWS API endpoint is saved in Settings.");
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            task: "standards-update",
+            standards: standards.map((standard) => ({
+              name: standard.name,
+              domain: standard.domain,
+              sector: standard.sector,
+              markets: standard.markets,
+              topics: standard.topics,
+              description: standard.description,
+              status: standard.status,
+              sourceUrl: standard.sourceUrl,
+              internalNotes: standard.internalNotes,
+              changes: safeList(standard.changes).slice(0, 4)
+            }))
+          })
         });
         if (!response.ok) throw new Error(`API returned ${response.status}`);
         return response.json();
@@ -3094,6 +3126,9 @@
             <div class="info-card">
               <strong>Official source website</strong>
               <p>${standard.sourceUrl ? externalLink(standard.sourceUrl, standard.sourceUrl) : "No official source URL saved yet. Add one when editing this standard."}</p>
+              ${standard.sourceCheckedAt ? `<p>Last live AI source check: ${esc(new Date(standard.sourceCheckedAt).toLocaleString())}</p>` : ""}
+              ${standard.sourceStatus ? `<p>Source status: ${esc(standard.sourceStatus)}</p>` : ""}
+              ${standard.sourceEvidence ? `<p>${esc(standard.sourceEvidence)}</p>` : ""}
             </div>
             ${standard.internalNotes ? `<div class="row-copy">TUV Rheinland notes: ${esc(standard.internalNotes)}</div>` : ""}
             <div class="tags">${renderTags(standard.topics)}</div>
@@ -3182,39 +3217,57 @@
         return;
       }
 
-      function runAiStandardUpdateScan() {
+      function mergeChangeLists(newChanges, oldChanges) {
+        const merged = [];
+        [...safeList(newChanges), ...safeList(oldChanges)].forEach((change) => {
+          const key = normalize(`${change.date || ""} ${change.title || ""} ${change.url || ""} ${change.summary || ""}`);
+          if (!key || merged.some((item) => normalize(`${item.date || ""} ${item.title || ""} ${item.url || ""} ${item.summary || ""}`) === key)) return;
+          merged.push(change);
+        });
+        return merged.slice(0, 8);
+      }
+
+      function applyStandardsEnrichment(result) {
+        if (!result || !Array.isArray(result.standards)) {
+          throw new Error("The standards update response did not include enriched standards.");
+        }
+        result.standards.forEach((updated) => {
+          const incoming = normalizeStandardRecord(updated);
+          const index = standards.findIndex((standard) => normalize(standard.name) === normalize(incoming.name));
+          if (index >= 0) {
+            standards[index] = normalizeStandardRecord({
+              ...standards[index],
+              ...incoming,
+              name: standards[index].name || incoming.name,
+              changes: mergeChangeLists(incoming.changes, standards[index].changes)
+            });
+          } else {
+            standards.push(incoming);
+          }
+        });
+      }
+
+      async function runAiStandardUpdateScan() {
         const button = document.getElementById("runAiStandardUpdate");
+        const status = document.getElementById("standardsUpdateStatus");
         if (!standards.length) return;
         button.disabled = true;
-        button.textContent = "AI scan running...";
-        const today = new Date().toISOString().slice(0, 10);
-        const targets = standards
-          .filter((standard) => ["Cybersecurity", "Functional Safety", "Regulation"].includes(standard.domain))
-          .slice(0, 4);
-        const updates = targets.map((standard) => ({
-          standard,
-          change: {
-            date: today,
-            title: "AI watch demo: public update review queued",
-            impact: standard.domain === "Regulation" ? "High" : "Review",
-            url: standard.sourceUrl || "",
-            summary: `Demo AI scan flagged ${standard.name} for review. Check official publications, interpretation notes, and customer project impact before notifying account teams.`
-          }
-        }));
-        updates.forEach(({ standard, change }) => {
-          const exists = safeList(standard.changes).some((item) => item.title === change.title && item.date === change.date);
-          if (!exists) standard.changes = [change, ...(standard.changes || [])];
-        });
-        store.set("assuranceStandardsV2", standards);
-        renderStandards();
-        renderWatch();
-        setTimeout(() => {
-          const refreshedButton = document.getElementById("runAiStandardUpdate");
-          if (refreshedButton) {
-            refreshedButton.disabled = false;
-            refreshedButton.textContent = "Run AI update scan";
-          }
-        }, 600);
+        button.textContent = "Fetching sources...";
+        status.textContent = "Checking official source URLs through AWS Lambda. AI will summarize only the fetched source material.";
+        try {
+          const result = await enrichStandardsWithApi();
+          applyStandardsEnrichment(result);
+          store.set("assuranceStandardsV2", standards);
+          renderStandards();
+          renderWatch();
+          const checkedAt = result.checkedAt ? new Date(result.checkedAt).toLocaleString() : "just now";
+          status.textContent = `Live AI standards enrichment completed ${checkedAt}. Updated ${result.standards.length} records from source checks.`;
+        } catch (error) {
+          status.textContent = `Live AI standards enrichment failed: ${error.message}. Make sure the Lambda code is updated, the API endpoint is saved, and ANTHROPIC_API_KEY is set in Lambda.`;
+        } finally {
+          button.disabled = false;
+          button.textContent = "Run live AI source update";
+        }
       }
 
       function renderDailySchedule() {
