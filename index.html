@@ -1360,6 +1360,29 @@
             </div>
           </div>
           <div id="resultBox" class="result-card hidden"></div>
+
+          <div class="dialog-overlay hidden" id="deleteCustomerDialog" role="dialog" aria-modal="true" aria-labelledby="deleteCustomerTitle">
+            <div class="dialog-panel">
+              <div class="panel-head">
+                <div>
+                  <h2 id="deleteCustomerTitle">Request Customer Deletion</h2>
+                  <p id="deleteCustomerCopy">This will not delete the customer immediately. It creates an admin request for review.</p>
+                </div>
+                <button class="button secondary" id="closeDeleteCustomerDialog" type="button">Cancel</button>
+              </div>
+              <form class="lookup-form" id="deleteCustomerForm">
+                <div class="info-card">
+                  <strong id="deleteCustomerName">Customer</strong>
+                  <p class="row-copy">Are you sure you want to request deletion of this saved customer profile?</p>
+                </div>
+                <div class="field">
+                  <label for="deleteCustomerReason">Reason for deletion request</label>
+                  <textarea id="deleteCustomerReason" required placeholder="Example: duplicate account, wrong company, customer no longer in scope, or saved by mistake."></textarea>
+                </div>
+                <button class="button" type="submit">Yes, send deletion request</button>
+              </form>
+            </div>
+          </div>
         </section>
 
         <section class="section-grid app-view" id="compliance">
@@ -2005,6 +2028,7 @@
       let selectedRegions = new Set(["Global"]);
       let currentResult = null;
       let expandedCustomerKey = "";
+      let pendingDeletionCustomer = null;
 
       const knownCompanies = {
         aster: [
@@ -3022,7 +3046,7 @@
           });
         });
         list.querySelectorAll("[data-delete-request]").forEach((button) => {
-          button.addEventListener("click", () => requestCustomerDeletion(customers[Number(button.dataset.deleteRequest)]));
+          button.addEventListener("click", () => openCustomerDeletionDialog(customers[Number(button.dataset.deleteRequest)]));
         });
       }
 
@@ -3273,7 +3297,22 @@
         renderAdminRequests();
       }
 
-      function requestCustomerDeletion(customer) {
+      function openCustomerDeletionDialog(customer) {
+        if (!customer) return;
+        pendingDeletionCustomer = customer;
+        document.getElementById("deleteCustomerName").textContent = customer.name || "Customer";
+        document.getElementById("deleteCustomerReason").value = "";
+        document.getElementById("deleteCustomerDialog").classList.remove("hidden");
+        document.getElementById("deleteCustomerReason").focus();
+      }
+
+      function closeCustomerDeletionDialog() {
+        pendingDeletionCustomer = null;
+        document.getElementById("deleteCustomerDialog").classList.add("hidden");
+        document.getElementById("deleteCustomerForm").reset();
+      }
+
+      function requestCustomerDeletion(customer, reason) {
         if (!customer) return;
         const key = profileKey(customer);
         if (!adminRequests.some((request) => request.type === "delete-customer" && request.customerKey === key && request.status === "Pending")) {
@@ -3283,11 +3322,14 @@
             status: "Pending",
             customerKey: key,
             customerName: customer.name,
+            reason: reason.trim(),
             createdAt: new Date().toISOString()
           });
           saveAdminRequests();
+          setStatus(`Deletion request for ${customer.name} sent to Settings.`);
+        } else {
+          setStatus(`A deletion request for ${customer.name} is already waiting in Settings.`);
         }
-        setStatus(`Deletion request for ${customer.name} sent to Settings.`);
       }
 
       function renderAdminRequests() {
@@ -3304,6 +3346,7 @@
               <span class="tag warn">${esc(request.status)}</span>
             </div>
             <p>${esc(new Date(request.createdAt).toLocaleString())}</p>
+            ${request.reason ? `<p class="row-copy"><strong>Reason:</strong> ${esc(request.reason)}</p>` : ""}
             <div class="split">
               <button class="button secondary" data-dismiss-request="${index}" type="button">Dismiss request</button>
               <button class="button" data-approve-request="${index}" type="button">Admin approve</button>
@@ -3359,6 +3402,18 @@
 
       document.getElementById("closeCandidateDialog").addEventListener("click", () => {
         closeCustomerDialog();
+      });
+
+      document.getElementById("closeDeleteCustomerDialog").addEventListener("click", closeCustomerDeletionDialog);
+      document.getElementById("deleteCustomerForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const reason = document.getElementById("deleteCustomerReason").value.trim();
+        if (!reason) {
+          document.getElementById("deleteCustomerReason").focus();
+          return;
+        }
+        requestCustomerDeletion(pendingDeletionCustomer, reason);
+        closeCustomerDeletionDialog();
       });
 
       document.getElementById("requestClearCustomers").addEventListener("click", () => {
