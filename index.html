@@ -1681,7 +1681,8 @@
           markets: ["Global"],
           topics: ["industrial", "safety", "electronics", "programmable systems", "SIL"],
           description: "The foundational functional safety standard for safety-related electrical, electronic, and programmable electronic systems. It supports product assessments and certification of safety-related devices.",
-          status: "Watch"
+          status: "Watch",
+          sourceUrl: "https://webstore.iec.ch/en/publication/5515"
         },
         {
           name: "IEC 61511",
@@ -1690,7 +1691,8 @@
           markets: ["Global"],
           topics: ["process industry", "safety instrumented systems", "SIS", "SIL"],
           description: "Applies functional safety practices to safety instrumented systems in process industries. It is relevant for chemical, energy, and other plant environments.",
-          status: "Watch"
+          status: "Watch",
+          sourceUrl: "https://webstore.iec.ch/en/publication/5527"
         },
         {
           name: "ISO 13849",
@@ -1699,7 +1701,8 @@
           markets: ["Global", "EU"],
           topics: ["machinery", "machine safety", "performance level", "industrial"],
           description: "Defines safety-related parts of control systems for machinery. It is a common fit for machine builders and manufacturing equipment suppliers.",
-          status: "Watch"
+          status: "Watch",
+          sourceUrl: "https://www.iso.org/standard/73481.html"
         },
         {
           name: "IEC 62443",
@@ -1708,7 +1711,8 @@
           markets: ["Global"],
           topics: ["industrial", "OT security", "automation", "control systems", "secure development"],
           description: "A family of standards for cybersecurity in industrial automation and control systems. It is often used for secure product development and OT environment assessments.",
-          status: "Watch"
+          status: "Watch",
+          sourceUrl: "https://www.isa.org/standards-and-publications/isa-standards/isa-iec-62443-series-of-standards"
         },
         {
           name: "ISO 27001 / 27002",
@@ -1717,7 +1721,8 @@
           markets: ["Global"],
           topics: ["ISMS", "information security", "governance", "controls"],
           description: "Provides an information security management system and control catalog. It is valuable for organizations that need structured security governance or certification evidence.",
-          status: "Watch"
+          status: "Watch",
+          sourceUrl: "https://www.iso.org/standard/27001"
         },
         {
           name: "NIST SP 800-115",
@@ -1726,7 +1731,8 @@
           markets: ["US"],
           topics: ["penetration testing", "technical security testing", "assessment"],
           description: "Gives technical guidance for information security testing and assessment. It is a useful reference for penetration testing and IT security analysis work.",
-          status: "Watch"
+          status: "Watch",
+          sourceUrl: "https://csrc.nist.gov/pubs/sp/800/115/final"
         },
         {
           name: "TISAX",
@@ -1735,7 +1741,8 @@
           markets: ["EU", "Global"],
           topics: ["automotive", "supplier", "information security", "assessment"],
           description: "An automotive industry assessment model for information security. It is often expected from suppliers working with European automotive customers.",
-          status: "Watch"
+          status: "Watch",
+          sourceUrl: "https://www.enx.com/tisax/"
         },
         {
           name: "EU Cyber Resilience Act (CRA)",
@@ -1744,7 +1751,8 @@
           markets: ["EU"],
           topics: ["product security", "software", "connected products", "market access", "CRA"],
           description: "Introduces cybersecurity requirements for products with digital elements sold into the EU. Non-EU manufacturers may still be affected when exporting connected products.",
-          status: "Monitor"
+          status: "Monitor",
+          sourceUrl: "https://eur-lex.europa.eu/eli/reg/2024/2847/oj"
         },
         {
           name: "EU RED Delegated Act (RED DA)",
@@ -1753,7 +1761,8 @@
           markets: ["EU"],
           topics: ["radio equipment", "wireless products", "cybersecurity", "privacy", "fraud protection", "RED DA"],
           description: "Adds cybersecurity-related requirements for many internet-connected radio products sold into the EU. It is relevant for wireless and connected products that need EU market access.",
-          status: "Monitor"
+          status: "Monitor",
+          sourceUrl: "https://eur-lex.europa.eu/eli/reg_del/2022/30/oj"
         },
         {
           name: "NIS2",
@@ -1762,7 +1771,8 @@
           markets: ["EU"],
           topics: ["critical sectors", "cybersecurity governance", "incident reporting"],
           description: "Expands cybersecurity obligations for essential and important entities in the EU. It may matter for customers with EU operations or critical-sector subsidiaries.",
-          status: "Monitor"
+          status: "Monitor",
+          sourceUrl: "https://eur-lex.europa.eu/eli/dir/2022/2555/oj"
         },
         {
           name: "UL 2900",
@@ -1771,7 +1781,8 @@
           markets: ["US"],
           topics: ["connected product", "medical", "IoT", "product security"],
           description: "Covers cybersecurity testing for network-connectable products and systems. It can support product security evidence for connected medical or IoT devices.",
-          status: "Review"
+          status: "Review",
+          sourceUrl: "https://www.ul.com/insights/medical-device-cybersecurity-standards-and-services"
         },
         {
           name: "UKCA / CE Market Access",
@@ -1780,7 +1791,8 @@
           markets: ["UK", "EU"],
           topics: ["market access", "conformity", "test marks", "certification"],
           description: "Market access marks and conformity paths can be required before products are placed in target markets. They are especially relevant for global launches and regulated product groups.",
-          status: "Monitor"
+          status: "Monitor",
+          sourceUrl: "https://www.gov.uk/guidance/ukca-marking-conformity-assessment-and-documentation"
         }
       ];
 
@@ -1999,11 +2011,16 @@
         .map(normalizeStandardRecord)
         .filter((standard) => normalize(standard.name) !== "dora");
       starterStandards.map(normalizeStandardRecord).forEach((starter) => {
-        if (normalize(starter.name) !== "dora" && !standards.some((standard) => normalize(standard.name) === normalize(starter.name))) {
+        const existing = standards.find((standard) => normalize(standard.name) === normalize(starter.name));
+        if (existing && starter.sourceUrl && !existing.sourceUrl) {
+          existing.sourceUrl = starter.sourceUrl;
+        }
+        if (normalize(starter.name) !== "dora" && !existing) {
           standards.push(starter);
         }
       });
       customers = customers.map(normalizeCustomerRecord);
+      store.set("assuranceStandardsV2", standards);
 
       function externalLink(url, label = url) {
         const clean = String(url || "").trim();
@@ -2878,9 +2895,11 @@
             <div class="last-change">
               <strong>Last change</strong>
               <p>No public change has been saved for this standard or regulation yet.</p>
+              ${standard.sourceUrl ? `<div class="row-copy">Watch source: ${externalLink(standard.sourceUrl, "official source website")}</div>` : ""}
             </div>
           `;
         }
+        const sourceUrl = change.url || standard.sourceUrl || "";
         return `
           <div class="last-change">
             <div class="row-top">
@@ -2888,7 +2907,7 @@
               <span class="tag ${change.impact === "High" ? "warn" : "dark"}">${esc(change.date || "Date unknown")}</span>
             </div>
             <p>${esc(change.summary || "No change content saved yet.")}</p>
-            ${change.url ? `<div class="row-copy">Source: ${externalLink(change.url, "open source")}</div>` : ""}
+            ${sourceUrl ? `<div class="row-copy">Update source: ${externalLink(sourceUrl, "open source website")}</div>` : ""}
           </div>
         `;
       }
@@ -2922,7 +2941,10 @@
               <span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${esc(standard.status)}</span>
             </div>
             <div class="row-copy">${esc(standard.description)}</div>
-            ${standard.sourceUrl ? `<div class="row-copy">Source: ${externalLink(standard.sourceUrl, standard.sourceUrl)}</div>` : ""}
+            <div class="info-card">
+              <strong>Official source website</strong>
+              <p>${standard.sourceUrl ? externalLink(standard.sourceUrl, standard.sourceUrl) : "No official source URL saved yet. Add one when editing this standard."}</p>
+            </div>
             ${standard.internalNotes ? `<div class="row-copy">TUV Rheinland notes: ${esc(standard.internalNotes)}</div>` : ""}
             <div class="tags">${renderTags(standard.topics)}</div>
             ${renderLastChange(standard)}
@@ -2933,7 +2955,7 @@
                     <strong>${esc(change.title || "Public change")}</strong>
                     <span class="tag ${change.impact === "High" ? "warn" : "dark"}">${esc(change.impact || "Review")}</span>
                   </div>
-                  <span>${esc(change.date || "Date unknown")} ${change.url ? `| ${externalLink(change.url, "source")}` : ""}</span>
+                  <span>${esc(change.date || "Date unknown")} ${change.url || standard.sourceUrl ? `| ${externalLink(change.url || standard.sourceUrl, "source website")}` : "| source not saved"}</span>
                   <p class="row-copy">${esc(change.summary || "No summary saved.")}</p>
                 </div>
               `).join("") : `<p class="row-copy">No public changes saved yet.</p>`}
