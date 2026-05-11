@@ -224,6 +224,23 @@
         display: block;
       }
 
+      .section-grid.app-view.active {
+        display: grid;
+      }
+
+      .view-overview {
+        display: none;
+      }
+
+      .view-overview.active {
+        display: block;
+      }
+
+      .service-strip.view-overview.active,
+      .metric-grid.view-overview.active {
+        display: grid;
+      }
+
       .intro-copy {
         max-width: 1160px;
         margin-bottom: 48px;
@@ -394,6 +411,75 @@
         display: grid;
         gap: 16px;
         padding: 24px 26px 28px;
+      }
+
+      .form-step {
+        display: grid;
+        gap: 14px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .form-step h4 {
+        margin: 0;
+        color: var(--blue-dark);
+        font-size: 1.05rem;
+      }
+
+      .work-visual,
+      .save-visual {
+        display: grid;
+        gap: 12px;
+        margin: 0 26px 22px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .work-visual.hidden,
+      .save-visual.hidden {
+        display: none;
+      }
+
+      .progress-rail {
+        height: 8px;
+        overflow: hidden;
+        background: var(--soft-blue);
+      }
+
+      .progress-rail span {
+        display: block;
+        width: 45%;
+        height: 100%;
+        background: var(--blue);
+        animation: scan 1.3s ease-in-out infinite;
+      }
+
+      @keyframes scan {
+        0% { transform: translateX(-110%); }
+        100% { transform: translateX(240%); }
+      }
+
+      .progress-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .progress-steps span {
+        padding: 10px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        background: #f8fafc;
+        font-size: 0.86rem;
+        font-weight: 800;
+      }
+
+      .progress-steps span.active {
+        color: #ffffff;
+        background: var(--blue);
+        border-color: var(--blue);
       }
 
       .record-editor {
@@ -662,6 +748,50 @@
 
       .row-title strong { font-size: 1.12rem; }
 
+      .customer-name-button {
+        width: 100%;
+        padding: 0;
+        border: 0;
+        color: var(--blue-dark);
+        background: transparent;
+        font: inherit;
+        font-size: 1.12rem;
+        font-weight: 800;
+        text-align: left;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+
+      .customer-detail {
+        display: none;
+        gap: 14px;
+      }
+
+      .customer-row.open .customer-detail {
+        display: grid;
+      }
+
+      .standard-picker {
+        display: grid;
+        gap: 10px;
+      }
+
+      .standard-choice {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        align-items: start;
+        padding: 12px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .standard-choice input {
+        width: auto;
+        min-height: auto;
+        margin-top: 4px;
+      }
+
       .row-title span,
       .row-copy {
         color: var(--muted);
@@ -869,7 +999,7 @@
     </header>
 
     <main>
-      <section class="hero" aria-label="Assurance Hub overview">
+      <section class="hero view-overview active" id="heroOverview" aria-label="Assurance Hub overview">
         <div class="hero-copy">
           <h1>Activate customer assurance intelligence.</h1>
           <p>
@@ -881,7 +1011,7 @@
       </section>
 
       <section class="content">
-        <section class="intro-copy">
+        <section class="intro-copy view-overview active" id="customersOverview">
           <h1>Your standards and customer assurance work - one click away.</h1>
           <p>
             This hub is built for NA-based team members working with customers
@@ -896,7 +1026,7 @@
           </p>
         </section>
 
-        <div class="service-strip">
+        <div class="service-strip view-overview active" id="customerServices">
           <article class="service-card">
             <strong>Customer lookup</strong>
             <span>Resolve ambiguous names, enrich metadata, and save confirmed customer context.</span>
@@ -915,7 +1045,7 @@
           </article>
         </div>
 
-        <div class="metric-grid">
+        <div class="metric-grid view-overview active" id="customerMetrics">
           <article class="metric">
             <span>Standards library</span>
             <strong id="standardCount">0</strong>
@@ -950,19 +1080,21 @@
                     exposure, and returns a practical account profile.
                   </p>
                 </div>
-                <button class="button secondary" id="sampleBMW">Try BMW example</button>
+                <button class="button secondary" id="sampleCustomer">Try fictional example</button>
               </div>
 
               <form class="lookup-form" id="lookupForm">
+                <div class="form-step">
+                  <h4>1. Identify the customer</h4>
                 <div class="wide-split">
                   <div class="field">
                     <label for="lookupName">Customer Name</label>
-                    <input id="lookupName" required placeholder="Example: BMW, Siemens, Rockwell Automation" />
+                    <input id="lookupName" required placeholder="Example: Aster Mobility Systems" />
                   </div>
                   <div class="field">
                     <label for="lookupSector">Known Sector</label>
                     <select id="lookupSector">
-                      <option value="">Let AI infer</option>
+                      <option value="">Suggest from customer context</option>
                       <option>Automotive</option>
                       <option>Industrial / OT</option>
                       <option>Medical Devices</option>
@@ -975,7 +1107,7 @@
                   <div class="field">
                     <label for="lookupSize">Known Size</label>
                     <select id="lookupSize">
-                      <option value="">Let AI infer</option>
+                      <option value="">Suggest from customer context</option>
                       <option>Startup</option>
                       <option>Mid-market</option>
                       <option>Enterprise</option>
@@ -983,7 +1115,10 @@
                     </select>
                   </div>
                 </div>
+                </div>
 
+                <div class="form-step">
+                  <h4>2. Add market and entity hints</h4>
                 <div class="split">
                   <div class="field">
                     <label for="lookupWebsite">Website or Subsidiary Hint</label>
@@ -1000,20 +1135,38 @@
                     </div>
                   </div>
                 </div>
+                </div>
 
+                <div class="form-step">
+                  <h4>3. Add what the team already knows</h4>
                 <div class="field">
                   <label for="lookupNotes">What We Know Already</label>
                   <textarea id="lookupNotes" placeholder="Products, subsidiaries, past projects, tested standards, known markets, or account notes."></textarea>
                 </div>
+                </div>
 
-                <div class="split">
+                <div class="form-step">
+                  <h4>4. Run enrichment, review, then save at the end</h4>
                   <button class="button" id="runLookup" type="submit">Lookup and enrich customer</button>
-                  <button class="button secondary" id="saveResult" type="button" disabled>Save enriched customer</button>
                 </div>
               </form>
 
               <div id="candidateBox" class="candidate-list hidden"></div>
+              <div id="enrichmentProgress" class="work-visual hidden">
+                <strong>Enriching customer profile</strong>
+                <div class="progress-rail"><span></span></div>
+                <div class="progress-steps">
+                  <span class="active">Resolving entity</span>
+                  <span>Reading context</span>
+                  <span>Mapping standards</span>
+                  <span>Preparing editable profile</span>
+                </div>
+              </div>
               <div id="resultBox" class="result-card hidden"></div>
+              <div id="saveVisual" class="save-visual hidden">
+                <strong>Customer saved to this browser workspace.</strong>
+                <span class="row-copy">The current build stores customers locally in the browser. A shared team database is the next backend step.</span>
+              </div>
               <div class="status-line">
                 <span id="enrichmentStatus">Ready. Demo enrichment is available even before the AWS AI API is connected.</span>
                 <span id="apiMode">Mode: browser demo</span>
@@ -1025,11 +1178,11 @@
                 <div>
                   <h2>Saved Customers</h2>
                   <p>
-                    Saved profiles keep confirmed data, AI guesses, hypercare
-                    status, and account engagement ideas together.
+                    Saved profiles keep confirmed data, AI guesses, project
+                    history, and account engagement ideas together.
                   </p>
                 </div>
-                <button class="button secondary" id="resetCustomers">Reset customers</button>
+                <button class="button secondary" id="resetCustomers">Clear customer list</button>
               </div>
               <div class="customer-list" id="customerList"></div>
             </section>
@@ -1471,28 +1624,28 @@
 
       const starterCustomers = [
         {
-          id: "cust-bmw",
-          name: "BMW Group",
-          website: "https://www.bmwgroup.com",
-          headquarters: "Munich, Germany",
+          id: "cust-aster-mobility",
+          name: "Aster Mobility Systems",
+          website: "https://example.com/aster-mobility",
+          headquarters: "Raleigh, North Carolina, US",
           sector: "Automotive",
-          subSector: "Premium vehicles, connected mobility, manufacturing",
-          size: "Global enterprise",
-          markets: ["North America", "EU", "China", "Global"],
-          summary: "BMW Group is a global automotive manufacturer with connected-vehicle, software, manufacturing, and supplier-chain exposure across multiple regions.",
+          subSector: "Connected mobility components and fleet software",
+          size: "Mid-market",
+          markets: ["North America", "EU"],
+          summary: "Aster Mobility Systems is a fictional connected-mobility supplier with software, vehicle connectivity, and export exposure. Use it as sample data only.",
           knownStandards: ["ISO/SAE 21434", "ISO 26262"],
           guessedStandards: ["UNECE R155 / R156", "TISAX", "IEC 62443"],
-          hypercare: "Active",
-          owner: "NA Cybersecurity",
+          hypercare: "Inactive",
+          owner: "NA team",
           userNotes: "Sample profile. Replace with confirmed account intelligence before using in front of a customer.",
           projects: [
             {
-              name: "Connected vehicle cybersecurity readiness",
+              name: "Prototype cybersecurity readiness review",
               type: "Gap assessment",
               date: "2025-09-15",
-              status: "Hypercare",
+              status: "Completed",
               standards: ["ISO/SAE 21434", "UNECE R155 / R156"],
-              notes: "Sample project record to show how completed assessments can drive future change notifications."
+              notes: "Fictional project record to show how completed assessments can drive future change notifications."
             }
           ],
           actions: [
@@ -1521,64 +1674,61 @@
       let customers = store.get("assuranceCustomersV2", starterCustomers);
       let selectedRegions = new Set(["North America"]);
       let currentResult = null;
+      let expandedCustomerKey = "";
 
       const knownCompanies = {
-        bmw: [
+        aster: [
           {
-            name: "BMW Group",
-            website: "https://www.bmwgroup.com",
-            headquarters: "Munich, Germany",
+            name: "Aster Mobility Systems",
+            website: "https://example.com/aster-mobility",
+            headquarters: "Raleigh, North Carolina, US",
             sector: "Automotive",
-            subSector: "Premium vehicles, connected mobility, manufacturing",
-            size: "Global enterprise",
-            markets: ["North America", "EU", "China", "Global"],
-            summary: "Global automotive group with premium vehicle brands, connected mobility programs, software-defined vehicle exposure, and manufacturing operations."
+            subSector: "Connected mobility components and fleet software",
+            size: "Mid-market",
+            markets: ["North America", "EU"],
+            summary: "Fictional connected-mobility supplier with vehicle software, components, export exposure, and cybersecurity readiness needs."
           },
           {
-            name: "BMW Manufacturing Co.",
-            website: "https://www.bmwgroup-werke.com/spartanburg/en.html",
-            headquarters: "Spartanburg, South Carolina, US",
-            sector: "Automotive",
-            subSector: "Vehicle manufacturing and export operations",
-            size: "Enterprise",
-            markets: ["North America", "Global"],
-            summary: "US manufacturing operation with production, supplier, export, industrial automation, and plant resilience considerations."
-          }
-        ],
-        siemens: [
-          {
-            name: "Siemens AG",
-            website: "https://www.siemens.com",
-            headquarters: "Munich, Germany",
+            name: "Aster Industrial Controls",
+            website: "https://example.com/aster-controls",
+            headquarters: "Cleveland, Ohio, US",
             sector: "Industrial / OT",
-            subSector: "Automation, smart infrastructure, industrial software",
-            size: "Global enterprise",
-            markets: ["North America", "EU", "China", "Global"],
-            summary: "Global technology company with industrial automation, infrastructure, software, and OT security relevance."
-          }
-        ],
-        "rockwell automation": [
+            subSector: "Machine control systems and remote monitoring",
+            size: "Mid-market",
+            markets: ["North America", "EU"],
+            summary: "Fictional industrial controls company with machinery safety, OT cybersecurity, and market-access exposure."
+          },
           {
-            name: "Rockwell Automation",
-            website: "https://www.rockwellautomation.com",
-            headquarters: "Milwaukee, Wisconsin, US",
-            sector: "Industrial / OT",
-            subSector: "Industrial automation and control systems",
-            size: "Global enterprise",
-            markets: ["North America", "EU", "Global"],
-            summary: "Industrial automation provider with control systems, connected operations, secure product development, and OT cybersecurity exposure."
-          }
-        ],
-        philips: [
-          {
-            name: "Philips",
-            website: "https://www.philips.com",
-            headquarters: "Amsterdam, Netherlands",
+            name: "Aster Medical Devices",
+            website: "https://example.com/aster-medical",
+            headquarters: "Minneapolis, Minnesota, US",
             sector: "Medical Devices",
-            subSector: "Health technology and connected medical systems",
-            size: "Global enterprise",
-            markets: ["North America", "EU", "China", "Global"],
-            summary: "Global health technology company with connected medical devices, software, privacy, and product security requirements."
+            subSector: "Connected diagnostics and care devices",
+            size: "Enterprise",
+            markets: ["North America", "EU"],
+            summary: "Fictional connected medical device maker with software, product cybersecurity, and regulatory assessment needs."
+          }
+        ],
+        nova: [
+          {
+            name: "Nova Rail Systems",
+            website: "https://example.com/nova-rail",
+            headquarters: "Toronto, Canada",
+            sector: "Automotive",
+            subSector: "Rail and mobility electronics",
+            size: "Enterprise",
+            markets: ["North America", "EU", "UK"],
+            summary: "Fictional rail electronics supplier with safety, cybersecurity, and market-access exposure."
+          },
+          {
+            name: "Nova Cloud Security",
+            website: "https://example.com/nova-cloud",
+            headquarters: "Austin, Texas, US",
+            sector: "ICT / Connected Products",
+            subSector: "Cloud security and managed services",
+            size: "Mid-market",
+            markets: ["North America", "EU"],
+            summary: "Fictional cloud security provider with ISMS, assessment, and EU customer assurance needs."
           }
         ]
       };
@@ -1629,6 +1779,7 @@
         return {
           userNotes: "",
           projects: [],
+          hypercare: "Inactive",
           ...customer,
           knownStandards: safeList(customer.knownStandards),
           guessedStandards: safeList(customer.guessedStandards),
@@ -1686,6 +1837,17 @@
         document.getElementById("apiMode").textContent = modeText || (getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
       }
 
+      function showEnrichmentProgress(show) {
+        document.getElementById("enrichmentProgress").classList.toggle("hidden", !show);
+      }
+
+      function showSaveVisual(message = "Customer saved to this browser workspace.") {
+        const box = document.getElementById("saveVisual");
+        box.classList.remove("hidden");
+        box.querySelector("strong").textContent = message;
+        setTimeout(() => box.classList.add("hidden"), 4200);
+      }
+
       function activeRegionList() {
         return Array.from(selectedRegions);
       }
@@ -1693,9 +1855,9 @@
       function inferSector(name, hint, notes) {
         if (hint) return hint;
         const text = normalize(`${name} ${notes}`);
-        if (text.includes("bmw") || text.includes("audi") || text.includes("vehicle") || text.includes("automotive")) return "Automotive";
-        if (text.includes("siemens") || text.includes("rockwell") || text.includes("industrial") || text.includes("plant") || text.includes("automation")) return "Industrial / OT";
-        if (text.includes("medical") || text.includes("health") || text.includes("philips")) return "Medical Devices";
+        if (text.includes("vehicle") || text.includes("automotive") || text.includes("mobility")) return "Automotive";
+        if (text.includes("industrial") || text.includes("plant") || text.includes("automation") || text.includes("controls")) return "Industrial / OT";
+        if (text.includes("medical") || text.includes("health") || text.includes("device")) return "Medical Devices";
         if (text.includes("bank") || text.includes("finance")) return "Financial Services";
         if (text.includes("iot") || text.includes("software") || text.includes("connected")) return "ICT / Connected Products";
         return "ICT / Connected Products";
@@ -1704,9 +1866,48 @@
       function candidateMatches(name) {
         const key = normalize(name);
         if (!key) return [];
-        return Object.entries(knownCompanies)
+        const known = Object.entries(knownCompanies)
           .filter(([company]) => key === company || company.includes(key) || key.includes(company))
           .flatMap(([, candidates]) => candidates);
+        if (known.length > 1) return known;
+        if (known.length === 1 && key.length > 4) return known;
+        if (key.length >= 2 && key.length <= 12) {
+          const label = String(name || "").trim().replace(/\s+/g, " ");
+          const title = label.charAt(0).toUpperCase() + label.slice(1);
+          return [
+            {
+              name: `${title} Mobility Systems`,
+              website: "",
+              headquarters: "Unknown - verify with customer",
+              sector: "Automotive",
+              subSector: "Connected mobility or vehicle systems",
+              size: "Unknown",
+              markets: ["North America", "EU"],
+              summary: "Possible customer entity generated from the search term. Confirm before enrichment."
+            },
+            {
+              name: `${title} Industrial Technologies`,
+              website: "",
+              headquarters: "Unknown - verify with customer",
+              sector: "Industrial / OT",
+              subSector: "Industrial automation or connected products",
+              size: "Unknown",
+              markets: ["North America", "Global"],
+              summary: "Possible customer entity generated from the search term. Confirm before enrichment."
+            },
+            {
+              name: `${title} Medical Systems`,
+              website: "",
+              headquarters: "Unknown - verify with customer",
+              sector: "Medical Devices",
+              subSector: "Connected medical products or regulated software",
+              size: "Unknown",
+              markets: ["North America", "EU"],
+              summary: "Possible customer entity generated from the search term. Confirm before enrichment."
+            }
+          ];
+        }
+        return known;
       }
 
       function standardsForProfile(profile, notes = "") {
@@ -1797,7 +1998,7 @@
           summary: base.summary || summaryFor(sector, input.name, markets),
           knownStandards: [],
           guessedStandards: [],
-          hypercare: "Active",
+          hypercare: "Inactive",
           owner: "NA team",
           evidenceNotes: [
             "AI-assisted profile; verify against official customer sources before treating fields as confirmed.",
@@ -1860,9 +2061,9 @@
         status.textContent = "Testing API Gateway endpoint with a small sample request...";
         try {
           const result = await enrichWithApi({
-            name: "BMW",
+            name: "Aster Mobility Systems",
             sector: "Automotive",
-            size: "Global enterprise",
+            size: "Mid-market",
             website: "",
             markets: ["North America", "EU"],
             notes: "Endpoint connection test from Assurance Hub."
@@ -1891,14 +2092,17 @@
         if (!input.name.trim()) return;
 
         document.getElementById("runLookup").disabled = true;
-        document.getElementById("saveResult").disabled = true;
+        document.getElementById("saveResult")?.setAttribute("disabled", "disabled");
         document.getElementById("candidateBox").classList.add("hidden");
+        document.getElementById("saveVisual").classList.add("hidden");
+        showEnrichmentProgress(true);
         setStatus(`Resolving ${input.name}...`, getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
 
         const candidates = !confirmed ? candidateMatches(input.name) : [];
-        if (!getApiUrl() && candidates.length > 1 && normalize(input.name).length <= 5) {
+        if (!confirmed && candidates.length > 1 && normalize(input.name).length <= 12) {
           renderCandidates(candidates, input);
           document.getElementById("runLookup").disabled = false;
+          showEnrichmentProgress(false);
           setStatus("Please confirm which organization you mean before enrichment continues.");
           return;
         }
@@ -1910,11 +2114,11 @@
           } catch (apiError) {
             if (getApiUrl()) setStatus(`AWS API unavailable (${apiError.message}). Showing browser demo enrichment.`);
           }
-          currentResult = normalizeApiResult(result) || buildDemoProfile(input, confirmed);
+          currentResult = normalizeCustomerRecord(normalizeApiResult(result) || buildDemoProfile(input, confirmed));
           renderResult(currentResult);
-          document.getElementById("saveResult").disabled = false;
           setStatus(`${currentResult.name} enriched. Review AI guesses before saving.`);
         } finally {
+          showEnrichmentProgress(false);
           document.getElementById("runLookup").disabled = false;
         }
       }
@@ -1936,7 +2140,7 @@
           knownStandards: customer.knownStandards || customer.known_compliance || customer.compliance || [],
           guessedStandards: customer.guessedStandards || customer.guessed_compliance || [],
           likelyStandards: customer.likelyStandards || customer.guessed_compliance_detail || [],
-          hypercare: customer.hypercare || "Active",
+          hypercare: customer.hypercare || "Inactive",
           owner: customer.owner || "NA team",
           userNotes: customer.userNotes || customer.user_notes || "",
           projects: Array.isArray(customer.projects) ? customer.projects : [],
@@ -1993,16 +2197,20 @@
             ${fact("Markets", regionsText(profile.markets))}
           </div>
           <div class="subpanel">
-            <h4>Likely compliance and standards</h4>
-            <div class="card-list">
+            <div class="row-top">
+              <h4>AI suggested standards</h4>
+              <button class="button secondary" id="keepAllStandards" type="button">Keep all suggestions</button>
+            </div>
+            <div class="standard-picker">
               ${(profile.likelyStandards || []).map((item) => `
-                <article class="info-card">
-                  <div class="row-top">
+                <label class="standard-choice">
+                  <input type="checkbox" class="suggested-standard" value="${esc(item.name)}" checked />
+                  <div>
                     <strong>${esc(item.name)}</strong>
-                    <span class="tag ${item.confidence === "high" ? "ok" : "warn"}">${esc(item.confidence || "medium")}</span>
+                    <p>${esc(item.why || "AI inferred this from sector, geography, and business model. Confirm before treating it as required.")}</p>
                   </div>
-                  <p>${esc(item.why || "AI inferred this from sector, geography, and business model. Confirm before treating it as required.")}</p>
-                </article>
+                  <span class="tag ${item.confidence === "high" ? "ok" : "warn"}">${esc(item.confidence || "medium")}</span>
+                </label>
               `).join("") || `<p class="row-copy">No standards matched yet. Add more sector or market details.</p>`}
             </div>
           </div>
@@ -2021,17 +2229,56 @@
             <div class="tags">${renderTags(profile.evidenceNotes, "tag dark")}</div>
           </div>
           <div class="record-editor">
-            <h4>Save with internal customer notes</h4>
+            <h4>4. Review and edit customer details</h4>
+            <div class="split">
+              <div class="field">
+                <label for="editCustomerName">Customer Name</label>
+                <input id="editCustomerName" value="${esc(profile.name || "")}" />
+              </div>
+              <div class="field">
+                <label for="editCustomerWebsite">Website</label>
+                <input id="editCustomerWebsite" value="${esc(profile.website || "")}" placeholder="https://..." />
+              </div>
+            </div>
+            <div class="split">
+              <div class="field">
+                <label for="editCustomerHeadquarters">Headquarters</label>
+                <input id="editCustomerHeadquarters" value="${esc(profile.headquarters || "")}" />
+              </div>
+              <div class="field">
+                <label for="editCustomerSize">Size</label>
+                <input id="editCustomerSize" value="${esc(profile.size || "")}" />
+              </div>
+            </div>
+            <div class="split">
+              <div class="field">
+                <label for="editCustomerSector">Sector</label>
+                <input id="editCustomerSector" value="${esc(profile.sector || "")}" />
+              </div>
+              <div class="field">
+                <label for="editCustomerSubSector">Sub-sector</label>
+                <input id="editCustomerSubSector" value="${esc(profile.subSector || "")}" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="editCustomerSummary">Customer Summary</label>
+              <textarea id="editCustomerSummary">${esc(profile.summary || "")}</textarea>
+            </div>
+            <div class="field">
+              <label for="editCustomerMarkets">Markets</label>
+              <input id="editCustomerMarkets" value="${esc(regionsText(profile.markets))}" />
+            </div>
+            <h4>5. Add internal customer notes</h4>
             <div class="split">
               <div class="field">
                 <label for="customerOwner">Account / Service Owner</label>
                 <input id="customerOwner" value="${esc(profile.owner || "NA team")}" />
               </div>
               <div class="field">
-                <label for="customerHypercare">Hypercare Status</label>
+                <label for="customerHypercare">Hypercare</label>
                 <select id="customerHypercare">
-                  <option ${profile.hypercare === "Active" ? "selected" : ""}>Active</option>
                   <option ${profile.hypercare === "Inactive" ? "selected" : ""}>Inactive</option>
+                  <option ${profile.hypercare === "Active" ? "selected" : ""}>Active</option>
                   <option ${profile.hypercare === "Pending" ? "selected" : ""}>Pending</option>
                 </select>
               </div>
@@ -2040,7 +2287,7 @@
               <label for="customerUserNotes">User-added notes</label>
               <textarea id="customerUserNotes" placeholder="Relationship context, open questions, account notes, assumptions to verify, or follow-up ideas.">${esc(profile.userNotes || "")}</textarea>
             </div>
-            <h4>Projects / assessments already done</h4>
+            <h4>6. Add projects / assessments already done</h4>
             <div class="split">
               <div class="field">
                 <label for="projectName">Project / Assessment</label>
@@ -2074,8 +2321,13 @@
               <label for="projectNotes">Project notes</label>
               <textarea id="projectNotes" placeholder="Scope, findings, open actions, or hypercare notes."></textarea>
             </div>
+            <button class="button" id="saveResult" type="button">Save customer to list</button>
           </div>
         `;
+        document.getElementById("keepAllStandards")?.addEventListener("click", () => {
+          document.querySelectorAll(".suggested-standard").forEach((checkbox) => { checkbox.checked = true; });
+        });
+        document.getElementById("saveResult")?.addEventListener("click", saveCurrentResult);
       }
 
       function fact(label, value, html = false) {
@@ -2098,9 +2350,22 @@
         const merged = normalizeCustomerRecord({
           ...existing,
           ...currentResult,
+          name: document.getElementById("editCustomerName")?.value.trim() || currentResult.name,
+          website: document.getElementById("editCustomerWebsite")?.value.trim() || "",
+          headquarters: document.getElementById("editCustomerHeadquarters")?.value.trim() || "",
+          sector: document.getElementById("editCustomerSector")?.value.trim() || "",
+          subSector: document.getElementById("editCustomerSubSector")?.value.trim() || "",
+          size: document.getElementById("editCustomerSize")?.value.trim() || "",
+          markets: document.getElementById("editCustomerMarkets")?.value.split(",").map((item) => item.trim()).filter(Boolean) || currentResult.markets,
+          summary: document.getElementById("editCustomerSummary")?.value.trim() || "",
           owner: document.getElementById("customerOwner")?.value.trim() || currentResult.owner || "NA team",
-          hypercare: document.getElementById("customerHypercare")?.value || currentResult.hypercare || "Active",
+          hypercare: document.getElementById("customerHypercare")?.value || currentResult.hypercare || "Inactive",
           userNotes: document.getElementById("customerUserNotes")?.value.trim() || "",
+          guessedStandards: Array.from(document.querySelectorAll(".suggested-standard:checked")).map((checkbox) => checkbox.value),
+          likelyStandards: safeList(currentResult.likelyStandards).filter((item) => {
+            const name = typeof item === "string" ? item : item.name;
+            return Array.from(document.querySelectorAll(".suggested-standard:checked")).some((checkbox) => checkbox.value === name);
+          }),
           projects: [
             ...(Array.isArray(existing.projects) ? existing.projects : []),
             ...(Array.isArray(currentResult.projects) ? currentResult.projects : [])
@@ -2117,8 +2382,9 @@
         store.set("assuranceCustomersV2", customers);
         renderCustomers();
         renderWatch();
-        document.getElementById("saveResult").disabled = true;
-        setStatus(`${currentResult.name} saved. Hypercare watch updated.`);
+        showSaveVisual(`${currentResult.name} added to the customer list.`);
+        document.getElementById("saveResult")?.setAttribute("disabled", "disabled");
+        setStatus(`${currentResult.name} saved locally. Shared database storage is not connected yet.`);
       }
 
       function renderCustomers() {
@@ -2126,43 +2392,62 @@
         if (!customers.length) {
           list.innerHTML = `<div class="customer-row"><p class="row-copy">No saved customers yet. Enrich and save the first profile.</p></div>`;
         } else {
-          list.innerHTML = customers.map((customer, index) => `
-            <article class="customer-row">
+          const sortedCustomers = customers
+            .map((customer, index) => ({ customer, index }))
+            .sort((a, b) => String(a.customer.name || "").localeCompare(String(b.customer.name || "")));
+          list.innerHTML = sortedCustomers.map(({ customer, index }) => `
+            <article class="customer-row ${expandedCustomerKey === profileKey(customer) ? "open" : ""}">
               <div class="row-top">
                 <div class="row-title">
-                  <strong>${esc(customer.name)}</strong>
-                  <span>${esc(customer.sector || "Unknown sector")} | ${esc(customer.size || "Unknown size")} | ${esc(regionsText(customer.markets))}</span>
+                  <button class="customer-name-button" data-toggle-customer="${index}" type="button">${esc(customer.name)}</button>
                 </div>
                 <span class="tag ${customer.hypercare === "Active" ? "ok" : ""}">${esc(customer.hypercare || "Inactive")}</span>
               </div>
-              <div class="row-copy">${esc(customer.summary || "No summary saved yet.")}</div>
-              <div class="row-copy">Website: ${externalLink(customer.website, customer.website || "Not saved")}</div>
-              ${customer.userNotes ? `<div class="row-copy">Notes: ${esc(customer.userNotes)}</div>` : ""}
-              <div class="tags">${renderTags([...safeList(customer.knownStandards), ...safeList(customer.guessedStandards)].slice(0, 8))}</div>
-              <div class="project-list">
-                ${customer.projects?.length ? customer.projects.slice(0, 3).map((project) => `
-                  <div class="project-card">
-                    <strong>${esc(project.name)}</strong>
-                    <span>${esc(project.type || "Project")} | ${esc(project.status || "Status unknown")} | ${esc(project.date || "Date unknown")}</span>
-                    <div class="tags" style="margin-top: 8px;">${renderTags(project.standards)}</div>
-                    ${project.notes ? `<p class="row-copy">${esc(project.notes)}</p>` : ""}
-                  </div>
-                `).join("") : `<p class="row-copy">No projects or assessments saved yet.</p>`}
-              </div>
-              <div class="split">
-                <button class="button secondary" data-load-customer="${index}" type="button">Open profile</button>
-                <button class="button secondary" data-toggle-watch="${index}" type="button">${customer.hypercare === "Active" ? "Pause hypercare" : "Start hypercare"}</button>
+              <div class="customer-detail">
+                <span class="row-copy">${esc(customer.sector || "Unknown sector")} | ${esc(customer.size || "Unknown size")} | ${esc(regionsText(customer.markets))}</span>
+                <div class="row-copy">${esc(customer.summary || "No summary saved yet.")}</div>
+                <div class="row-copy">Website: ${externalLink(customer.website, customer.website || "Not saved")}</div>
+                ${customer.userNotes ? `<div class="row-copy">Notes: ${esc(customer.userNotes)}</div>` : ""}
+                <div class="info-card">
+                  <strong>AI suggested or publicly known standards</strong>
+                  <div class="tags">${renderTags(safeList(customer.guessedStandards).slice(0, 12)) || `<span class="row-copy">No suggested standards saved.</span>`}</div>
+                </div>
+                <div class="info-card">
+                  <strong>Standards covered in our projects / assessments</strong>
+                  <div class="tags">${renderTags(unique((customer.projects || []).flatMap((project) => safeList(project.standards)))) || `<span class="row-copy">No delivered standards saved yet.</span>`}</div>
+                </div>
+                <div class="project-list">
+                  ${customer.projects?.length ? customer.projects.map((project) => `
+                    <div class="project-card">
+                      <strong>${esc(project.name)}</strong>
+                      <span>${esc(project.type || "Project")} | ${esc(project.status || "Status unknown")} | ${esc(project.date || "Date unknown")}</span>
+                      <div class="tags" style="margin-top: 8px;">${renderTags(project.standards)}</div>
+                      ${project.notes ? `<p class="row-copy">${esc(project.notes)}</p>` : ""}
+                    </div>
+                  `).join("") : `<p class="row-copy">No projects or assessments saved yet.</p>`}
+                </div>
+                <div class="split">
+                  <button class="button secondary" data-load-customer="${index}" type="button">Edit profile</button>
+                  <button class="button secondary" data-toggle-watch="${index}" type="button">${customer.hypercare === "Active" ? "Remove from hypercare" : "Add to hypercare"}</button>
+                </div>
               </div>
             </article>
           `).join("");
         }
         document.getElementById("customerCount").textContent = customers.length;
         document.getElementById("watchCount").textContent = customers.filter((customer) => customer.hypercare === "Active").length;
+        list.querySelectorAll("[data-toggle-customer]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const customer = customers[Number(button.dataset.toggleCustomer)];
+            const key = profileKey(customer);
+            expandedCustomerKey = expandedCustomerKey === key ? "" : key;
+            renderCustomers();
+          });
+        });
         list.querySelectorAll("[data-load-customer]").forEach((button) => {
           button.addEventListener("click", () => {
             currentResult = customers[Number(button.dataset.loadCustomer)];
             renderResult(currentResult);
-            document.getElementById("saveResult").disabled = false;
             document.querySelectorAll(".nav-tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === "customers"));
             document.querySelectorAll(".app-view").forEach((view) => view.classList.toggle("active", view.id === "customers"));
             document.getElementById("customers").scrollIntoView();
@@ -2244,20 +2529,20 @@
       }
 
       document.getElementById("lookupForm").addEventListener("submit", runLookup);
-      document.getElementById("saveResult").addEventListener("click", saveCurrentResult);
-      document.getElementById("sampleBMW").addEventListener("click", () => {
-        document.getElementById("lookupName").value = "BMW";
+      document.getElementById("sampleCustomer").addEventListener("click", () => {
+        document.getElementById("lookupName").value = "Aster";
         document.getElementById("lookupSector").value = "Automotive";
-        document.getElementById("lookupSize").value = "Global enterprise";
-        document.getElementById("lookupWebsite").value = "BMW Group with US manufacturing and EU headquarters";
-        document.getElementById("lookupNotes").value = "Connected vehicles, software updates, supplier ecosystem, functional safety, manufacturing OT, and global market access.";
-        selectedRegions = new Set(["North America", "EU", "China", "Global"]);
+        document.getElementById("lookupSize").value = "Mid-market";
+        document.getElementById("lookupWebsite").value = "Fictional EU subsidiary and US engineering team";
+        document.getElementById("lookupNotes").value = "Connected mobility components, vehicle software, supplier ecosystem, functional safety, and EU market access.";
+        selectedRegions = new Set(["North America", "EU"]);
         renderRegionPicker();
         document.getElementById("lookupName").focus();
       });
 
       document.getElementById("resetCustomers").addEventListener("click", () => {
-        customers = starterCustomers.map(normalizeCustomerRecord);
+        customers = [];
+        expandedCustomerKey = "";
         store.set("assuranceCustomersV2", customers);
         renderCustomers();
         renderWatch();
@@ -2333,6 +2618,7 @@
         button.addEventListener("click", () => {
           document.querySelectorAll(".nav-tab").forEach((tab) => tab.classList.remove("active"));
           document.querySelectorAll(".app-view").forEach((view) => view.classList.remove("active"));
+          document.querySelectorAll(".view-overview").forEach((view) => view.classList.toggle("active", button.dataset.view === "customers"));
           button.classList.add("active");
           document.getElementById(button.dataset.view).classList.add("active");
           document.querySelector(".content").scrollIntoView({ behavior: "smooth", block: "start" });
