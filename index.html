@@ -59,7 +59,7 @@
         gap: 32px;
         max-width: 1480px;
         margin: 0 auto;
-        padding: 24px 38px 20px;
+        padding: 22px 38px;
       }
 
       .brand {
@@ -130,29 +130,31 @@
       }
 
       .primary-nav {
-        display: flex;
-        gap: 42px;
-        max-width: 1480px;
-        margin: 0 auto;
-        padding: 0 38px 20px;
-        background: var(--panel);
+        position: sticky;
+        top: 104px;
+        display: grid;
+        gap: 8px;
+        align-self: start;
       }
 
       .nav-tab {
-        min-height: 34px;
-        padding: 0;
-        border: 0;
-        border-bottom: 3px solid transparent;
+        min-height: 48px;
+        padding: 0 16px;
+        border: 1px solid transparent;
+        border-left: 4px solid transparent;
         color: #2d3237;
-        background: var(--panel);
+        background: transparent;
         font-size: 1.06rem;
         line-height: 1.25;
         text-align: left;
       }
 
       .nav-tab.active {
-        border-bottom-color: var(--blue);
+        border-color: var(--line);
+        border-left-color: var(--blue);
         color: var(--blue-dark);
+        background: #ffffff;
+        font-weight: 800;
       }
 
       .hero {
@@ -205,6 +207,34 @@
         padding: 28px 38px 82px;
       }
 
+      .app-shell {
+        display: grid;
+        grid-template-columns: 230px minmax(0, 1fr);
+        gap: 28px;
+        align-items: start;
+      }
+
+      .side-nav {
+        border: 1px solid var(--line);
+        background: var(--panel);
+        padding: 14px;
+      }
+
+      .side-nav-title {
+        margin: 0 0 12px;
+        padding: 8px 12px 14px;
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .workspace {
+        min-width: 0;
+      }
+
       .app-view {
         display: none;
       }
@@ -225,12 +255,6 @@
         display: block;
       }
 
-      .service-strip.view-overview.active,
-      .metric-grid.view-overview.active {
-        display: grid;
-      }
-
-      #customerMetrics .metric,
       .compliance-kpis .metric {
         min-height: 178px;
         color: #ffffff;
@@ -238,18 +262,10 @@
         border-color: var(--blue);
       }
 
-      #customerMetrics .metric span,
-      #customerMetrics .metric strong,
-      #customerMetrics .metric p,
       .compliance-kpis .metric span,
       .compliance-kpis .metric strong,
       .compliance-kpis .metric p {
         color: #ffffff;
-      }
-
-      #customersOverview,
-      #customerMetrics {
-        display: none !important;
       }
 
       .customer-layout {
@@ -388,8 +404,7 @@
       }
 
       .service-strip,
-      .metric-grid,
-      .source-grid {
+      .metric-grid {
         display: grid;
         gap: 18px;
       }
@@ -994,28 +1009,6 @@
         background: #f8fafc;
       }
 
-      .source-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-
-      .source-card {
-        min-height: 170px;
-        padding: 22px;
-        border: 1px solid var(--line);
-        background: var(--panel);
-      }
-
-      .source-card h3 {
-        margin: 0 0 12px;
-        color: var(--blue-dark);
-      }
-
-      .source-card p {
-        margin: 0 0 14px;
-        color: var(--muted);
-        line-height: 1.5;
-      }
-
       .text-link {
         color: var(--blue-dark);
         font-weight: 800;
@@ -1107,7 +1100,7 @@
         .section-grid,
         .metric-grid,
         .service-strip,
-        .source-grid,
+        .app-shell,
         .dashboard-grid {
           grid-template-columns: 1fr 1fr;
         }
@@ -1136,10 +1129,10 @@
         }
 
         .primary-nav,
+        .app-shell,
         .service-strip,
         .metric-grid,
         .section-grid,
-        .source-grid,
         .dashboard-grid,
         .setup-grid,
         .split,
@@ -1150,8 +1143,12 @@
         }
 
         .primary-nav {
-          flex-direction: column;
           gap: 14px;
+          position: static;
+        }
+
+        .content {
+          padding-top: 20px;
         }
 
         .hero-copy {
@@ -1178,67 +1175,21 @@
           <span class="search"><span class="search-icon"></span>Search</span>
         </div>
       </div>
-
-      <nav class="primary-nav" aria-label="Main menu">
-        <button class="nav-tab active" data-view="watch">Daily Watch</button>
-        <button class="nav-tab" data-view="customers">Customers</button>
-        <button class="nav-tab" data-view="compliance">Standards</button>
-        <button class="nav-tab" data-view="setup">Settings</button>
-      </nav>
     </header>
 
     <main>
-      <section class="hero hidden" id="heroOverview" aria-label="Assurance Hub overview">
-        <div class="hero-copy">
-          <h1>Activate customer assurance intelligence.</h1>
-          <p>
-            Look up global customers, enrich their profile, infer likely
-            compliance needs, and plan practical engagement actions.
-          </p>
-        </div>
-        <div class="wave"></div>
-      </section>
-
       <section class="content">
-        <section class="intro-copy view-overview active" id="customersOverview">
-          <h1>Customer assurance intelligence for global account teams.</h1>
-          <p>
-            This hub helps NA-based team members work with customers anywhere
-            in the world. Use it to capture account context, enrich customer
-            profiles, connect subsidiaries and operating markets, and identify
-            cybersecurity, functional safety, and market-access topics that may
-            need follow-up.
-          </p>
-          <p>
-            The goal state is a shared customer and standards knowledge base:
-            AI assists with research, team members confirm the facts, completed
-            projects are tied to customers, and standards changes can trigger
-            practical outreach.
-          </p>
-        </section>
-
-        <div class="metric-grid view-overview active" id="customerMetrics">
-          <article class="metric">
-            <span>Standards library</span>
-            <strong id="standardCount">0</strong>
-            <p>Cybersecurity, functional safety, and regulatory references.</p>
-          </article>
-          <article class="metric">
-            <span>Saved customers</span>
-            <strong id="customerCount">0</strong>
-            <p>Profiles saved in this demo browser.</p>
-          </article>
-          <article class="metric">
-            <span>Hypercare watch</span>
-            <strong id="watchCount">0</strong>
-            <p>Customer accounts monitored for standard changes.</p>
-          </article>
-          <article class="metric">
-            <span>Daily updates</span>
-            <strong>06:00</strong>
-            <p>Designed for a daily automated standards change check.</p>
-          </article>
-        </div>
+        <div class="app-shell">
+          <aside class="side-nav">
+            <div class="side-nav-title">Navigation</div>
+            <nav class="primary-nav" aria-label="Main menu">
+              <button class="nav-tab active" data-view="watch">Daily Watch</button>
+              <button class="nav-tab" data-view="customers">Customers</button>
+              <button class="nav-tab" data-view="compliance">Standards</button>
+              <button class="nav-tab" data-view="setup">Settings</button>
+            </nav>
+          </aside>
+          <section class="workspace">
 
         <section class="section-grid customer-layout app-view" id="customers">
           <section class="panel customer-overview">
@@ -1541,26 +1492,6 @@
           </div>
         </section>
 
-        <section class="app-view" id="sources">
-          <div class="source-grid">
-            <article class="source-card">
-              <h3>Functional Safety</h3>
-              <p>Useful sectors include manufacturing, process industries, railway, automotive, and medical industries.</p>
-              <div class="tags"><span class="tag">IEC 61508</span><span class="tag">IEC 61511</span><span class="tag">ISO 13849</span><span class="tag">ISO 26262</span></div>
-            </article>
-            <article class="source-card">
-              <h3>Cybersecurity</h3>
-              <p>Relevant services include OT security, penetration testing, IT compliance, ISMS, TISAX, and cloud security.</p>
-              <div class="tags"><span class="tag">ISO 27001</span><span class="tag">NIST 800-115</span><span class="tag">TISAX</span><span class="tag">IEC 62443</span></div>
-            </article>
-            <article class="source-card">
-              <h3>Market Access</h3>
-              <p>Global product launches can require local legal requirements, conformity certificates, test marks, and approval support.</p>
-              <div class="tags"><span class="tag">UKCA</span><span class="tag">CE</span><span class="tag">PVoC</span><span class="tag">Certipedia</span></div>
-            </article>
-          </div>
-        </section>
-
         <section class="panel app-view" id="setup">
           <div class="panel-head">
             <div>
@@ -1615,6 +1546,8 @@
           </div>
           <div class="admin-list" id="adminRequestList"></div>
         </section>
+          </section>
+        </div>
       </section>
     </main>
 
@@ -1916,6 +1849,11 @@
           .replace(/>/g, "&gt;")
           .replace(/"/g, "&quot;")
           .replace(/'/g, "&#039;");
+      }
+
+      function setText(id, value) {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value;
       }
 
       function safeList(value) {
@@ -2665,8 +2603,8 @@
             </article>
           `).join("");
         }
-        document.getElementById("customerCount").textContent = customers.length;
-        document.getElementById("watchCount").textContent = customers.filter((customer) => customer.hypercare === "Active").length;
+        setText("customerCount", customers.length);
+        setText("watchCount", customers.filter((customer) => customer.hypercare === "Active").length);
         updateComplianceKpis();
         list.querySelectorAll("[data-toggle-customer]").forEach((button) => {
           button.addEventListener("click", () => {
@@ -2747,7 +2685,7 @@
             `).join("")}
           </section>
         `).join("");
-        document.getElementById("standardCount").textContent = standards.length;
+        setText("standardCount", standards.length);
         updateComplianceKpis();
         renderStandardOptions();
         renderWatch();
@@ -2768,9 +2706,9 @@
           return normalize(`${project.type} ${project.status}`).includes("cert") && String(project.date || "").startsWith(year);
         }).length;
         const changes = standards.reduce((total, standard) => total + safeList(standard.changes).length, 0);
-        document.getElementById("certifiedYearCount").textContent = certifiedThisYear;
-        document.getElementById("topStandardName").textContent = top.length > 16 ? `${top.slice(0, 16)}...` : top;
-        document.getElementById("recentChangeCount").textContent = changes;
+        setText("certifiedYearCount", certifiedThisYear);
+        setText("topStandardName", top.length > 16 ? `${top.slice(0, 16)}...` : top);
+        setText("recentChangeCount", changes);
       }
 
       function moveCustomerLookupPanel() {
@@ -2789,9 +2727,9 @@
         const recent = changes
           .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
           .slice(0, 4);
-        document.getElementById("dashboardStandardCount").textContent = standards.length;
-        document.getElementById("dashboardHypercareCount").textContent = active.length;
-        document.getElementById("dashboardRecentChangeCount").textContent = changes.length;
+        setText("dashboardStandardCount", standards.length);
+        setText("dashboardHypercareCount", active.length);
+        setText("dashboardRecentChangeCount", changes.length);
         document.getElementById("watchHighlightList").innerHTML = recent.length ? recent.map((change) => `
           <article class="highlight-card">
             <strong>${esc(change.standard)}: ${esc(change.title || "Public change")}</strong>
