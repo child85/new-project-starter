@@ -997,8 +997,61 @@
         box-shadow: var(--shadow);
       }
 
+      .dialog-overlay.review-mode .dialog-panel {
+        width: min(1120px, 100%);
+      }
+
+      .dialog-overlay.review-mode #lookupForm {
+        display: none;
+      }
+
       .dialog-panel .candidate-list {
         padding: 22px;
+      }
+
+      .review-form {
+        display: grid;
+        gap: 18px;
+      }
+
+      .review-section {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .review-section h3 {
+        margin: 0;
+        color: var(--blue-dark);
+        font-size: 1.2rem;
+      }
+
+      .review-section p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      .review-field-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .review-wide {
+        grid-column: 1 / -1;
+      }
+
+      .review-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .short-summary {
+        max-width: 980px;
       }
 
       .customer-list,
@@ -1321,7 +1374,8 @@
         }
 
         .wide-split,
-        .profile-grid {
+        .profile-grid,
+        .review-field-grid {
           grid-template-columns: 1fr 1fr;
         }
       }
@@ -1353,6 +1407,8 @@
         .split,
         .wide-split,
         .profile-grid,
+        .review-field-grid,
+        .review-actions,
         .customer-card.open .customer-detail,
         .customer-card,
         .controls,
@@ -2388,7 +2444,9 @@
       }
 
       function closeCustomerDialog() {
-        document.getElementById("candidateDialog").classList.add("hidden");
+        const dialog = document.getElementById("candidateDialog");
+        dialog.classList.add("hidden");
+        dialog.classList.remove("review-mode");
         document.getElementById("candidateBox").classList.add("hidden");
         showEnrichmentProgress(false);
         document.getElementById("lookupForm").reset();
@@ -2624,16 +2682,91 @@
         return `${name} appears to fit the ${sector} context with operations or market exposure in ${regionsText(markets)}. The profile should be reviewed by the account team before using it as confirmed customer intelligence.`;
       }
 
+      function shortSummary(value, maxLength = 260) {
+        const text = String(value || "").replace(/\s+/g, " ").trim();
+        if (!text) return "";
+        return text.length > maxLength ? `${text.slice(0, maxLength - 3).trim()}...` : text;
+      }
+
       function customerBrief(profile, likelyStandards, notes, sourceSummary = "") {
-        const standardNames = likelyStandards.slice(0, 3).map((item) => item.name).filter(Boolean);
-        const base = sourceSummary || summaryFor(profile.sector, profile.name, profile.markets);
-        const employeeText = profile.employeeEstimate ? ` Estimated employee range: ${profile.employeeEstimate}.` : "";
-        const revenueText = profile.revenueEstimate ? ` Estimated revenue range: ${profile.revenueEstimate}.` : "";
-        const standardsText = standardNames.length
-          ? ` The most important initial standards to review are ${standardNames.join(", ")} because of the customer's sector, product context, and market exposure.`
-          : " No strong standard match was found yet; add products, subsidiaries, or market details to improve the fit.";
+        const base = shortSummary(sourceSummary || summaryFor(profile.sector, profile.name, profile.markets), 340);
         const noteText = notes ? ` User hint considered: ${notes.trim()}` : "";
-        return `${base}${employeeText}${revenueText}${standardsText}${noteText}`;
+        return `${base}${noteText}`;
+      }
+
+      function readTextField(id) {
+        return document.getElementById(id)?.value.trim() || "";
+      }
+
+      function csvToList(value) {
+        return String(value || "")
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      function readCsvField(id) {
+        return csvToList(readTextField(id));
+      }
+
+      function readNotesField(id) {
+        return String(document.getElementById(id)?.value || "")
+          .split(/\n|;/)
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      function reviewInput(label, id, value = "", placeholder = "", type = "text", extraClass = "") {
+        return `
+          <div class="field ${extraClass}">
+            <label for="${esc(id)}">${esc(label)}</label>
+            <input id="${esc(id)}" type="${esc(type)}" value="${esc(value || "")}" placeholder="${esc(placeholder)}" />
+          </div>
+        `;
+      }
+
+      function reviewTextarea(label, id, value = "", placeholder = "", extraClass = "review-wide") {
+        return `
+          <div class="field ${extraClass}">
+            <label for="${esc(id)}">${esc(label)}</label>
+            <textarea id="${esc(id)}" placeholder="${esc(placeholder)}">${esc(value || "")}</textarea>
+          </div>
+        `;
+      }
+
+      function readCustomerReviewForm(profile) {
+        const standardNames = readCsvField("reviewCustomerStandards");
+        const sourceLikely = safeList(profile.likelyStandards);
+        const likelyStandards = standardNames.map((name) => {
+          const existing = sourceLikely.find((item) => normalize(typeof item === "string" ? item : item.name) === normalize(name));
+          if (!existing || typeof existing === "string") return { name, confidence: "medium", why: "Added during customer review." };
+          return { ...existing, name };
+        });
+
+        return normalizeCustomerRecord({
+          ...profile,
+          name: readTextField("reviewCustomerName") || profile.name,
+          website: readTextField("reviewCustomerWebsite"),
+          headquarters: readTextField("reviewCustomerHeadquarters"),
+          sector: readTextField("reviewCustomerSector"),
+          subSector: readTextField("reviewCustomerSubSector"),
+          size: readTextField("reviewCustomerSize"),
+          employeeEstimate: readTextField("reviewCustomerEmployees"),
+          revenueEstimate: readTextField("reviewCustomerRevenue"),
+          yearFounded: readTextField("reviewCustomerFounded"),
+          ownership: readTextField("reviewCustomerOwnership"),
+          markets: readCsvField("reviewCustomerMarkets"),
+          targetMarkets: readCsvField("reviewCustomerTargetMarkets"),
+          keyProducts: readCsvField("reviewCustomerProducts"),
+          subsidiaries: readCsvField("reviewCustomerSubsidiaries"),
+          summary: readTextField("reviewCustomerSummary"),
+          sourceNotes: readNotesField("reviewCustomerSourceNotes"),
+          evidenceNotes: readNotesField("reviewCustomerEvidence"),
+          actions: readNotesField("reviewCustomerActions"),
+          guessedStandards: standardNames,
+          likelyStandards,
+          confidence: readTextField("reviewCustomerConfidence") || profile.confidence || "medium"
+        });
       }
 
       function reasonForStandard(standard, profile) {
@@ -2726,6 +2859,7 @@
         document.getElementById("candidateBox").classList.add("hidden");
         document.getElementById("saveVisual").classList.add("hidden");
         document.getElementById("candidateDialog").classList.remove("hidden");
+        document.getElementById("candidateDialog").classList.remove("review-mode");
         document.getElementById("candidateDialogTitle").textContent = "Adding Customer";
         document.getElementById("candidateDialogCopy").textContent = "The hub is resolving the customer and building a profile summary for review.";
         setLookupStep(0, "Resolving customer entity");
@@ -2783,25 +2917,27 @@
       function normalizeApiResult(result) {
         if (!result) return null;
         const customer = result.customer || result.profile || result;
+        const business = customer.businessProfile || customer.business_profile || {};
+        const sourceProfile = customer.customer_profile || {};
         if (!customer.name) return null;
         return {
           id: customer.id || `cust-${Date.now()}`,
           name: customer.name,
-          website: customer.website || customer.customer_profile?.website || "",
-          headquarters: customer.headquarters || customer.customer_profile?.headquarters || "",
+          website: customer.website || sourceProfile.website || business.website || "",
+          headquarters: customer.headquarters || sourceProfile.headquarters || business.headquarters || "",
           sector: customer.sector || "",
-          subSector: customer.subSector || customer.sub_sector || customer.customer_profile?.market_position || "",
-          size: customer.size || customer.customer_profile?.company_size || "",
-          employeeEstimate: customer.employeeEstimate || customer.employee_estimate || customer.employee_count || customer.customer_profile?.employee_count || "",
-          revenueEstimate: customer.revenueEstimate || customer.revenue_estimate || customer.annual_revenue || customer.customer_profile?.annual_revenue || "",
-          yearFounded: customer.yearFounded || customer.year_founded || customer.founded || "",
-          ownership: customer.ownership || customer.ownership_type || customer.company_type || "",
-          keyProducts: customer.keyProducts || customer.key_products || customer.products || customer.productsServices || [],
-          targetMarkets: customer.targetMarkets || customer.target_markets || customer.markets || [],
-          subsidiaries: customer.subsidiaries || customer.operating_subsidiaries || [],
-          sourceNotes: customer.sourceNotes || customer.source_notes || [],
-          markets: customer.markets || customer.operating_regions || [customer.region || "Global"],
-          summary: customer.summary || customer.notes || customer.customer_profile?.executive_summary || "",
+          subSector: customer.subSector || customer.sub_sector || sourceProfile.market_position || business.marketPosition || "",
+          size: customer.size || sourceProfile.company_size || business.size || "",
+          employeeEstimate: customer.employeeEstimate || customer.employee_estimate || customer.employee_count || customer.employees || sourceProfile.employee_count || sourceProfile.employees || business.employeeEstimate || business.employees || "",
+          revenueEstimate: customer.revenueEstimate || customer.revenue_estimate || customer.annual_revenue || customer.revenue || sourceProfile.annual_revenue || sourceProfile.revenue || business.revenueEstimate || business.revenue || "",
+          yearFounded: customer.yearFounded || customer.year_founded || customer.founded || customer.founded_year || sourceProfile.founded || business.yearFounded || business.founded || "",
+          ownership: customer.ownership || customer.ownership_type || customer.company_type || sourceProfile.ownership || business.ownership || "",
+          keyProducts: customer.keyProducts || customer.key_products || customer.products || customer.productsServices || sourceProfile.products || business.keyProducts || [],
+          targetMarkets: customer.targetMarkets || customer.target_markets || customer.markets || sourceProfile.target_markets || business.targetMarkets || [],
+          subsidiaries: customer.subsidiaries || customer.operating_subsidiaries || customer.business_units || sourceProfile.subsidiaries || business.subsidiaries || [],
+          sourceNotes: customer.sourceNotes || customer.source_notes || sourceProfile.source_notes || business.sourceNotes || [],
+          markets: customer.markets || customer.operating_regions || sourceProfile.markets || business.markets || [customer.region || "Global"],
+          summary: customer.summary || customer.notes || sourceProfile.executive_summary || business.summary || "",
           knownStandards: customer.knownStandards || customer.known_compliance || customer.compliance || [],
           guessedStandards: customer.guessedStandards || customer.guessed_compliance || [],
           likelyStandards: customer.likelyStandards || customer.guessed_compliance_detail || [],
@@ -2818,6 +2954,7 @@
       function renderCandidates(candidates, input) {
         const box = document.getElementById("candidateBox");
         document.getElementById("candidateDialog").classList.remove("hidden");
+        document.getElementById("candidateDialog").classList.remove("review-mode");
         document.getElementById("candidateDialogTitle").textContent = "Which customer do you mean?";
         document.getElementById("candidateDialogCopy").textContent = "Choose the matching organization. The hub will start enrichment immediately after your selection.";
         box.classList.remove("hidden");
@@ -2863,69 +3000,107 @@
       function renderFoundCustomerSummary(profile) {
         const box = document.getElementById("candidateBox");
         document.getElementById("candidateDialog").classList.remove("hidden");
-        document.getElementById("candidateDialogTitle").textContent = "Customer summary";
-        document.getElementById("candidateDialogCopy").textContent = "Review what the hub found. Save the customer only if this is the right organization and the profile is useful.";
+        document.getElementById("candidateDialog").classList.add("review-mode");
+        document.getElementById("candidateDialogTitle").textContent = "Review Customer Profile";
+        document.getElementById("candidateDialogCopy").textContent = "The AI found a customer profile. Review the separate fields, correct anything that looks wrong, then save it.";
         box.classList.remove("hidden");
         const likely = standardSummaryItems(profile);
+        const standardNames = likely.map((item) => item.name).filter(Boolean);
+        const reviewedStandardNames = standardNames.length ? standardNames : safeList(profile.guessedStandards).map(itemLabel).filter(Boolean);
+        const evidenceNotes = unique([...safeList(profile.evidenceNotes), ...safeList(profile.sourceNotes)]);
+        const actionNotes = safeList(profile.actions).slice(0, 10);
         box.innerHTML = `
-          <article class="info-card">
-            <div class="row-top">
-              <div class="row-title">
-                <strong>${esc(profile.name)}</strong>
-                <span>${esc(profile.summary || "No summary returned. Add notes after saving if needed.")}</span>
-              </div>
-              <span class="tag ${profile.confidence === "high" || profile.confidence === "medium-high" ? "ok" : "warn"}">${esc(profile.confidence || "medium")} confidence</span>
-            </div>
-          </article>
-          <div class="profile-grid">
-            ${fact("Website", externalLink(profile.website, profile.website || "Unknown"), true)}
-            ${fact("Headquarters", profile.headquarters || "Unknown")}
-            ${fact("Sector", profile.sector || "Unknown")}
-            ${fact("Sub-sector", profile.subSector || "Unknown")}
-            ${fact("Size", profile.size || "Unknown")}
-            ${fact("Employee estimate", profile.employeeEstimate || "Unknown - verify")}
-            ${fact("Revenue estimate", profile.revenueEstimate || "Unknown - verify")}
-            ${fact("Founded", profile.yearFounded || "Unknown - verify")}
-            ${fact("Ownership", profile.ownership || "Unknown - verify")}
-            ${fact("Markets", regionsText(profile.markets))}
-          </div>
-          <article class="info-card">
-            <strong>Important standards to review first</strong>
-            <div class="card-list">
-              ${likely.length ? likely.slice(0, 6).map((item) => `
-                <div class="info-card">
-                  <div class="row-top">
-                    <strong>${esc(item.name)}</strong>
-                    <span class="tag ${item.confidence === "high" ? "ok" : "warn"}">${esc(item.confidence)} confidence</span>
-                  </div>
-                  <p>${esc(item.why)}</p>
+          <form class="review-form" id="quickCustomerProfileForm">
+            <section class="review-section">
+              <div class="row-top">
+                <div>
+                  <h3>1. Customer identity</h3>
+                  <p class="short-summary">Confirm the exact organization before this becomes a saved account profile.</p>
                 </div>
-              `).join("") : `<p>No standards suggested yet. Add product, subsidiary, or target-market context to improve the match.</p>`}
+                <span class="tag ${profile.confidence === "high" || profile.confidence === "medium-high" ? "ok" : "warn"}">${esc(profile.confidence || "medium")} confidence</span>
+              </div>
+              <div class="review-field-grid">
+                ${reviewInput("Customer name", "reviewCustomerName", profile.name, "Legal or commonly used company name")}
+                ${reviewInput("Website", "reviewCustomerWebsite", profile.website, "https://example.com")}
+                ${reviewInput("Headquarters", "reviewCustomerHeadquarters", profile.headquarters, "City, country")}
+                ${reviewInput("Confidence", "reviewCustomerConfidence", profile.confidence || "medium", "low, medium, high")}
+              </div>
+            </section>
+
+            <section class="review-section">
+              <h3>2. Business profile</h3>
+              <p class="short-summary">These are the facts users need at a glance. Keep estimates as ranges if the source is uncertain.</p>
+              <div class="review-field-grid">
+                ${reviewInput("Employee estimate", "reviewCustomerEmployees", profile.employeeEstimate, "Example: 10,000+ employees")}
+                ${reviewInput("Revenue estimate", "reviewCustomerRevenue", profile.revenueEstimate, "Example: $10B+ annual revenue")}
+                ${reviewInput("Founded", "reviewCustomerFounded", profile.yearFounded, "Example: 1916")}
+                ${reviewInput("Ownership", "reviewCustomerOwnership", profile.ownership, "Public company, private, subsidiary")}
+                ${reviewInput("Sector", "reviewCustomerSector", profile.sector, "Automotive, Industrial / OT, ICT")}
+                ${reviewInput("Sub-sector", "reviewCustomerSubSector", profile.subSector, "Product or service focus")}
+              </div>
+            </section>
+
+            <section class="review-section">
+              <h3>3. Markets, products, and entities</h3>
+              <p class="short-summary">Separate where the customer operates from what products, subsidiaries, or entities may drive compliance exposure.</p>
+              <div class="review-field-grid">
+                ${reviewInput("Operating markets", "reviewCustomerMarkets", regionsText(profile.markets), "North America, EU, Global")}
+                ${reviewInput("Target markets", "reviewCustomerTargetMarkets", regionsText(profile.targetMarkets?.length ? profile.targetMarkets : profile.markets), "EU, UK, China, Global")}
+                ${reviewInput("Key products / services", "reviewCustomerProducts", regionsText(profile.keyProducts), "Connected devices, vehicles, software")}
+                ${reviewInput("Subsidiaries / entities", "reviewCustomerSubsidiaries", regionsText(profile.subsidiaries), "Business units or subsidiaries to verify", "text", "review-wide")}
+              </div>
+            </section>
+
+            <section class="review-section">
+              <h3>4. Compliance fit</h3>
+              <p class="short-summary">Keep only the standards that look relevant enough for the account team to review.</p>
+              <div class="review-field-grid">
+                ${reviewInput("Suggested standards", "reviewCustomerStandards", reviewedStandardNames.join(", "), "ISO/SAE 21434, IEC 62443, ISO 26262", "text", "review-wide")}
+                ${reviewTextarea("Why these standards may matter", "reviewCustomerEvidence", evidenceNotes.join("\n"), "One source or rationale per line")}
+              </div>
+              <div class="card-list">
+                ${likely.length ? likely.slice(0, 6).map((item) => `
+                  <div class="info-card">
+                    <div class="row-top">
+                      <strong>${esc(item.name)}</strong>
+                      <span class="tag ${item.confidence === "high" ? "ok" : "warn"}">${esc(item.confidence)}</span>
+                    </div>
+                    <p>${esc(item.why)}</p>
+                  </div>
+                `).join("") : `<p>No standards suggested yet. Add product, subsidiary, or market context to improve the match.</p>`}
+              </div>
+            </section>
+
+            <section class="review-section">
+              <h3>5. Summary and engagement notes</h3>
+              <p class="short-summary">Use the summary for the customer card. Keep the measurable facts above, not buried in this paragraph.</p>
+              <div class="review-field-grid">
+                ${reviewTextarea("Short customer summary", "reviewCustomerSummary", shortSummary(profile.summary || "", 520), "One or two plain-English sentences for the customer card")}
+                ${reviewTextarea("Source notes", "reviewCustomerSourceNotes", safeList(profile.sourceNotes).join("\n"), "Where facts appear to come from, or what must be verified")}
+                ${reviewTextarea("Engagement ideas", "reviewCustomerActions", actionNotes.join("\n"), "One practical account action per line")}
+              </div>
+            </section>
+
+            <div class="review-actions">
+              <button class="button" id="confirmSaveCustomer" type="submit">Save reviewed customer</button>
+              <button class="button secondary" id="reviewFullCustomer" type="button">Open full project form</button>
             </div>
-          </article>
-          <article class="info-card">
-            <strong>First engagement ideas</strong>
-            <div class="card-list">
-              ${safeList(profile.actions).slice(0, 4).map((action) => `<p>${esc(action)}</p>`).join("") || `<p>No engagement ideas returned yet.</p>`}
-            </div>
-          </article>
-          <div class="split">
-            <button class="button" id="confirmSaveCustomer" type="button">Save this customer</button>
-            <button class="button secondary" id="reviewFullCustomer" type="button">Review and edit first</button>
-          </div>
+          </form>
           <button class="button secondary" id="searchAnotherCustomer" type="button">Search another customer</button>
         `;
-        document.getElementById("confirmSaveCustomer").addEventListener("click", () => {
-          saveLookupProfile(profile);
-          showSaveVisual(`${profile.name} saved.`);
-          setStatus(`${profile.name} added to saved customers.`);
+        document.getElementById("quickCustomerProfileForm").addEventListener("submit", (event) => {
+          event.preventDefault();
+          currentResult = readCustomerReviewForm(profile);
+          saveLookupProfile(currentResult);
+          showSaveVisual(`${currentResult.name} saved.`);
+          setStatus(`${currentResult.name} added to saved customers.`);
           setTimeout(() => {
             closeCustomerDialog();
             document.getElementById("customers").scrollIntoView({ behavior: "smooth", block: "start" });
           }, 950);
         });
         document.getElementById("reviewFullCustomer").addEventListener("click", () => {
-          currentResult = normalizeCustomerRecord(profile);
+          currentResult = readCustomerReviewForm(profile);
           closeCustomerDialog();
           renderResult(currentResult);
           document.getElementById("resultBox").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2933,6 +3108,7 @@
         document.getElementById("searchAnotherCustomer").addEventListener("click", () => {
           box.classList.add("hidden");
           document.getElementById("saveVisual").classList.add("hidden");
+          document.getElementById("candidateDialog").classList.remove("review-mode");
           document.getElementById("candidateDialogTitle").textContent = "Add Customer";
           document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity and show a summary before anything is saved.";
           document.getElementById("lookupForm").reset();
@@ -3219,7 +3395,7 @@
             <article class="customer-card ${expandedCustomerKey === profileKey(customer) ? "open" : ""}" data-customer-key="${esc(recordKey(profileKey(customer)))}">
               <div class="customer-summary">
                 <h3>${esc(customer.name)}</h3>
-                <p>${esc(customer.summary || "No short customer description saved yet.")}</p>
+                <p>${esc(shortSummary(customer.summary, 220) || "No short customer description saved yet.")}</p>
                 <div class="tags">
                   <span class="tag">${esc(customer.sector || "Unknown sector")}</span>
                   <span class="tag">${esc(regionsText(customer.markets))}</span>

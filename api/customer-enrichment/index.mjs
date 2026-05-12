@@ -526,7 +526,8 @@ Return this exact top-level shape:
 
 Rules:
 - Users are NA-based, but customers may be global and may have EU, UK, China, or other subsidiaries.
-- Provide a practical business profile, not only compliance guesses. Include employee estimate, revenue estimate, founded year, ownership, products/services, subsidiaries, and markets when available.
+- Provide a practical business profile, not only compliance guesses. Put employee estimate, revenue estimate, founded year, ownership, products/services, subsidiaries, and markets in their dedicated JSON fields, not only inside the summary.
+- Keep summary to one or two short plain-English sentences. Do not bury employee count, revenue, or source caveats in the summary if a dedicated field exists.
 - If a fact is uncertain, use "Unknown - verify" or an explicit range instead of inventing precision.
 - Never state guessed standards as confirmed requirements.
 - Include exactly 10 actions.
