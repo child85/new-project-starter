@@ -1258,6 +1258,39 @@
         gap: 18px;
       }
 
+      .review-summary-card {
+        display: grid;
+        gap: 16px;
+        padding: 20px;
+        border: 1px solid var(--blue);
+        border-left: 8px solid var(--blue);
+        background: #f7fbff;
+      }
+
+      .review-summary-card h3 {
+        margin: 0;
+        color: var(--blue-dark);
+        font-size: 1.45rem;
+      }
+
+      .review-details {
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .review-details summary {
+        padding: 16px 18px;
+        color: var(--blue-dark);
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .review-detail-stack {
+        display: grid;
+        gap: 18px;
+        padding: 0 18px 18px;
+      }
+
       .review-section {
         display: grid;
         gap: 14px;
@@ -2348,7 +2381,7 @@
           <div class="panel-head" style="border-top: 1px solid var(--line);">
             <div>
               <h2>Admin Area</h2>
-              <p>Deletion requests, customer notification tasks, and maintenance actions are staged here. In the production version, this area should require administrative rights.</p>
+              <p>Deletion requests and maintenance actions are staged here. Customer notification tasks are handled from the Daily Watch command center.</p>
             </div>
             <button class="button secondary" id="requestClearCustomers" type="button">Request clear customer list</button>
           </div>
@@ -3611,8 +3644,8 @@
         const box = document.getElementById("candidateBox");
         document.getElementById("candidateDialog").classList.remove("hidden");
         document.getElementById("candidateDialog").classList.add("review-mode");
-        document.getElementById("candidateDialogTitle").textContent = "Review Customer Profile";
-        document.getElementById("candidateDialogCopy").textContent = "The AI found a customer profile. Review the separate fields, correct anything that looks wrong, then save it.";
+        document.getElementById("candidateDialogTitle").textContent = "Customer found";
+        document.getElementById("candidateDialogCopy").textContent = "Review the quick summary. Save it if this is the right customer, or open the details only if something needs editing.";
         box.classList.remove("hidden");
         const likely = standardSummaryItems(profile);
         const standardNames = likely.map((item) => item.name).filter(Boolean);
@@ -3621,6 +3654,30 @@
         const actionNotes = safeList(profile.actions).slice(0, 10);
         box.innerHTML = `
           <form class="review-form" id="quickCustomerProfileForm">
+            <section class="review-summary-card">
+              <div class="row-top">
+                <div>
+                  <h3>${esc(profile.name)}</h3>
+                  <p>${esc(shortSummary(profile.summary || "No short customer description found yet.", 360))}</p>
+                </div>
+                <span class="tag ${profile.confidence === "high" || profile.confidence === "medium-high" ? "ok" : "warn"}">${esc(profile.confidence || "medium")} confidence</span>
+              </div>
+              <div class="profile-grid">
+                ${fact("Website", externalLink(profile.website, profile.website || "Unknown"), true)}
+                ${fact("Headquarters", profile.headquarters || "Unknown - verify")}
+                ${fact("Sector", profile.sector || "Unknown")}
+                ${fact("Employees", profile.employeeEstimate || "Unknown - verify")}
+                ${fact("Revenue", profile.revenueEstimate || "Unknown - verify")}
+                ${fact("Markets", regionsText(profile.markets))}
+              </div>
+              <div>
+                <strong>Likely standards</strong>
+                <div class="tags" style="margin-top: 10px;">${reviewedStandardNames.length ? renderTags(reviewedStandardNames) : `<span class="row-copy">No standards suggested yet.</span>`}</div>
+              </div>
+            </section>
+            <details class="review-details">
+              <summary>Edit detailed profile fields</summary>
+              <div class="review-detail-stack">
             <section class="review-section">
               <div class="row-top">
                 <div>
@@ -3692,10 +3749,12 @@
                 ${reviewTextarea("Engagement ideas", "reviewCustomerActions", actionNotes.join("\n"), "One practical account action per line")}
               </div>
             </section>
+              </div>
+            </details>
 
             <div class="review-actions">
-              <button class="button" id="confirmSaveCustomer" type="submit">Save reviewed customer</button>
-              <button class="button secondary" id="reviewFullCustomer" type="button">Open full project form</button>
+              <button class="button" id="confirmSaveCustomer" type="submit">Save customer</button>
+              <button class="button secondary" id="reviewFullCustomer" type="button">Open full editor</button>
             </div>
           </form>
           <button class="button secondary" id="searchAnotherCustomer" type="button">Search another customer</button>
@@ -4250,7 +4309,6 @@
             </div>
             ${expanded ? `
               <div class="standard-detail">
-                <div class="row-copy">${esc(standard.description)}</div>
                 <div class="info-card">
                   <strong>Official source website</strong>
                   <p>${standard.sourceUrl ? externalLink(standard.sourceUrl, standard.sourceUrl) : "No official source URL saved yet. Add one when editing this standard."}</p>
@@ -4901,6 +4959,7 @@
 
       function notificationTasks() {
         return adminRequests
+          .map((request, index) => ({ ...request, _index: index }))
           .filter((request) => request.type === "notify-customer")
           .sort((a, b) => {
             const priorityOrder = { High: 0, Medium: 1, Low: 2 };
@@ -4926,8 +4985,29 @@
               <span class="tag">${esc(task.taskStatus || "Open")}</span>
             </div>
             <p class="row-copy">${esc(shortSummary(task.reason || "", 160))}</p>
+            <div class="notification-actions">
+              <button class="notification-action" type="button" data-complete-task="${task._index}">Mark customer notified</button>
+              <button class="notification-action secondary" type="button" data-open-task-customer="${esc(recordKey(task.customerKey || task.customerName || ""))}">Open customer</button>
+              <button class="notification-action secondary" type="button" data-close-task="${task._index}">Close task</button>
+            </div>
           </article>
         `).join("");
+      }
+
+      function completeNotificationTask(index, status = "Customer notified") {
+        const request = adminRequests[index];
+        if (!request || request.type !== "notify-customer") return;
+        impactReviews = impactReviews.map((review) => review.key === request.impactKey ? {
+          ...review,
+          status,
+          taskCreated: true,
+          taskCompletedAt: new Date().toISOString()
+        } : review);
+        store.set("assuranceImpactReviewsV1", impactReviews);
+        adminRequests.splice(index, 1);
+        saveAdminRequests();
+        renderWatch();
+        setStatus(`${status} task closed for ${request.customerName || "customer"}.`);
       }
 
       function renderWatch() {
@@ -5095,6 +5175,15 @@
         document.querySelectorAll("[data-review-impact]").forEach((button) => {
           button.addEventListener("click", () => openImpactReview(button.dataset.reviewImpact, button.dataset.reviewStandard || ""));
         });
+        document.querySelectorAll("[data-complete-task]").forEach((button) => {
+          button.addEventListener("click", () => completeNotificationTask(Number(button.dataset.completeTask), "Customer notified"));
+        });
+        document.querySelectorAll("[data-close-task]").forEach((button) => {
+          button.addEventListener("click", () => completeNotificationTask(Number(button.dataset.closeTask), "Closed"));
+        });
+        document.querySelectorAll("[data-open-task-customer]").forEach((button) => {
+          button.addEventListener("click", () => openCustomerFromWatch(button.dataset.openTaskCustomer));
+        });
         document.querySelectorAll("[data-enable-watch]").forEach((button) => {
           button.addEventListener("click", () => {
             const customer = customers.find((item) => recordKey(profileKey(item)) === button.dataset.enableWatch);
@@ -5182,30 +5271,30 @@
       function renderAdminRequests() {
         const list = document.getElementById("adminRequestList");
         if (!list) return;
-        if (!adminRequests.length) {
-          list.innerHTML = `<article class="info-card"><strong>No admin requests</strong><p>Deletion, clear-list, and customer notification tasks will appear here for an administrator to review.</p></article>`;
+        const visibleRequests = adminRequests
+          .map((request, index) => ({ request, index }))
+          .filter(({ request }) => request.type !== "notify-customer");
+        if (!visibleRequests.length) {
+          list.innerHTML = `<article class="info-card"><strong>No admin requests</strong><p>Deletion and clear-list requests will appear here for an administrator to review. Customer notification tasks live in the Daily Watch command center.</p></article>`;
           return;
         }
         const requestTitle = (request) => {
           if (request.type === "clear-customers") return "Clear customer list";
-          if (request.type === "notify-customer") return `Notify customer: ${request.customerName || "Customer"}`;
           return `Delete customer: ${request.customerName || "Customer"}`;
         };
-        const approveLabel = (request) => request.type === "notify-customer" ? "Mark task done" : "Admin approve";
-        list.innerHTML = adminRequests.map((request, index) => `
+        list.innerHTML = visibleRequests.map(({ request, index }) => `
           <article class="info-card">
             <div class="row-top">
               <strong>${esc(requestTitle(request))}</strong>
               <span class="tag warn">${esc(request.status)}</span>
             </div>
             <p>${esc(new Date(request.createdAt).toLocaleString())}</p>
-            ${request.type === "notify-customer" ? `<p class="row-copy"><strong>Standard:</strong> ${esc(request.standard || "Not specified")}</p>` : ""}
             ${request.owner ? `<p class="row-copy"><strong>Owner:</strong> ${esc(request.owner)}</p>` : ""}
             ${request.priority ? `<p class="row-copy"><strong>Priority:</strong> ${esc(request.priority)}${request.dueDate ? ` | Due: ${esc(request.dueDate)}` : ""}${request.taskStatus ? ` | Status: ${esc(request.taskStatus)}` : ""}</p>` : ""}
             ${request.reason ? `<p class="row-copy"><strong>Reason:</strong> ${esc(request.reason)}</p>` : ""}
             <div class="split">
               <button class="button secondary" data-dismiss-request="${index}" type="button">Dismiss request</button>
-              <button class="button" data-approve-request="${index}" type="button">${esc(approveLabel(request))}</button>
+              <button class="button" data-approve-request="${index}" type="button">Admin approve</button>
             </div>
           </article>
         `).join("");
