@@ -382,9 +382,23 @@
       }
 
       .highlight-card {
+        width: 100%;
         padding: 18px;
         border: 1px solid var(--line);
         background: #ffffff;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+      }
+
+      button.highlight-card {
+        cursor: pointer;
+      }
+
+      button.highlight-card:hover,
+      button.highlight-card:focus-visible {
+        border-color: var(--blue);
+        outline: 2px solid rgba(0, 119, 185, 0.18);
       }
 
       .highlight-card strong {
@@ -398,6 +412,11 @@
         margin: 0;
         color: var(--muted);
         line-height: 1.45;
+      }
+
+      .jump-focus {
+        outline: 3px solid rgba(0, 119, 185, 0.32);
+        outline-offset: 4px;
       }
 
       .standard-group h3 {
@@ -2112,6 +2131,10 @@
         return normalize(`${profile.name} ${profile.website || ""}`);
       }
 
+      function recordKey(value) {
+        return normalize(value).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "record";
+      }
+
       function regionsText(regions) {
         const list = Array.isArray(regions) ? regions : (regions ? [regions] : []);
         return list.join(", ") || "Unknown";
@@ -3004,7 +3027,7 @@
             .map((customer, index) => ({ customer, index }))
             .sort((a, b) => String(a.customer.name || "").localeCompare(String(b.customer.name || "")));
           list.innerHTML = sortedCustomers.map(({ customer, index }) => `
-            <article class="customer-card ${expandedCustomerKey === profileKey(customer) ? "open" : ""}">
+            <article class="customer-card ${expandedCustomerKey === profileKey(customer) ? "open" : ""}" data-customer-key="${esc(recordKey(profileKey(customer)))}">
               <div class="customer-summary">
                 <h3>${esc(customer.name)}</h3>
                 <p>${esc(customer.summary || "No short customer description saved yet.")}</p>
@@ -3114,7 +3137,7 @@
 
       function standardCard(standard) {
         return `
-          <article class="standard-row">
+          <article class="standard-row" data-standard-key="${esc(recordKey(standard.name))}">
             <div class="row-top">
               <div class="row-title">
                 <strong>${esc(standard.name)}</strong>
@@ -3301,6 +3324,59 @@
         renderDailySchedule();
       }
 
+      function viewForStandard(standard) {
+        if (!standard) return "compliance";
+        if (standard.domain === "Functional Safety") return "functionalSafetyStandards";
+        if (standard.domain === "Cybersecurity" || standard.domain === "Regulation") return "cybersecurityStandards";
+        return "marketAccessStandards";
+      }
+
+      function clearStandardPageFilters(viewId) {
+        const ids = {
+          cybersecurityStandards: ["cybersecuritySearch", "cybersecuritySectorFilter"],
+          functionalSafetyStandards: ["functionalSafetySearch", "functionalSafetySectorFilter"],
+          marketAccessStandards: ["marketAccessSearch", "marketAccessSectorFilter"]
+        }[viewId] || [];
+        ids.forEach((id) => {
+          const element = document.getElementById(id);
+          if (!element) return;
+          element.value = element.tagName === "SELECT" ? "All" : "";
+        });
+      }
+
+      function scrollToRecord(selector) {
+        const element = document.querySelector(selector);
+        if (!element) return;
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.classList.add("jump-focus");
+        setTimeout(() => element.classList.remove("jump-focus"), 1800);
+      }
+
+      function openStandardFromWatch(name) {
+        const standard = standards.find((item) => normalize(item.name) === normalize(name));
+        if (!standard) {
+          activateView("compliance");
+          return;
+        }
+        const viewId = viewForStandard(standard);
+        clearStandardPageFilters(viewId);
+        renderStandards();
+        activateView(viewId);
+        requestAnimationFrame(() => scrollToRecord(`[data-standard-key="${recordKey(standard.name)}"]`));
+      }
+
+      function openCustomerFromWatch(customerKey) {
+        const customer = customers.find((item) => recordKey(profileKey(item)) === customerKey);
+        if (!customer) {
+          activateView("customers");
+          return;
+        }
+        expandedCustomerKey = profileKey(customer);
+        renderCustomers();
+        activateView("customers");
+        requestAnimationFrame(() => scrollToRecord(`[data-customer-key="${recordKey(profileKey(customer))}"]`));
+      }
+
       function renderWatch() {
         const active = customers.filter((customer) => customer.hypercare === "Active");
         const changes = standards.flatMap((standard) => safeList(standard.changes).map((change) => ({ ...change, standard: standard.name })));
@@ -3312,14 +3388,14 @@
         setText("dashboardRecentChangeCount", changes.length);
         renderDailySchedule();
         document.getElementById("watchHighlightList").innerHTML = recent.length ? recent.map((change) => `
-          <article class="highlight-card">
+          <button class="highlight-card" type="button" data-watch-standard="${esc(change.standard)}">
             <strong>${esc(change.standard)}: ${esc(change.title || "Public change")}</strong>
             <p>${esc(change.summary || "Review this public change for potential customer impact.")}</p>
             <div class="tags" style="margin-top: 10px;">
               <span class="tag ${change.impact === "High" ? "warn" : "dark"}">${esc(change.impact || "Review")}</span>
               <span class="tag">${esc(change.date || "Date unknown")}</span>
             </div>
-          </article>
+          </button>
         `).join("") : `
           <article class="highlight-card">
             <strong>No public changes queued</strong>
@@ -3327,7 +3403,7 @@
           </article>
         `;
         document.getElementById("watchList").innerHTML = active.length ? active.slice(0, 4).map((customer) => `
-          <article class="highlight-card">
+          <button class="highlight-card" type="button" data-watch-customer="${esc(recordKey(profileKey(customer)))}">
             <div class="row-top">
               <div class="row-title">
                 <strong>${esc(customer.name)}</strong>
@@ -3336,13 +3412,19 @@
               <span class="tag ok">Notify on change</span>
             </div>
             <p>${esc(customer.owner || "NA team")} should be alerted when watched standards publish meaningful changes.</p>
-          </article>
+          </button>
         `).join("") : `
           <article class="highlight-card">
             <strong>No hypercare customers yet</strong>
             <p>Add a customer to hypercare from the Customers tab to include them in daily watch monitoring.</p>
           </article>
         `;
+        document.querySelectorAll("[data-watch-standard]").forEach((button) => {
+          button.addEventListener("click", () => openStandardFromWatch(button.dataset.watchStandard));
+        });
+        document.querySelectorAll("[data-watch-customer]").forEach((button) => {
+          button.addEventListener("click", () => openCustomerFromWatch(button.dataset.watchCustomer));
+        });
       }
 
       function saveAdminRequests() {
