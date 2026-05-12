@@ -447,6 +447,46 @@
         line-height: 1.45;
       }
 
+      .notification-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .notification-meta .tag {
+        color: var(--muted);
+        border-color: var(--line);
+        background: #f6f9fb;
+      }
+
+      .notification-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding-top: 2px;
+      }
+
+      .notification-action {
+        min-height: 36px;
+        padding: 6px 12px;
+        border: 1px solid var(--blue);
+        color: #ffffff;
+        background: var(--blue);
+        font-weight: 800;
+      }
+
+      .notification-action.secondary {
+        color: var(--blue-dark);
+        background: #ffffff;
+      }
+
+      .notification-action.warn {
+        border-color: var(--warn);
+        color: #ffffff;
+        background: var(--warn);
+      }
+
       .standard-map {
         display: grid;
         gap: 12px;
@@ -1204,6 +1244,47 @@
         font-size: 1.35rem;
       }
 
+      .standard-summary-line {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 18px;
+        align-items: center;
+        padding: 18px 24px;
+        background: #ffffff;
+      }
+
+      .standard-row.collapsed {
+        gap: 0;
+        padding-bottom: 0;
+      }
+
+      .standard-row.collapsed .row-copy {
+        margin-top: -6px;
+        margin-bottom: 16px;
+      }
+
+      .standard-row.expanded {
+        border-color: var(--blue);
+      }
+
+      .standard-detail {
+        display: grid;
+        gap: 18px;
+        padding-bottom: 22px;
+        border-top: 1px solid var(--line);
+      }
+
+      .standard-quick-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .expand-button {
+        min-width: 126px;
+      }
+
       .row-top {
         display: flex;
         align-items: flex-start;
@@ -1736,6 +1817,11 @@
                   <label for="stdName">Name</label>
                   <input id="stdName" required placeholder="Example: IEC 62443" />
                 </div>
+                <div class="info-card">
+                  <strong>AI enrichment</strong>
+                  <p id="standardAiStatus">Enter a standard name, then let AI draft the description, source review fields, markets, topics, and internal notes.</p>
+                  <button class="button secondary" id="enrichStandardWithAi" type="button">Enrich standard with AI</button>
+                </div>
                 <div class="split">
                   <div class="field">
                     <label for="stdDomain">Domain</label>
@@ -1903,10 +1989,10 @@
               <strong id="dashboardLinkCount">0</strong>
               <p>Jump to the customer-standard overview.</p>
             </button>
-            <button class="metric" type="button" data-watch-drill="notifications">
+            <button class="metric" type="button" data-watch-drill="impacted">
               <span>Impacted customers</span>
               <strong id="dashboardImpactedCount">0</strong>
-              <p>Jump to customers affected by change notes.</p>
+              <p>Jump to the affected customer list.</p>
             </button>
             <button class="metric" type="button" data-watch-drill="notifications">
               <span>Open alerts</span>
@@ -1919,9 +2005,19 @@
               <h3>Change Notifications</h3>
               <div class="highlight-list" id="notificationList"></div>
             </section>
+            <section id="watchImpactedCustomersSection">
+              <h3>Impacted Customers</h3>
+              <div class="highlight-list" id="impactedCustomerList"></div>
+            </section>
+          </div>
+          <div class="dashboard-grid">
             <section id="watchRecentStandardsSection">
               <h3>Standards Changed Recently</h3>
               <div class="highlight-list" id="watchHighlightList"></div>
+            </section>
+            <section id="watchCustomerListSection">
+              <h3>Notification Watch List</h3>
+              <div class="highlight-list" id="watchList"></div>
             </section>
           </div>
           <section class="dashboard-section" id="watchMatrixSection">
@@ -1933,15 +2029,6 @@
               <button class="button secondary" type="button" data-view="customers">Open Customers</button>
             </div>
             <div class="standard-map" id="customerStandardsMatrix"></div>
-          </section>
-          <section class="dashboard-section" id="watchCustomerListSection">
-            <div class="row-top">
-              <div>
-                <h3>Notification Watch List</h3>
-                <p class="row-copy">Hypercare means the customer owner should be notified when one of their saved standards changes.</p>
-              </div>
-            </div>
-            <div class="highlight-list" id="watchList"></div>
           </section>
           <section class="dashboard-section" id="watchCoverageGapsSection">
             <div class="row-top">
@@ -2330,6 +2417,7 @@
       let selectedRegions = new Set(["Global"]);
       let currentResult = null;
       let expandedCustomerKey = "";
+      let expandedStandardKey = "";
       let pendingDeletionCustomer = null;
 
       const knownCompanies = {
@@ -3660,42 +3748,151 @@
       }
 
       function standardCard(standard) {
+        const key = recordKey(standard.name);
+        const expanded = expandedStandardKey === key;
+        const change = latestChangeFor(standard);
         return `
-          <article class="standard-row" data-standard-key="${esc(recordKey(standard.name))}">
-            <div class="row-top">
+          <article class="standard-row ${expanded ? "expanded" : "collapsed"}" data-standard-key="${esc(key)}">
+            <div class="standard-summary-line">
               <div class="row-title">
                 <strong>${esc(standard.name)}</strong>
                 <span>${esc(standard.domain)} | ${esc(standard.sector)} | ${esc(regionsText(standard.markets))}</span>
-              </div>
-              <span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${esc(standard.status)}</span>
-            </div>
-            <div class="row-copy">${esc(standard.description)}</div>
-            <div class="info-card">
-              <strong>Official source website</strong>
-              <p>${standard.sourceUrl ? externalLink(standard.sourceUrl, standard.sourceUrl) : "No official source URL saved yet. Add one when editing this standard."}</p>
-              ${standard.sourceCheckedAt ? `<p>Last live AI source check: ${esc(new Date(standard.sourceCheckedAt).toLocaleString())}</p>` : ""}
-              ${standard.sourceStatus ? `<p>Source status: ${esc(standard.sourceStatus)}</p>` : ""}
-              ${standard.sourceEvidence ? `<p>${esc(standard.sourceEvidence)}</p>` : ""}
-            </div>
-            ${standard.internalNotes ? `<div class="row-copy">TUV Rheinland notes: ${esc(standard.internalNotes)}</div>` : ""}
-            <div class="tags">${renderTags(standard.topics)}</div>
-            ${renderLastChange(standard)}
-            <div class="change-list">
-              ${standard.changes?.length ? standard.changes.map((change) => `
-                <div class="change-card">
-                  <div class="row-top">
-                    <strong>${esc(change.title || "Public change")}</strong>
-                    <span class="tag ${change.impact === "High" ? "warn" : "dark"}">${esc(change.impact || "Review")}</span>
-                  </div>
-                  <span>${esc(change.date || "Date unknown")} ${change.url || standard.sourceUrl ? `| ${externalLink(change.url || standard.sourceUrl, "source website")}` : "| source not saved"}</span>
-                  <p class="row-copy">${esc(change.summary || "No summary saved.")}</p>
+                <p class="row-copy">${esc(shortSummary(standard.description, 180))}</p>
+                <div class="standard-quick-meta">
+                  <span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${esc(standard.status)}</span>
+                  <span class="tag ${change ? "warn" : "dark"}">${change ? `Changed ${esc(change.date || "date unknown")}` : "No saved change"}</span>
+                  ${standard.sourceUrl ? `<span class="tag">Source saved</span>` : `<span class="tag warn">Source missing</span>`}
                 </div>
-              `).join("") : `<p class="row-copy">No public changes saved yet.</p>`}
+              </div>
+              <button class="button secondary expand-button" type="button" data-toggle-standard="${esc(key)}">${expanded ? "Collapse" : "View details"}</button>
             </div>
+            ${expanded ? `
+              <div class="standard-detail">
+                <div class="row-copy">${esc(standard.description)}</div>
+                <div class="info-card">
+                  <strong>Official source website</strong>
+                  <p>${standard.sourceUrl ? externalLink(standard.sourceUrl, standard.sourceUrl) : "No official source URL saved yet. Add one when editing this standard."}</p>
+                  ${standard.sourceCheckedAt ? `<p>Last live AI source check: ${esc(new Date(standard.sourceCheckedAt).toLocaleString())}</p>` : ""}
+                  ${standard.sourceStatus ? `<p>Source status: ${esc(standard.sourceStatus)}</p>` : ""}
+                  ${standard.sourceEvidence ? `<p>${esc(standard.sourceEvidence)}</p>` : ""}
+                </div>
+                ${standard.internalNotes ? `<div class="row-copy">TUV Rheinland notes: ${esc(standard.internalNotes)}</div>` : ""}
+                <div class="tags">${renderTags(standard.topics)}</div>
+                ${renderLastChange(standard)}
+                <div class="change-list">
+                  ${standard.changes?.length ? standard.changes.map((change) => `
+                    <div class="change-card">
+                      <div class="row-top">
+                        <strong>${esc(change.title || "Public change")}</strong>
+                        <span class="tag ${change.impact === "High" ? "warn" : "dark"}">${esc(change.impact || "Review")}</span>
+                      </div>
+                      <span>${esc(change.date || "Date unknown")} ${change.url || standard.sourceUrl ? `| ${externalLink(change.url || standard.sourceUrl, "source website")}` : "| source not saved"}</span>
+                      <p class="row-copy">${esc(change.summary || "No summary saved.")}</p>
+                    </div>
+                  `).join("") : `<p class="row-copy">No public changes saved yet.</p>`}
+                </div>
+              </div>
+            ` : ""}
           </article>
         `;
       }
 
+      function wireStandardToggles() {
+        document.querySelectorAll("[data-toggle-standard]").forEach((button) => {
+          button.addEventListener("click", () => {
+            expandedStandardKey = expandedStandardKey === button.dataset.toggleStandard ? "" : button.dataset.toggleStandard;
+            renderStandards();
+            requestAnimationFrame(() => scrollToRecord(`[data-standard-key="${button.dataset.toggleStandard}"]`));
+          });
+        });
+      }
+
+      function enrichStandardSeed(seed) {
+        const name = seed.name || "";
+        const text = normalize(`${name} ${seed.domain} ${seed.sector} ${seed.topics}`);
+        const known = standards.find((standard) => normalize(standard.name) === normalize(name));
+        if (known) return { ...known, sourceStatus: known.sourceStatus || "matched_existing_record" };
+        const domain = seed.domain || (text.includes("safety") || text.includes("sil") ? "Functional Safety" : "Cybersecurity");
+        const sector = seed.sector || (text.includes("vehicle") || text.includes("automotive") ? "Automotive" : text.includes("industrial") || text.includes("ot") ? "Industrial / OT" : "ICT / Connected Products");
+        const markets = safeList(seed.markets).length ? safeList(seed.markets) : (text.includes("eu") ? ["EU", "Global"] : ["Global"]);
+        const topics = safeList(seed.topics).length ? safeList(seed.topics) : unique([name, domain, sector].join(" ").split(" ").filter((item) => item.length > 3)).slice(0, 5);
+        return {
+          name,
+          domain,
+          sector,
+          markets,
+          topics,
+          description: seed.description || `${name} is a ${domain.toLowerCase()} reference for ${sector.toLowerCase()} contexts. Review the official source and internal notes before using it for customer advice.`,
+          sourceUrl: seed.sourceUrl || "",
+          internalNotes: seed.internalNotes || "AI-assisted draft. Confirm source, applicability, and service angle before publishing broadly.",
+          changes: [],
+          status: "Review",
+          sourceStatus: "browser_assisted_draft"
+        };
+      }
+
+      function readStandardFormSeed() {
+        return {
+          name: document.getElementById("stdName").value.trim(),
+          domain: document.getElementById("stdDomain").value,
+          sector: document.getElementById("stdSector").value,
+          markets: document.getElementById("stdMarkets").value.split(",").map((item) => item.trim()).filter(Boolean),
+          topics: document.getElementById("stdTopics").value.split(",").map((item) => item.trim()).filter(Boolean),
+          description: document.getElementById("stdDescription").value.trim(),
+          sourceUrl: document.getElementById("stdSourceUrl").value.trim(),
+          internalNotes: document.getElementById("stdInternalNotes").value.trim()
+        };
+      }
+
+      function fillStandardForm(record) {
+        document.getElementById("stdName").value = record.name || "";
+        document.getElementById("stdDomain").value = record.domain || "Cybersecurity";
+        document.getElementById("stdSector").value = record.sector || "ICT / Connected Products";
+        document.getElementById("stdMarkets").value = regionsText(record.markets);
+        document.getElementById("stdTopics").value = regionsText(record.topics);
+        document.getElementById("stdDescription").value = record.description || "";
+        document.getElementById("stdSourceUrl").value = record.sourceUrl || "";
+        document.getElementById("stdInternalNotes").value = record.internalNotes || "";
+      }
+
+      async function enrichStandardForm() {
+        const status = document.getElementById("standardAiStatus");
+        const button = document.getElementById("enrichStandardWithAi");
+        const seed = readStandardFormSeed();
+        if (!seed.name) {
+          status.textContent = "Enter a standard or regulation name first.";
+          document.getElementById("stdName").focus();
+          return;
+        }
+        button.disabled = true;
+        status.textContent = getApiUrl()
+          ? "Asking the AWS AI backend to enrich the standard from its source..."
+          : "No AWS API endpoint saved. Creating a browser-assisted draft from the name and hints.";
+        try {
+          let record = null;
+          if (getApiUrl()) {
+            const response = await fetch(getApiUrl(), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ task: "standards-update", standards: [seed] })
+            });
+            if (!response.ok) throw new Error(`API returned ${response.status}`);
+            const result = await response.json();
+            record = result.standards?.[0] || null;
+          }
+          const enriched = normalizeStandardRecord(record || enrichStandardSeed(seed));
+          fillStandardForm(enriched);
+          status.textContent = record
+            ? "AI enrichment filled the draft. Review the fields, then save."
+            : "Browser-assisted draft filled. Review and improve before saving.";
+        } catch (error) {
+          const enriched = normalizeStandardRecord(enrichStandardSeed(seed));
+          fillStandardForm(enriched);
+          status.textContent = `AI enrichment failed: ${error.message}. A local draft was filled so you can continue.`;
+        } finally {
+          button.disabled = false;
+        }
+      }
       function renderStandardPage({ listId, searchId, sectorId, predicate, emptyText }) {
         const list = document.getElementById(listId);
         if (!list) return;
@@ -3735,6 +3932,7 @@
           predicate: (standard) => !["Cybersecurity", "Functional Safety", "Regulation"].includes(standard.domain),
           emptyText: "No market access or other regulatory records match this search yet."
         });
+        wireStandardToggles();
         setText("standardCount", standards.length);
         updateComplianceKpis();
         renderWatch();
@@ -3894,6 +4092,7 @@
         }
         const viewId = viewForStandard(standard);
         clearStandardPageFilters(viewId);
+        expandedStandardKey = recordKey(standard.name);
         renderStandards();
         activateView(viewId);
         requestAnimationFrame(() => scrollToRecord(`[data-standard-key="${recordKey(standard.name)}"]`));
@@ -3945,6 +4144,7 @@
           "recent-standards": "#watchRecentStandardsSection",
           matrix: "#watchMatrixSection",
           notifications: "#watchNotificationsSection",
+          impacted: "#watchImpactedCustomersSection",
           watchlist: "#watchCustomerListSection",
           gaps: "#watchCoverageGapsSection"
         }[action] || "#watchNotificationsSection";
@@ -4073,21 +4273,48 @@
                 <strong>${esc(item.customer.name)} may be affected by ${esc(item.standard)}</strong>
                 <p>${esc(item.change.summary || "Review this standards change against the saved customer profile.")}</p>
               </div>
-              <span class="tag ${item.notify ? "ok" : "warn"}">${item.notify ? "Notify owner" : "Review impact"}</span>
+              <span class="tag ${item.notify ? "ok" : "warn"}">${item.notify ? "Notification watch active" : "Needs review"}</span>
             </div>
-            <div class="tags">
+            <div class="notification-meta">
               <span class="tag">${esc(item.change.date || "Date unknown")}</span>
               <span class="tag">${esc(item.change.impact || "Review")}</span>
               <span class="tag">Owner: ${esc(item.customer.owner || "NA team")}</span>
-              <button class="chip-button" type="button" data-watch-customer="${esc(recordKey(profileKey(item.customer)))}">Open customer</button>
-              <button class="chip-button" type="button" data-watch-standard="${esc(item.standard)}">Open standard</button>
-              ${item.notify ? "" : `<button class="chip-button changed" type="button" data-enable-watch="${esc(recordKey(profileKey(item.customer)))}">Add notification watch</button>`}
+            </div>
+            <div class="notification-actions">
+              <button class="notification-action" type="button" data-review-impact="${esc(recordKey(profileKey(item.customer)))}">Review impact</button>
+              <button class="notification-action secondary" type="button" data-watch-standard="${esc(item.standard)}">Open standard</button>
+              ${item.notify ? "" : `<button class="notification-action warn" type="button" data-enable-watch="${esc(recordKey(profileKey(item.customer)))}">Add notification watch</button>`}
             </div>
           </article>
         `).join("") : `
           <article class="highlight-card">
             <strong>No customer impact alerts yet</strong>
             <p>Save customers with standards, then run the AI source update. Matching standards with public changes will appear here.</p>
+          </article>
+        `;
+        const impactedGroups = customers
+          .map((customer) => ({ customer, matches: customerChangeMatches(customer) }))
+          .filter((item) => item.matches.length)
+          .sort((a, b) => b.matches.length - a.matches.length || String(a.customer.name).localeCompare(String(b.customer.name)));
+        document.getElementById("impactedCustomerList").innerHTML = impactedGroups.length ? impactedGroups.map(({ customer, matches }) => `
+          <article class="highlight-card">
+            <div class="row-top">
+              <div>
+                <strong>${esc(customer.name)}</strong>
+                <p>${esc(matches.length)} linked standard${matches.length === 1 ? "" : "s"} with saved public change notes. Owner: ${esc(customer.owner || "NA team")}.</p>
+              </div>
+              <span class="tag ${customer.hypercare === "Active" ? "ok" : "warn"}">${customer.hypercare === "Active" ? "Watched" : "Not watched"}</span>
+            </div>
+            <div class="tags" style="margin-top: 10px;">${matches.slice(0, 6).map((item) => `<button class="chip-button changed" type="button" data-watch-standard="${esc(item.name)}">${esc(item.name)}</button>`).join("")}</div>
+            <div class="notification-actions" style="margin-top: 12px;">
+              <button class="notification-action" type="button" data-review-impact="${esc(recordKey(profileKey(customer)))}">Review customer impact</button>
+              ${customer.hypercare === "Active" ? "" : `<button class="notification-action warn" type="button" data-enable-watch="${esc(recordKey(profileKey(customer)))}">Add notification watch</button>`}
+            </div>
+          </article>
+        `).join("") : `
+          <article class="highlight-card">
+            <strong>No impacted customers yet</strong>
+            <p>When a saved customer standard has a public change note, the customer appears here.</p>
           </article>
         `;
         document.getElementById("watchHighlightList").innerHTML = recent.length ? recent.map((change) => `
@@ -4164,6 +4391,9 @@
         });
         document.querySelectorAll("[data-watch-customer]").forEach((button) => {
           button.addEventListener("click", () => openCustomerFromWatch(button.dataset.watchCustomer));
+        });
+        document.querySelectorAll("[data-review-impact]").forEach((button) => {
+          button.addEventListener("click", () => openCustomerFromWatch(button.dataset.reviewImpact));
         });
         document.querySelectorAll("[data-enable-watch]").forEach((button) => {
           button.addEventListener("click", () => {
@@ -4317,22 +4547,37 @@
         renderStandards();
       });
 
-      ["openStandardDialog", "openStandardDialogCyber", "openStandardDialogSafety", "openStandardDialogMarket"].forEach((id) => {
+      function openStandardDialog(defaultDomain = "") {
+        const dialog = document.getElementById("standardDialog");
+        document.body.appendChild(dialog);
+        dialog.classList.remove("hidden");
+        document.getElementById("standardAiStatus").textContent = "Enter a standard name, then let AI draft the description, source review fields, markets, topics, and internal notes.";
+        if (defaultDomain) document.getElementById("stdDomain").value = defaultDomain;
+        document.getElementById("stdName").focus();
+      }
+
+      [
+        ["openStandardDialog", ""],
+        ["openStandardDialogCyber", "Cybersecurity"],
+        ["openStandardDialogSafety", "Functional Safety"],
+        ["openStandardDialogMarket", "Market Access"]
+      ].forEach(([id, defaultDomain]) => {
         document.getElementById(id)?.addEventListener("click", () => {
-          document.getElementById("standardDialog").classList.remove("hidden");
-          document.getElementById("stdName").focus();
+          openStandardDialog(defaultDomain);
         });
       });
 
       document.getElementById("closeStandardDialog").addEventListener("click", () => {
         document.getElementById("standardDialog").classList.add("hidden");
         document.getElementById("standardForm").reset();
+        document.getElementById("standardAiStatus").textContent = "Enter a standard name, then let AI draft the description, source review fields, markets, topics, and internal notes.";
       });
       document.getElementById("runAiStandardUpdate").addEventListener("click", runAiStandardUpdateScan);
+      document.getElementById("enrichStandardWithAi").addEventListener("click", enrichStandardForm);
 
       document.getElementById("standardForm").addEventListener("submit", (event) => {
         event.preventDefault();
-        standards.unshift(normalizeStandardRecord({
+        const record = normalizeStandardRecord({
           name: document.getElementById("stdName").value.trim(),
           domain: document.getElementById("stdDomain").value,
           sector: document.getElementById("stdSector").value,
@@ -4343,7 +4588,14 @@
           internalNotes: document.getElementById("stdInternalNotes").value.trim(),
           changes: [],
           status: "Watch"
-        }));
+        });
+        const existingIndex = standards.findIndex((standard) => normalize(standard.name) === normalize(record.name));
+        if (existingIndex >= 0) {
+          standards[existingIndex] = normalizeStandardRecord({ ...standards[existingIndex], ...record, changes: standards[existingIndex].changes || [] });
+        } else {
+          standards.unshift(record);
+        }
+        expandedStandardKey = recordKey(record.name);
         store.set("assuranceStandardsV2", standards);
         event.target.reset();
         renderStandards();
