@@ -520,11 +520,15 @@
 
       .command-card {
         display: grid;
+        width: 100%;
         gap: 8px;
         padding: 18px;
         border: 1px solid var(--line);
         border-left: 7px solid var(--blue);
         background: #ffffff;
+        color: inherit;
+        font: inherit;
+        text-align: left;
       }
 
       .command-card strong {
@@ -537,6 +541,14 @@
         font-size: 0.82rem;
         font-weight: 800;
         text-transform: uppercase;
+      }
+
+      .command-card:hover,
+      .command-card:focus-visible {
+        border-color: var(--blue);
+        background: #f7fbff;
+        outline: none;
+        box-shadow: 0 6px 18px rgba(18, 48, 70, 0.08);
       }
 
       .task-board {
@@ -2424,6 +2436,15 @@
               </div>
             </div>
             <div class="command-strip" id="watchCommandStrip"></div>
+          </section>
+          <section class="dashboard-section" id="watchImpactReviewSection">
+            <div class="row-top">
+              <div>
+                <h3>Open Impact Reviews</h3>
+                <p class="row-copy">Customer-standard impact reviews that still need a decision, notification task, or closure.</p>
+              </div>
+            </div>
+            <div class="task-board" id="watchImpactReviewBoard"></div>
           </section>
           <section class="dashboard-section" id="watchTaskBoardSection">
             <div class="row-top">
@@ -4884,10 +4905,28 @@
           matrix: "#watchMatrixSection",
           notifications: "#watchNotificationsSection",
           impacted: "#watchImpactedCustomersSection",
+          reviews: "#watchImpactReviewSection",
+          tasks: "#watchTaskBoardSection",
+          overdue: "#watchTaskBoardSection",
           watchlist: "#watchCustomerListSection",
           gaps: "#watchCoverageGapsSection"
         }[action] || "#watchNotificationsSection";
         activateView("watch", { scrollTop: false, target });
+      }
+
+      function openSavedImpactReview(reviewId) {
+        const review = impactReviews.find((item) => (item.id || item.key) === reviewId);
+        if (!review) {
+          openWatchDrill("reviews");
+          return;
+        }
+        const customer = customers.find((item) => profileKey(item) === review.customerKey || normalize(item.name) === normalize(review.customerName));
+        if (customer && review.standard) {
+          openImpactReview(recordKey(profileKey(customer)), review.standard);
+          return;
+        }
+        openWatchDrill("reviews");
+        requestAnimationFrame(() => scrollToRecord(`[data-impact-review-card="${reviewId}"]`));
       }
 
       function customerStandardNames(customer) {
@@ -5160,7 +5199,7 @@
 
       function renderTaskBoard(tasks) {
         if (!tasks.length) {
-          return `<article class="task-card"><strong>No owned follow-up tasks</strong><p class="row-copy">Review an impacted customer and select "Create customer notification task" to create the first task.</p></article>`;
+          return `<article class="task-card"><strong>No owned follow-up tasks</strong><p class="row-copy">Tasks live here in the Daily Watch command center. Review an impacted customer and select "Create customer notification task" to create the first task.</p></article>`;
         }
         return tasks.slice(0, 9).map((task) => `
           <article class="task-card ${isOverdue(task.dueDate) ? "overdue" : ""}">
@@ -5179,6 +5218,43 @@
               <button class="notification-action" type="button" data-complete-task="${task._index}">Mark customer notified</button>
               <button class="notification-action secondary" type="button" data-open-task-customer="${esc(recordKey(task.customerKey || task.customerName || ""))}">Open customer</button>
               <button class="notification-action secondary" type="button" data-close-task="${task._index}">Close task</button>
+            </div>
+          </article>
+        `).join("");
+      }
+
+      function openImpactReviews() {
+        return impactReviews
+          .filter((review) => !["Customer notified", "Closed", "Not relevant"].includes(review.status))
+          .sort((a, b) => {
+            const priorityOrder = { High: 0, Medium: 1, Low: 2 };
+            return (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1)
+              || String(a.dueDate || "9999-12-31").localeCompare(String(b.dueDate || "9999-12-31"));
+          });
+      }
+
+      function renderImpactReviewBoard(reviews) {
+        if (!reviews.length) {
+          return `<article class="task-card"><strong>No open impact reviews</strong><p class="row-copy">Open reviews appear here after you save an impact review that is still in review, relevant, or waiting on customer notification.</p></article>`;
+        }
+        return reviews.slice(0, 9).map((review) => `
+          <article class="task-card ${isOverdue(review.dueDate) ? "overdue" : ""}" data-impact-review-card="${esc(review.id || review.key)}">
+            <div class="row-top">
+              <strong>${esc(review.customerName || "Customer")}</strong>
+              <span class="tag ${review.priority === "High" ? "warn" : "dark"}">${esc(review.priority || "Medium")}</span>
+            </div>
+            <p class="row-copy">${esc(review.standard || "Standard not specified")} | ${esc(review.changeTitle || "Public change")}</p>
+            <div class="notification-meta">
+              <span class="tag">${esc(review.status || "In review")}</span>
+              <span class="tag">${esc(review.decision || "Needs review")}</span>
+              <span class="tag">Owner: ${esc(review.owner || "NA team")}</span>
+              <span class="tag">Due: ${esc(review.dueDate || "Not set")}</span>
+            </div>
+            <p class="row-copy">${esc(shortSummary(review.note || review.recommendation?.note || "", 160))}</p>
+            <div class="notification-actions">
+              <button class="notification-action" type="button" data-open-impact-review="${esc(review.id || review.key)}">Open review</button>
+              <button class="notification-action secondary" type="button" data-open-review-customer="${esc(recordKey(review.customerKey || review.customerName || ""))}">Open customer</button>
+              <button class="notification-action secondary" type="button" data-watch-standard="${esc(review.standard || "")}">Open standard</button>
             </div>
           </article>
         `).join("");
@@ -5208,7 +5284,8 @@
           .slice(0, 4);
         const queue = notificationQueue();
         const tasks = notificationTasks();
-        const reviewsOpen = impactReviews.filter((review) => !["Customer notified", "Closed", "Not relevant"].includes(review.status)).length;
+        const openReviews = openImpactReviews();
+        const reviewsOpen = openReviews.length;
         const overdueTasks = tasks.filter((task) => isOverdue(task.dueDate)).length;
         const impactedCustomers = unique(queue.map((item) => item.customer.name));
         const linkCount = customers.reduce((total, customer) => total + customerStandardNames(customer).length, 0);
@@ -5218,11 +5295,12 @@
         setText("dashboardAlertCount", queue.length);
         renderDailySchedule();
         document.getElementById("watchCommandStrip").innerHTML = `
-          <article class="command-card"><span>Open reviews</span><strong>${reviewsOpen}</strong><p class="row-copy">Impact reviews not closed yet.</p></article>
-          <article class="command-card"><span>Notification tasks</span><strong>${tasks.length}</strong><p class="row-copy">Customer follow-up items in the task queue.</p></article>
-          <article class="command-card"><span>Overdue</span><strong>${overdueTasks}</strong><p class="row-copy">Tasks past due date.</p></article>
-          <article class="command-card"><span>Team owners</span><strong>${activeUsers().length}</strong><p class="row-copy">Active users available for assignment.</p></article>
+          <button class="command-card" type="button" data-command-drill="reviews"><span>Open reviews</span><strong>${reviewsOpen}</strong><p class="row-copy">Impact reviews not closed yet.</p></button>
+          <button class="command-card" type="button" data-command-drill="tasks"><span>Notification tasks</span><strong>${tasks.length}</strong><p class="row-copy">Customer follow-up items in the task queue.</p></button>
+          <button class="command-card" type="button" data-command-drill="overdue"><span>Overdue</span><strong>${overdueTasks}</strong><p class="row-copy">Tasks past due date.</p></button>
+          <button class="command-card" type="button" data-view="setup"><span>Team owners</span><strong>${activeUsers().length}</strong><p class="row-copy">Active users available for assignment.</p></button>
         `;
+        document.getElementById("watchImpactReviewBoard").innerHTML = renderImpactReviewBoard(openReviews);
         document.getElementById("watchTaskBoard").innerHTML = renderTaskBoard(tasks);
         document.getElementById("notificationList").innerHTML = queue.length ? queue.slice(0, 6).map((item) => {
           const review = existingImpactReview(item.customer, item.standard, item.change);
@@ -5369,8 +5447,20 @@
         document.querySelectorAll("[data-watch-customer]").forEach((button) => {
           button.addEventListener("click", () => openCustomerFromWatch(button.dataset.watchCustomer));
         });
+        document.querySelectorAll("[data-command-drill]").forEach((button) => {
+          button.addEventListener("click", () => openWatchDrill(button.dataset.commandDrill));
+        });
+        document.getElementById("watchCommandStrip").querySelectorAll("[data-view]").forEach((button) => {
+          button.addEventListener("click", () => activateView(button.dataset.view));
+        });
         document.querySelectorAll("[data-review-impact]").forEach((button) => {
           button.addEventListener("click", () => openImpactReview(button.dataset.reviewImpact, button.dataset.reviewStandard || ""));
+        });
+        document.querySelectorAll("[data-open-impact-review]").forEach((button) => {
+          button.addEventListener("click", () => openSavedImpactReview(button.dataset.openImpactReview));
+        });
+        document.querySelectorAll("[data-open-review-customer]").forEach((button) => {
+          button.addEventListener("click", () => openCustomerFromWatch(button.dataset.openReviewCustomer));
         });
         document.querySelectorAll("[data-complete-task]").forEach((button) => {
           button.addEventListener("click", () => completeNotificationTask(Number(button.dataset.completeTask), "Customer notified"));
