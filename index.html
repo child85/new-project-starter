@@ -414,6 +414,97 @@
         line-height: 1.45;
       }
 
+      .dashboard-section {
+        display: grid;
+        gap: 14px;
+        padding: 0 26px 28px;
+      }
+
+      .dashboard-section h3,
+      .dashboard-grid h3 {
+        margin: 0 0 14px;
+        color: var(--blue-dark);
+        font-size: 1.22rem;
+      }
+
+      .notification-card {
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid var(--blue);
+        border-left: 7px solid var(--blue);
+        background: #f7fbff;
+      }
+
+      .notification-card strong {
+        color: var(--blue-dark);
+        font-size: 1.04rem;
+      }
+
+      .notification-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .standard-map {
+        display: grid;
+        gap: 12px;
+      }
+
+      .standard-map-row {
+        display: grid;
+        grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(180px, 0.45fr);
+        gap: 12px;
+        align-items: stretch;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .standard-map-row.header {
+        padding-top: 10px;
+        padding-bottom: 10px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        background: #f6f9fb;
+      }
+
+      .standard-map-row h4 {
+        margin: 0 0 8px;
+        color: var(--blue-dark);
+        font-size: 1.05rem;
+      }
+
+      .chip-button {
+        min-height: 32px;
+        padding: 4px 9px;
+        border: 1px solid var(--blue);
+        color: var(--blue-dark);
+        background: #ffffff;
+        font-weight: 800;
+      }
+
+      .chip-button.changed {
+        border-color: var(--warn);
+        color: var(--warn);
+        background: #fff7ed;
+      }
+
+      .chip-button:hover,
+      .chip-button:focus-visible {
+        color: #ffffff;
+        background: var(--blue);
+        outline: none;
+      }
+
+      .chip-button.changed:hover,
+      .chip-button.changed:focus-visible {
+        background: var(--warn);
+      }
+
       .jump-focus {
         outline: 3px solid rgba(0, 119, 185, 0.32);
         outline-offset: 4px;
@@ -1375,7 +1466,8 @@
 
         .wide-split,
         .profile-grid,
-        .review-field-grid {
+        .review-field-grid,
+        .standard-map-row {
           grid-template-columns: 1fr 1fr;
         }
       }
@@ -1409,6 +1501,7 @@
         .profile-grid,
         .review-field-grid,
         .review-actions,
+        .standard-map-row,
         .customer-card.open .customer-detail,
         .customer-card,
         .controls,
@@ -1794,9 +1887,8 @@
             <div>
               <h2>Daily Watch Dashboard</h2>
               <p>
-                A daily highlight overview for standards changes, hypercare
-                accounts, and follow-up items. Use Standards for the full
-                library and detailed regulation records.
+                Quick answer to the core question: which customers are tied to
+                which standards, what changed, and who needs follow-up.
               </p>
             </div>
           </div>
@@ -1806,32 +1898,60 @@
               <strong id="dashboardStandardCount">0</strong>
               <p>Standards and regulations in the library.</p>
             </button>
-            <button class="metric" type="button" data-overview-action="hypercare">
-              <span>Hypercare customers</span>
-              <strong id="dashboardHypercareCount">0</strong>
-              <p>Customers monitored for standard changes.</p>
+            <button class="metric" type="button" data-overview-action="customers">
+              <span>Customer-standard links</span>
+              <strong id="dashboardLinkCount">0</strong>
+              <p>Saved customer relationships to standards.</p>
             </button>
             <button class="metric" type="button" data-overview-action="recent-change">
-              <span>Recent changes</span>
-              <strong id="dashboardRecentChangeCount">0</strong>
-              <p>Saved public change notes to review.</p>
+              <span>Impacted customers</span>
+              <strong id="dashboardImpactedCount">0</strong>
+              <p>Customers linked to standards with change notes.</p>
             </button>
-            <button class="metric" type="button" data-overview-action="settings">
-              <span>Daily update setup</span>
-              <strong id="dashboardScheduleStatus">Admin demo</strong>
-              <p>Schedule controls live in Settings.</p>
+            <button class="metric" type="button" data-overview-action="alerts">
+              <span>Open alerts</span>
+              <strong id="dashboardAlertCount">0</strong>
+              <p>Change notifications waiting for review.</p>
             </button>
           </div>
           <div class="dashboard-grid">
             <section>
-              <h3>Today’s Highlights</h3>
-              <div class="highlight-list" id="watchHighlightList"></div>
+              <h3>Change Notifications</h3>
+              <div class="highlight-list" id="notificationList"></div>
             </section>
             <section>
-              <h3>Customer Watch</h3>
-              <div class="highlight-list" id="watchList"></div>
+              <h3>Standards Changed Recently</h3>
+              <div class="highlight-list" id="watchHighlightList"></div>
             </section>
           </div>
+          <section class="dashboard-section">
+            <div class="row-top">
+              <div>
+                <h3>Customer-Standard Overview</h3>
+                <p class="row-copy">This is the operating view: every saved customer, the standards attached to them, recent change exposure, and whether the customer is in notification watch.</p>
+              </div>
+              <button class="button secondary" type="button" data-overview-action="customers">Open Customers</button>
+            </div>
+            <div class="standard-map" id="customerStandardsMatrix"></div>
+          </section>
+          <section class="dashboard-section">
+            <div class="row-top">
+              <div>
+                <h3>Notification Watch List</h3>
+                <p class="row-copy">Hypercare means the customer owner should be notified when one of their saved standards changes.</p>
+              </div>
+            </div>
+            <div class="highlight-list" id="watchList"></div>
+          </section>
+          <section class="dashboard-section">
+            <div class="row-top">
+              <div>
+                <h3>Missing Links to Fix</h3>
+                <p class="row-copy">These are the gaps that make the system less useful. Fixing them improves change impact alerts.</p>
+              </div>
+            </div>
+            <div class="highlight-list" id="coverageGapList"></div>
+          </section>
         </section>
 
         <section class="panel app-view" id="setup">
@@ -3806,7 +3926,7 @@
           else activateView("compliance");
           return;
         }
-        if (action === "hypercare" || action === "certified") {
+        if (action === "hypercare" || action === "certified" || action === "customers") {
           activateView("customers");
           return;
         }
@@ -3814,19 +3934,153 @@
           activateView("setup");
           return;
         }
+        if (action === "alerts") {
+          activateView("watch");
+          requestAnimationFrame(() => scrollToRecord("#notificationList"));
+          return;
+        }
         activateView("compliance");
+      }
+
+      function customerStandardNames(customer) {
+        return unique([
+          ...safeList(customer.knownStandards).map(itemLabel),
+          ...safeList(customer.guessedStandards).map(itemLabel),
+          ...safeList(customer.likelyStandards).map(itemLabel),
+          ...safeList(customer.projects).flatMap((project) => safeList(project.standards).map(itemLabel))
+        ].filter(Boolean));
+      }
+
+      function customerConfirmedStandardNames(customer) {
+        return unique([
+          ...safeList(customer.knownStandards).map(itemLabel),
+          ...safeList(customer.projects).flatMap((project) => safeList(project.standards).map(itemLabel))
+        ].filter(Boolean));
+      }
+
+      function customerSuggestedStandardNames(customer) {
+        const confirmed = customerConfirmedStandardNames(customer).map(normalize);
+        return unique([
+          ...safeList(customer.guessedStandards).map(itemLabel),
+          ...safeList(customer.likelyStandards).map(itemLabel)
+        ].filter((name) => name && !confirmed.includes(normalize(name))));
+      }
+
+      function standardRecordByName(name) {
+        return standards.find((standard) => normalize(standard.name) === normalize(name));
+      }
+
+      function changeItems() {
+        return standards.flatMap((standard) => safeList(standard.changes).map((change) => ({ ...change, standard: standard.name })));
+      }
+
+      function recentChangeForStandardName(name) {
+        const standard = standardRecordByName(name);
+        return standard ? latestChangeFor(standard) : null;
+      }
+
+      function customerChangeMatches(customer) {
+        return customerStandardNames(customer)
+          .map((name) => ({ name, change: recentChangeForStandardName(name) }))
+          .filter((item) => item.change)
+          .sort((a, b) => String(b.change.date || "").localeCompare(String(a.change.date || "")));
+      }
+
+      function notificationQueue() {
+        return customers.flatMap((customer) => customerChangeMatches(customer).map((item) => ({
+          customer,
+          standard: item.name,
+          change: item.change,
+          notify: customer.hypercare === "Active"
+        }))).sort((a, b) => String(b.change.date || "").localeCompare(String(a.change.date || "")));
+      }
+
+      function renderStandardButtons(names) {
+        return names.length ? names.map((name) => {
+          const changed = Boolean(recentChangeForStandardName(name));
+          return `<button class="chip-button ${changed ? "changed" : ""}" type="button" data-watch-standard="${esc(name)}">${esc(name)}</button>`;
+        }).join("") : `<span class="row-copy">No standards saved yet</span>`;
+      }
+
+      function renderCoverageGaps(queue) {
+        const gaps = [];
+        const customersWithoutStandards = customers.filter((customer) => !customerStandardNames(customer).length);
+        const inactiveImpacted = unique(queue.filter((item) => !item.notify).map((item) => item.customer.name));
+        const standardsWithoutCustomers = standards
+          .filter((standard) => latestChangeFor(standard))
+          .filter((standard) => !customers.some((customer) => customerStandardNames(customer).some((name) => normalize(name) === normalize(standard.name))))
+          .map((standard) => standard.name);
+
+        if (customersWithoutStandards.length) {
+          gaps.push({
+            title: "Customers need standards attached",
+            body: `${customersWithoutStandards.map((customer) => customer.name).join(", ")} will not produce useful change alerts until confirmed or suggested standards are saved.`
+          });
+        }
+        if (inactiveImpacted.length) {
+          gaps.push({
+            title: "Impacted customers are not in notification watch",
+            body: `${inactiveImpacted.join(", ")} match standards with change notes, but hypercare is inactive. Add watch only where follow-up is expected.`
+          });
+        }
+        if (standardsWithoutCustomers.length) {
+          gaps.push({
+            title: "Changed standards have no customer owner",
+            body: `${standardsWithoutCustomers.join(", ")} changed, but no saved customer is tied to them yet.`
+          });
+        }
+        if (!gaps.length) {
+          gaps.push({
+            title: "No obvious coverage gaps",
+            body: "Saved customers have standard links, and changed standards are visible in the dashboard."
+          });
+        }
+        return gaps.map((gap) => `
+          <article class="highlight-card">
+            <strong>${esc(gap.title)}</strong>
+            <p>${esc(gap.body)}</p>
+          </article>
+        `).join("");
       }
 
       function renderWatch() {
         const active = customers.filter((customer) => customer.hypercare === "Active");
-        const changes = standards.flatMap((standard) => safeList(standard.changes).map((change) => ({ ...change, standard: standard.name })));
+        const changes = changeItems();
         const recent = changes
           .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
           .slice(0, 4);
+        const queue = notificationQueue();
+        const impactedCustomers = unique(queue.map((item) => item.customer.name));
+        const linkCount = customers.reduce((total, customer) => total + customerStandardNames(customer).length, 0);
         setText("dashboardStandardCount", standards.length);
-        setText("dashboardHypercareCount", active.length);
-        setText("dashboardRecentChangeCount", changes.length);
+        setText("dashboardLinkCount", linkCount);
+        setText("dashboardImpactedCount", impactedCustomers.length);
+        setText("dashboardAlertCount", queue.length);
         renderDailySchedule();
+        document.getElementById("notificationList").innerHTML = queue.length ? queue.slice(0, 6).map((item) => `
+          <article class="notification-card">
+            <div class="row-top">
+              <div>
+                <strong>${esc(item.customer.name)} may be affected by ${esc(item.standard)}</strong>
+                <p>${esc(item.change.summary || "Review this standards change against the saved customer profile.")}</p>
+              </div>
+              <span class="tag ${item.notify ? "ok" : "warn"}">${item.notify ? "Notify owner" : "Review impact"}</span>
+            </div>
+            <div class="tags">
+              <span class="tag">${esc(item.change.date || "Date unknown")}</span>
+              <span class="tag">${esc(item.change.impact || "Review")}</span>
+              <span class="tag">Owner: ${esc(item.customer.owner || "NA team")}</span>
+              <button class="chip-button" type="button" data-watch-customer="${esc(recordKey(profileKey(item.customer)))}">Open customer</button>
+              <button class="chip-button" type="button" data-watch-standard="${esc(item.standard)}">Open standard</button>
+              ${item.notify ? "" : `<button class="chip-button changed" type="button" data-enable-watch="${esc(recordKey(profileKey(item.customer)))}">Add notification watch</button>`}
+            </div>
+          </article>
+        `).join("") : `
+          <article class="highlight-card">
+            <strong>No customer impact alerts yet</strong>
+            <p>Save customers with standards, then run the AI source update. Matching standards with public changes will appear here.</p>
+          </article>
+        `;
         document.getElementById("watchHighlightList").innerHTML = recent.length ? recent.map((change) => `
           <button class="highlight-card" type="button" data-watch-standard="${esc(change.standard)}">
             <strong>${esc(change.standard)}: ${esc(change.title || "Public change")}</strong>
@@ -3840,6 +4094,42 @@
           <article class="highlight-card">
             <strong>No public changes queued</strong>
             <p>Run the AI update scan from the Standards tab. The daily watch dashboard will summarize review items here.</p>
+          </article>
+        `;
+        document.getElementById("customerStandardsMatrix").innerHTML = customers.length ? `
+          <div class="standard-map-row header">
+            <span>Customer</span>
+            <span>Confirmed / project standards</span>
+            <span>AI suggested standards</span>
+            <span>Change status</span>
+          </div>
+          ${customers
+            .slice()
+            .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
+            .map((customer) => {
+              const confirmed = customerConfirmedStandardNames(customer);
+              const suggested = customerSuggestedStandardNames(customer);
+              const matches = customerChangeMatches(customer);
+              return `
+                <div class="standard-map-row">
+                  <div>
+                    <h4>${esc(customer.name)}</h4>
+                    <p class="row-copy">${esc(customer.sector || "Unknown sector")} | ${esc(customer.owner || "NA team")}</p>
+                    <button class="chip-button" type="button" data-watch-customer="${esc(recordKey(profileKey(customer)))}">Open profile</button>
+                  </div>
+                  <div class="tags">${renderStandardButtons(confirmed)}</div>
+                  <div class="tags">${renderStandardButtons(suggested)}</div>
+                  <div class="tags">
+                    <span class="tag ${matches.length ? "warn" : "ok"}">${matches.length ? `${matches.length} change match${matches.length === 1 ? "" : "es"}` : "No change match"}</span>
+                    <span class="tag ${customer.hypercare === "Active" ? "ok" : "dark"}">${customer.hypercare === "Active" ? "Notify" : "Not watched"}</span>
+                  </div>
+                </div>
+              `;
+            }).join("")}
+        ` : `
+          <article class="highlight-card">
+            <strong>No customers saved yet</strong>
+            <p>Add a customer, confirm the relevant standards, and this overview becomes the daily operating map.</p>
           </article>
         `;
         document.getElementById("watchList").innerHTML = active.length ? active.slice(0, 4).map((customer) => `
@@ -3859,11 +4149,22 @@
             <p>Add a customer to hypercare from the Customers tab to include them in daily watch monitoring.</p>
           </article>
         `;
+        document.getElementById("coverageGapList").innerHTML = renderCoverageGaps(queue);
         document.querySelectorAll("[data-watch-standard]").forEach((button) => {
           button.addEventListener("click", () => openStandardFromWatch(button.dataset.watchStandard));
         });
         document.querySelectorAll("[data-watch-customer]").forEach((button) => {
           button.addEventListener("click", () => openCustomerFromWatch(button.dataset.watchCustomer));
+        });
+        document.querySelectorAll("[data-enable-watch]").forEach((button) => {
+          button.addEventListener("click", () => {
+            const customer = customers.find((item) => recordKey(profileKey(item)) === button.dataset.enableWatch);
+            if (!customer) return;
+            customer.hypercare = "Active";
+            store.set("assuranceCustomersV2", customers);
+            renderCustomers();
+            renderWatch();
+          });
         });
       }
 
