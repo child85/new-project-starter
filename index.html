@@ -99,15 +99,35 @@
       .utility {
         display: flex;
         align-items: center;
-        gap: 28px;
+        gap: 12px;
         color: #2d3237;
         font-size: 1rem;
       }
 
-      .search {
+      .utility-button {
+        min-height: 42px;
+        padding: 0 16px;
+        border: 1px solid var(--blue);
+        color: var(--blue-dark);
+        background: #ffffff;
+        font-weight: 800;
+      }
+
+      .utility-button.primary {
+        color: #ffffff;
+        background: var(--blue);
+      }
+
+      .global-search {
+        position: relative;
         display: flex;
         align-items: center;
         gap: 10px;
+        min-width: 320px;
+        min-height: 42px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        background: #ffffff;
       }
 
       .search-icon {
@@ -127,6 +147,54 @@
         content: "";
         background: var(--blue);
         transform: rotate(45deg);
+      }
+
+      .global-search input {
+        width: 100%;
+        border: 0;
+        outline: 0;
+        color: var(--ink);
+        background: transparent;
+      }
+
+      .global-search-results {
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        z-index: 20;
+        width: min(520px, 82vw);
+        border: 1px solid var(--line);
+        background: #ffffff;
+        box-shadow: var(--shadow);
+      }
+
+      .global-search-result {
+        display: grid;
+        width: 100%;
+        gap: 4px;
+        padding: 14px 16px;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        background: #ffffff;
+        text-align: left;
+      }
+
+      .global-search-result:last-child { border-bottom: 0; }
+
+      .global-search-result strong {
+        color: var(--blue-dark);
+        font-size: 1rem;
+      }
+
+      .global-search-result span {
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .global-search-empty {
+        padding: 14px 16px;
+        color: var(--muted);
       }
 
       .primary-nav {
@@ -2006,6 +2074,12 @@
           justify-content: flex-start;
         }
 
+        .utility,
+        .global-search,
+        .utility-button {
+          width: 100%;
+        }
+
         .content {
           padding-top: 20px;
         }
@@ -2029,9 +2103,13 @@
           </div>
         </div>
         <div class="utility">
-          <span>North America users</span>
-          <span>Global customer scope</span>
-          <span class="search"><span class="search-icon"></span>Search</span>
+          <button class="utility-button primary" id="headerAddCustomer" type="button">Add Customer</button>
+          <button class="utility-button" data-view="setup" type="button">Settings</button>
+          <div class="global-search">
+            <span class="search-icon" aria-hidden="true"></span>
+            <input id="globalSearch" type="search" placeholder="Search customers, standards, tasks" autocomplete="off" aria-label="Search customers, standards, tasks" />
+            <div class="global-search-results hidden" id="globalSearchResults"></div>
+          </div>
         </div>
       </div>
     </header>
@@ -3079,6 +3157,7 @@
       let pendingDeletionCustomer = null;
       let pendingImpactReview = null;
       let pendingProjectCustomerKey = "";
+      let globalSearchMatches = [];
 
       function normalize(value) {
         return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -4986,6 +5065,121 @@
         requestAnimationFrame(() => scrollToRecord(`[data-impact-review-card="${reviewId}"]`));
       }
 
+      function globalSearchEntries(query) {
+        const needle = normalize(query);
+        if (!needle) return [];
+        const terms = needle.split(" ").filter(Boolean);
+        const matchesQuery = (text) => terms.every((term) => text.includes(term));
+        const entries = [];
+        customers.forEach((customer) => {
+          const text = normalize([
+            customer.name,
+            customer.summary,
+            customer.sector,
+            customer.subSector,
+            regionsText(customer.markets),
+            customerStandardNames(customer).join(" ")
+          ].join(" "));
+          if (matchesQuery(text)) {
+            entries.push({
+              type: "customer",
+              title: customer.name,
+              subtitle: `${customer.sector || "Unknown sector"} | ${regionsText(customer.markets)}`,
+              key: profileKey(customer)
+            });
+          }
+        });
+        standards.forEach((standard) => {
+          const text = normalize([
+            standard.name,
+            standard.domain,
+            standard.sector,
+            standard.description,
+            safeList(standard.topics).join(" "),
+            safeList(standard.markets).join(" ")
+          ].join(" "));
+          if (matchesQuery(text)) {
+            entries.push({
+              type: "standard",
+              title: standard.name,
+              subtitle: `${standard.domain || "Standard"} | ${standard.sector || "All sectors"}`,
+              key: standard.name
+            });
+          }
+        });
+        impactReviews.forEach((review) => {
+          const text = normalize(`${review.customerName} ${review.standard} ${review.status} ${review.decision} ${review.note}`);
+          if (matchesQuery(text)) {
+            entries.push({
+              type: "review",
+              title: `${review.customerName || "Customer"} impact review`,
+              subtitle: `${review.standard || "Standard"} | ${review.status || "Open"}`,
+              key: review.id || review.key
+            });
+          }
+        });
+        adminRequests.filter((request) => request.type === "notify-customer").forEach((task) => {
+          const text = normalize(`${task.customerName} ${task.standard} ${task.owner} ${task.priority} ${task.taskStatus} ${task.reason}`);
+          if (matchesQuery(text)) {
+            entries.push({
+              type: "task",
+              title: `${task.customerName || "Customer"} notification task`,
+              subtitle: `${task.standard || "Standard"} | ${task.taskStatus || task.status || "Open"} | Owner: ${task.owner || "Unassigned"}`,
+              key: task.id
+            });
+          }
+        });
+        return entries.slice(0, 10);
+      }
+
+      function openGlobalSearchResult(entry) {
+        if (!entry) return;
+        document.getElementById("globalSearchResults")?.classList.add("hidden");
+        document.getElementById("globalSearch")?.blur();
+        if (entry.type === "customer") {
+          expandedCustomerKey = entry.key;
+          renderCustomers();
+          activateView("customers", { scrollTop: false });
+          requestAnimationFrame(() => scrollToRecord(`[data-customer-key="${recordKey(entry.key)}"]`));
+          return;
+        }
+        if (entry.type === "standard") {
+          openStandardFromWatch(entry.key);
+          return;
+        }
+        if (entry.type === "review") {
+          openSavedImpactReview(entry.key);
+          return;
+        }
+        if (entry.type === "task") {
+          openWatchDrill("tasks");
+        }
+      }
+
+      function renderGlobalSearchResults() {
+        const input = document.getElementById("globalSearch");
+        const box = document.getElementById("globalSearchResults");
+        if (!input || !box) return;
+        globalSearchMatches = globalSearchEntries(input.value);
+        if (!input.value.trim()) {
+          box.classList.add("hidden");
+          box.innerHTML = "";
+          return;
+        }
+        box.classList.remove("hidden");
+        box.innerHTML = globalSearchMatches.length
+          ? globalSearchMatches.map((entry, index) => `
+            <button class="global-search-result" type="button" data-global-search-result="${index}">
+              <strong>${esc(entry.title)}</strong>
+              <span>${esc(entry.type.toUpperCase())} - ${esc(entry.subtitle)}</span>
+            </button>
+          `).join("")
+          : `<div class="global-search-empty">No matching customers, standards, reviews, or tasks found.</div>`;
+        box.querySelectorAll("[data-global-search-result]").forEach((button) => {
+          button.addEventListener("click", () => openGlobalSearchResult(globalSearchMatches[Number(button.dataset.globalSearchResult)]));
+        });
+      }
+
       function customerStandardNames(customer) {
         return unique([
           ...safeList(customer.knownStandards).map(itemLabel),
@@ -5681,6 +5875,10 @@
       }
 
       document.getElementById("lookupForm").addEventListener("submit", runLookup);
+      document.getElementById("headerAddCustomer").addEventListener("click", () => {
+        activateView("customers", { scrollTop: false });
+        requestAnimationFrame(() => document.getElementById("openCustomerDialog").click());
+      });
       document.getElementById("openCustomerDialog").addEventListener("click", () => {
         document.getElementById("candidateDialogTitle").textContent = "Add Customer";
         document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity, enrich the profile, and show a summary before anything is saved.";
@@ -5847,6 +6045,21 @@
 
       document.getElementById("testApiEndpoint").addEventListener("click", testSavedEndpoint);
       document.getElementById("saveDailySchedule").addEventListener("click", saveDailySchedule);
+      document.getElementById("globalSearch").addEventListener("input", renderGlobalSearchResults);
+      document.getElementById("globalSearch").addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && globalSearchMatches[0]) {
+          event.preventDefault();
+          openGlobalSearchResult(globalSearchMatches[0]);
+        }
+        if (event.key === "Escape") {
+          document.getElementById("globalSearchResults").classList.add("hidden");
+        }
+      });
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".global-search")) {
+          document.getElementById("globalSearchResults")?.classList.add("hidden");
+        }
+      });
 
       let currentViewId = document.querySelector(".app-view.active")?.id || "watch";
 
