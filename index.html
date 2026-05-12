@@ -1893,48 +1893,48 @@
             </div>
           </div>
           <div class="metric-grid compliance-kpis" style="padding: 22px 26px;">
-            <button class="metric" type="button" data-overview-action="standards">
+            <button class="metric" type="button" data-watch-drill="recent-standards">
               <span>Watched standards</span>
               <strong id="dashboardStandardCount">0</strong>
-              <p>Standards and regulations in the library.</p>
+              <p>Standards in scope for the daily change scan.</p>
             </button>
-            <button class="metric" type="button" data-overview-action="customers">
+            <button class="metric" type="button" data-watch-drill="matrix">
               <span>Customer-standard links</span>
               <strong id="dashboardLinkCount">0</strong>
-              <p>Saved customer relationships to standards.</p>
+              <p>Jump to the customer-standard overview.</p>
             </button>
-            <button class="metric" type="button" data-overview-action="recent-change">
+            <button class="metric" type="button" data-watch-drill="notifications">
               <span>Impacted customers</span>
               <strong id="dashboardImpactedCount">0</strong>
-              <p>Customers linked to standards with change notes.</p>
+              <p>Jump to customers affected by change notes.</p>
             </button>
-            <button class="metric" type="button" data-overview-action="alerts">
+            <button class="metric" type="button" data-watch-drill="notifications">
               <span>Open alerts</span>
               <strong id="dashboardAlertCount">0</strong>
-              <p>Change notifications waiting for review.</p>
+              <p>Jump to change notifications waiting for review.</p>
             </button>
           </div>
           <div class="dashboard-grid">
-            <section>
+            <section id="watchNotificationsSection">
               <h3>Change Notifications</h3>
               <div class="highlight-list" id="notificationList"></div>
             </section>
-            <section>
+            <section id="watchRecentStandardsSection">
               <h3>Standards Changed Recently</h3>
               <div class="highlight-list" id="watchHighlightList"></div>
             </section>
           </div>
-          <section class="dashboard-section">
+          <section class="dashboard-section" id="watchMatrixSection">
             <div class="row-top">
               <div>
                 <h3>Customer-Standard Overview</h3>
                 <p class="row-copy">This is the operating view: every saved customer, the standards attached to them, recent change exposure, and whether the customer is in notification watch.</p>
               </div>
-              <button class="button secondary" type="button" data-overview-action="customers">Open Customers</button>
+              <button class="button secondary" type="button" data-view="customers">Open Customers</button>
             </div>
             <div class="standard-map" id="customerStandardsMatrix"></div>
           </section>
-          <section class="dashboard-section">
+          <section class="dashboard-section" id="watchCustomerListSection">
             <div class="row-top">
               <div>
                 <h3>Notification Watch List</h3>
@@ -1943,7 +1943,7 @@
             </div>
             <div class="highlight-list" id="watchList"></div>
           </section>
-          <section class="dashboard-section">
+          <section class="dashboard-section" id="watchCoverageGapsSection">
             <div class="row-top">
               <div>
                 <h3>Missing Links to Fix</h3>
@@ -3612,9 +3612,7 @@
           button.addEventListener("click", () => {
             currentResult = customers[Number(button.dataset.loadCustomer)];
             renderResult(currentResult);
-            document.querySelectorAll(".nav-tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === "customers"));
-            document.querySelectorAll(".app-view").forEach((view) => view.classList.toggle("active", view.id === "customers"));
-            document.getElementById("customers").scrollIntoView();
+            activateView("customers");
           });
         });
         list.querySelectorAll("[data-toggle-watch]").forEach((button) => {
@@ -3940,6 +3938,17 @@
           return;
         }
         activateView("compliance");
+      }
+
+      function openWatchDrill(action) {
+        const target = {
+          "recent-standards": "#watchRecentStandardsSection",
+          matrix: "#watchMatrixSection",
+          notifications: "#watchNotificationsSection",
+          watchlist: "#watchCustomerListSection",
+          gaps: "#watchCoverageGapsSection"
+        }[action] || "#watchNotificationsSection";
+        activateView("watch", { scrollTop: false, target });
       }
 
       function customerStandardNames(customer) {
@@ -4372,13 +4381,39 @@
       document.getElementById("testApiEndpoint").addEventListener("click", testSavedEndpoint);
       document.getElementById("saveDailySchedule").addEventListener("click", saveDailySchedule);
 
-      function activateView(viewId) {
+      let currentViewId = document.querySelector(".app-view.active")?.id || "watch";
+
+      function navigationStateFromHash() {
+        const hash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+        const element = hash ? document.getElementById(hash) : null;
+        if (!element) return { viewId: "watch", target: "" };
+        if (element.classList.contains("app-view")) return { viewId: element.id, target: "" };
+        const parentView = element.closest(".app-view");
+        return { viewId: parentView?.id || "watch", target: `#${hash}` };
+      }
+
+      function activateView(viewId, options = {}) {
+          const view = document.getElementById(viewId);
+          const nextViewId = view?.classList.contains("app-view") ? viewId : "watch";
+          const target = options.target || "";
+          const hashValue = target ? target.replace(/^#/, "") : nextViewId;
           document.querySelectorAll(".nav-tab").forEach((tab) => tab.classList.remove("active"));
-          document.querySelectorAll(".app-view").forEach((view) => view.classList.remove("active"));
-          document.querySelectorAll(".view-overview").forEach((view) => view.classList.toggle("active", viewId === "customers"));
-          document.querySelector(`[data-view="${viewId}"]`)?.classList.add("active");
-          document.getElementById(viewId)?.classList.add("active");
-          document.querySelector(".content").scrollIntoView({ behavior: "smooth", block: "start" });
+          document.querySelectorAll(".app-view").forEach((item) => item.classList.remove("active"));
+          document.querySelectorAll(".view-overview").forEach((item) => item.classList.toggle("active", nextViewId === "customers"));
+          document.querySelector(`.nav-tab[data-view="${nextViewId}"]`)?.classList.add("active");
+          document.getElementById(nextViewId)?.classList.add("active");
+          currentViewId = nextViewId;
+          if (options.pushHistory !== false) {
+            const state = { viewId: nextViewId, target };
+            const url = `#${hashValue}`;
+            if (options.replaceHistory) history.replaceState(state, "", url);
+            else if (window.location.hash !== url) history.pushState(state, "", url);
+          }
+          if (target) {
+            requestAnimationFrame(() => scrollToRecord(target));
+          } else if (options.scrollTop !== false) {
+            document.querySelector(".content").scrollIntoView({ behavior: "smooth", block: "start" });
+          }
       }
 
       document.querySelectorAll("[data-view]").forEach((button) => {
@@ -4396,6 +4431,21 @@
       document.querySelectorAll("[data-overview-action]").forEach((button) => {
         button.addEventListener("click", () => {
           openOverviewAction(button.dataset.overviewAction);
+        });
+      });
+
+      document.querySelectorAll("[data-watch-drill]").forEach((button) => {
+        button.addEventListener("click", () => {
+          openWatchDrill(button.dataset.watchDrill);
+        });
+      });
+
+      window.addEventListener("popstate", (event) => {
+        const state = event.state || navigationStateFromHash();
+        activateView(state.viewId || "watch", {
+          pushHistory: false,
+          scrollTop: !state.target,
+          target: state.target || ""
         });
       });
 
@@ -4421,6 +4471,17 @@
       renderCustomers();
       renderWatch();
       renderAdminRequests();
+      const initialNavigationState = navigationStateFromHash();
+      history.replaceState(
+        initialNavigationState,
+        "",
+        `#${initialNavigationState.target ? initialNavigationState.target.replace(/^#/, "") : initialNavigationState.viewId}`
+      );
+      activateView(initialNavigationState.viewId, {
+        pushHistory: false,
+        scrollTop: !initialNavigationState.target,
+        target: initialNavigationState.target
+      });
       setStatus("Ready to add a customer.");
     </script>
   </body>
