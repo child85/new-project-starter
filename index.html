@@ -514,6 +514,69 @@
         gap: 14px;
       }
 
+      .workflow-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        padding: 22px 26px;
+        border-bottom: 1px solid var(--line);
+        background: #f8fafc;
+      }
+
+      .workflow-step {
+        display: grid;
+        gap: 8px;
+        min-height: 150px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-top: 6px solid var(--blue);
+        background: #ffffff;
+      }
+
+      .workflow-step span {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .workflow-step strong {
+        color: var(--blue-dark);
+        font-size: 1.08rem;
+      }
+
+      .workflow-step p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .system-status-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        padding: 0 26px 22px;
+        background: #f8fafc;
+      }
+
+      .system-status-card {
+        display: grid;
+        gap: 8px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .system-status-card strong {
+        color: var(--blue-dark);
+      }
+
+      .system-status-card p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
       .command-strip {
         grid-template-columns: repeat(4, minmax(0, 1fr));
       }
@@ -1869,6 +1932,8 @@
         .metric-grid,
         .service-strip,
         .app-shell,
+        .workflow-strip,
+        .system-status-grid,
         .command-strip,
         .task-board,
         .source-grid,
@@ -1911,6 +1976,8 @@
         .section-grid,
         .dashboard-grid,
         .setup-grid,
+        .workflow-strip,
+        .system-status-grid,
         .command-strip,
         .task-board,
         .source-grid,
@@ -2406,6 +2473,42 @@
               </p>
             </div>
           </div>
+          <div class="workflow-strip" aria-label="Daily Watch workflow">
+            <article class="workflow-step">
+              <span>Step 1</span>
+              <strong>Check what changed</strong>
+              <p>Review standards with saved public change notes or run the live AI source update from Standards Overview.</p>
+            </article>
+            <article class="workflow-step">
+              <span>Step 2</span>
+              <strong>Review customer impact</strong>
+              <p>Decide whether a standard change is relevant for a saved customer, project, or hypercare account.</p>
+            </article>
+            <article class="workflow-step">
+              <span>Step 3</span>
+              <strong>Create follow-up tasks</strong>
+              <p>If outreach is needed, create a customer notification task and assign an owner and due date.</p>
+            </article>
+            <article class="workflow-step">
+              <span>Step 4</span>
+              <strong>Close the loop</strong>
+              <p>Mark the customer notified or close the review so the dashboard only shows active work.</p>
+            </article>
+          </div>
+          <div class="system-status-grid" aria-label="System readiness">
+            <article class="system-status-card">
+              <strong>Data storage: browser demo</strong>
+              <p>Customers, tasks, reviews, and users are saved locally until shared backend storage is connected.</p>
+            </article>
+            <article class="system-status-card">
+              <strong>AI enrichment: API assisted</strong>
+              <p>Customer and standards enrichment can use the saved AWS endpoint. AI output still needs source review before customer use.</p>
+            </article>
+            <article class="system-status-card">
+              <strong>Notifications: task queue</strong>
+              <p>The hub creates follow-up tasks here. Email or Teams notifications are not connected yet.</p>
+            </article>
+          </div>
           <div class="metric-grid compliance-kpis" style="padding: 22px 26px;">
             <button class="metric" type="button" data-watch-drill="recent-standards">
               <span>Watched standards</span>
@@ -2553,7 +2656,7 @@
                 <input id="createNotificationTask" type="checkbox" checked />
                 <div>
                   <strong>Create customer notification task</strong>
-                  <p>Send this to Settings as an admin/task item so it is not lost after the review.</p>
+                  <p>Add this to Daily Watch under Owned Follow-Up Tasks so the customer owner can act on it.</p>
                 </div>
               </label>
               <button class="button" type="submit">Save impact review</button>
@@ -2568,7 +2671,9 @@
               <p>
                 Administrative controls for deletion requests, customer-list
                 maintenance, and AI backend connection settings. This area
-                should be restricted before the hub is shared broadly.
+                should be restricted before the hub is shared broadly. Team
+                roles shown here are demo-only until real authentication is
+                connected.
               </p>
             </div>
           </div>
