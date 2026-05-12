@@ -528,6 +528,23 @@
         background: var(--panel);
       }
 
+      button.metric {
+        width: 100%;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      button.metric:hover,
+      button.metric:focus-visible,
+      .standards-route:hover,
+      .standards-route:focus-visible {
+        border-color: var(--blue-dark);
+        outline: 3px solid rgba(0, 119, 185, 0.22);
+        outline-offset: 2px;
+      }
+
       .metric span {
         display: block;
         margin-bottom: 22px;
@@ -1459,26 +1476,26 @@
                 </div>
               </div>
               <div class="metric-grid compliance-kpis" style="padding: 22px 26px;">
-                <article class="metric">
+                <button class="metric" type="button" data-overview-action="certified">
                   <span>Certified this year</span>
                   <strong id="certifiedYearCount">0</strong>
                   <p>Saved project records marked as certification work.</p>
-                </article>
-                <article class="metric">
+                </button>
+                <button class="metric" type="button" data-overview-action="top-standard">
                   <span>Most sought after</span>
                   <strong id="topStandardName">-</strong>
                   <p>Based on saved customer suggestions and project records.</p>
-                </article>
-                <article class="metric">
+                </button>
+                <button class="metric" type="button" data-overview-action="recent-change">
                   <span>Recently changed</span>
                   <strong id="recentChangeCount">0</strong>
                   <p>Public change notes saved in the standards library.</p>
-                </article>
-                <article class="metric">
+                </button>
+                <button class="metric" type="button" data-overview-action="settings">
                   <span>Watch administration</span>
                   <strong>Admin</strong>
                   <p>Daily update schedule is managed from Settings.</p>
-                </article>
+                </button>
               </div>
             </section>
           </div>
@@ -1688,26 +1705,26 @@
             </div>
           </div>
           <div class="metric-grid compliance-kpis" style="padding: 22px 26px;">
-            <article class="metric">
+            <button class="metric" type="button" data-overview-action="standards">
               <span>Watched standards</span>
               <strong id="dashboardStandardCount">0</strong>
               <p>Standards and regulations in the library.</p>
-            </article>
-            <article class="metric">
+            </button>
+            <button class="metric" type="button" data-overview-action="hypercare">
               <span>Hypercare customers</span>
               <strong id="dashboardHypercareCount">0</strong>
               <p>Customers monitored for standard changes.</p>
-            </article>
-            <article class="metric">
+            </button>
+            <button class="metric" type="button" data-overview-action="recent-change">
               <span>Recent changes</span>
               <strong id="dashboardRecentChangeCount">0</strong>
               <p>Saved public change notes to review.</p>
-            </article>
-            <article class="metric">
+            </button>
+            <button class="metric" type="button" data-overview-action="settings">
               <span>Daily update setup</span>
               <strong id="dashboardScheduleStatus">Admin demo</strong>
               <p>Schedule controls live in Settings.</p>
-            </article>
+            </button>
           </div>
           <div class="dashboard-grid">
             <section>
@@ -3389,7 +3406,7 @@
         renderWatch();
       }
 
-      function updateComplianceKpis() {
+      function topReferencedStandardName() {
         const projectStandards = customers.flatMap((customer) => safeList(customer.projects).flatMap((project) => safeList(project.standards)));
         const guessed = customers.flatMap((customer) => safeList(customer.guessedStandards));
         const allRefs = [...projectStandards, ...guessed].map(itemLabel).filter(Boolean);
@@ -3398,7 +3415,17 @@
           if (key) acc[key] = (acc[key] || 0) + 1;
           return acc;
         }, {});
-        const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
+        return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+      }
+
+      function mostRecentChangedStandardName() {
+        return standards
+          .flatMap((standard) => safeList(standard.changes).map((change) => ({ ...change, standard: standard.name })))
+          .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))[0]?.standard || "";
+      }
+
+      function updateComplianceKpis() {
+        const top = topReferencedStandardName() || "-";
         const certifiedThisYear = customers.flatMap((customer) => safeList(customer.projects)).filter((project) => {
           const year = new Date().getFullYear().toString();
           return normalize(`${project.type} ${project.status}`).includes("cert") && String(project.date || "").startsWith(year);
@@ -3548,6 +3575,30 @@
         renderCustomers();
         activateView("customers");
         requestAnimationFrame(() => scrollToRecord(`[data-customer-key="${recordKey(profileKey(customer))}"]`));
+      }
+
+      function openOverviewAction(action) {
+        if (action === "top-standard") {
+          const standardName = topReferencedStandardName();
+          if (standardName) openStandardFromWatch(standardName);
+          else activateView("compliance");
+          return;
+        }
+        if (action === "recent-change") {
+          const standardName = mostRecentChangedStandardName();
+          if (standardName) openStandardFromWatch(standardName);
+          else activateView("compliance");
+          return;
+        }
+        if (action === "hypercare" || action === "certified") {
+          activateView("customers");
+          return;
+        }
+        if (action === "settings") {
+          activateView("setup");
+          return;
+        }
+        activateView("compliance");
       }
 
       function renderWatch() {
@@ -3822,6 +3873,12 @@
       document.querySelectorAll("[data-route-view]").forEach((button) => {
         button.addEventListener("click", () => {
           activateView(button.dataset.routeView);
+        });
+      });
+
+      document.querySelectorAll("[data-overview-action]").forEach((button) => {
+        button.addEventListener("click", () => {
+          openOverviewAction(button.dataset.overviewAction);
         });
       });
 
