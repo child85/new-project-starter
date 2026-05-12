@@ -29,6 +29,16 @@ export async function handler(event) {
 
   try {
     const body = parseRequestBody(event);
+    if (body.task === "state-load") {
+      const result = await loadAppState();
+      return response(200, result);
+    }
+
+    if (body.task === "state-save") {
+      const result = await saveAppState(body.state || {});
+      return response(200, result);
+    }
+
     if (body.task === "standards-update") {
       const result = await enrichStandardsUpdate(body);
       return response(200, result);
@@ -58,7 +68,7 @@ export async function handler(event) {
 
     return response(200, result);
   } catch (error) {
-    return response(500, {
+    return response(error.statusCode || 500, {
       error: "Customer enrichment failed.",
       detail: error.message
     });
@@ -72,6 +82,86 @@ function parseRequestBody(event) {
     ? Buffer.from(event.body, "base64").toString("utf8")
     : event.body;
   return JSON.parse(rawBody || "{}");
+}
+
+function appStateTableName() {
+  if (!process.env.APP_STATE_TABLE) {
+    const error = new Error("Shared app-state storage is not configured. Create a DynamoDB table and set APP_STATE_TABLE on the Lambda.");
+    error.statusCode = 501;
+    throw error;
+  }
+  return process.env.APP_STATE_TABLE;
+}
+
+async function dynamoDocumentClient() {
+  const { DynamoDBClient } = await import("@aws-sdk/client-dynamodb");
+  const { DynamoDBDocumentClient } = await import("@aws-sdk/lib-dynamodb");
+  return DynamoDBDocumentClient.from(new DynamoDBClient({}));
+}
+
+function emptyAppState() {
+  return {
+    standards: [],
+    customers: [],
+    users: [],
+    adminRequests: [],
+    impactReviews: [],
+    watchSchedule: {}
+  };
+}
+
+function sanitizeAppState(state = {}) {
+  return {
+    standards: Array.isArray(state.standards) ? state.standards : [],
+    customers: Array.isArray(state.customers) ? state.customers : [],
+    users: Array.isArray(state.users) ? state.users : [],
+    adminRequests: Array.isArray(state.adminRequests) ? state.adminRequests : [],
+    impactReviews: Array.isArray(state.impactReviews) ? state.impactReviews : [],
+    watchSchedule: state.watchSchedule && typeof state.watchSchedule === "object" ? state.watchSchedule : {}
+  };
+}
+
+async function loadAppState() {
+  const tableName = appStateTableName();
+  const dynamo = await dynamoDocumentClient();
+  const { GetCommand } = await import("@aws-sdk/lib-dynamodb");
+  const result = await dynamo.send(new GetCommand({
+    TableName: tableName,
+    Key: {
+      pk: "APP#assurance-intelligence-hub",
+      sk: "STATE#current"
+    }
+  }));
+
+  return {
+    status: "loaded",
+    storage: "dynamodb",
+    state: result.Item?.state || emptyAppState(),
+    updatedAt: result.Item?.updated_at || ""
+  };
+}
+
+async function saveAppState(state) {
+  const tableName = appStateTableName();
+  const dynamo = await dynamoDocumentClient();
+  const { PutCommand } = await import("@aws-sdk/lib-dynamodb");
+  const updatedAt = new Date().toISOString();
+
+  await dynamo.send(new PutCommand({
+    TableName: tableName,
+    Item: {
+      pk: "APP#assurance-intelligence-hub",
+      sk: "STATE#current",
+      state: sanitizeAppState(state),
+      updated_at: updatedAt
+    }
+  }));
+
+  return {
+    status: "saved",
+    storage: "dynamodb",
+    updatedAt
+  };
 }
 
 async function saveCustomerProfile(customer, status) {
@@ -543,7 +633,7 @@ function deterministicEnrichment(body) {
   const likelyStandards = standardsFor(sector, markets);
 
   return {
-    status: "completed_demo_fallback",
+    status: "completed_rule_based_fallback",
     customer: {
       name,
       website: body.website || body.confirmedEntity?.website || "",

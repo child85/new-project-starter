@@ -2108,7 +2108,7 @@
                 </div>
                 <div class="status-line">
                   <span id="enrichmentStatus">Ready to add a customer.</span>
-                  <span id="apiMode">Mode: browser demo</span>
+                  <span id="apiMode">Storage: backend required</span>
                 </div>
               </div>
             </div>
@@ -2244,7 +2244,7 @@
               <div class="customer-card-actions">
                 <button class="button" id="openStandardDialog" type="button">Add Standard</button>
                 <button class="button secondary" id="runAiStandardUpdate" type="button">Run live AI source update</button>
-                <button class="button secondary" id="resetStandards" type="button">Reset sample data</button>
+                <button class="button secondary" id="resetStandards" type="button">Restore baseline standards</button>
               </div>
             </div>
             <div class="code" id="standardsUpdateStatus">Live standards enrichment uses the saved AWS API endpoint, fetches official source links in Lambda, and asks AI to summarize the source material.</div>
@@ -2497,8 +2497,8 @@
           </div>
           <div class="system-status-grid" aria-label="System readiness">
             <article class="system-status-card">
-              <strong>Data storage: browser demo</strong>
-              <p>Customers, tasks, reviews, and users are saved locally until shared backend storage is connected.</p>
+              <strong>Data storage: shared AWS backend</strong>
+              <p>Customers, tasks, reviews, and users sync through the saved API endpoint when Lambda has app-state storage connected.</p>
             </article>
             <article class="system-status-card">
               <strong>AI enrichment: API assisted</strong>
@@ -2672,8 +2672,8 @@
                 Administrative controls for deletion requests, customer-list
                 maintenance, and AI backend connection settings. This area
                 should be restricted before the hub is shared broadly. Team
-                roles shown here are demo-only until real authentication is
-                connected.
+                roles here are shared workspace settings until real
+                authentication is connected.
               </p>
             </div>
           </div>
@@ -2691,7 +2691,7 @@
             <div class="panel-head compact-head">
               <div>
                 <h2>Team Members</h2>
-                <p>Users here can own impact reviews and customer notification tasks. This is browser-saved demo data until the hub has shared backend storage.</p>
+                <p>Users here can own impact reviews and customer notification tasks. Shared user data is stored through the AWS backend when app-state storage is connected.</p>
               </div>
             </div>
             <form class="split" id="teamMemberForm">
@@ -2721,11 +2721,11 @@
           <div class="setup-box">
             <div class="panel-head compact-head">
               <div>
-                <h2>Daily Update Demo</h2>
+                <h2>Daily Update Schedule</h2>
                 <p>
                   Admin-only schedule controls for a future daily standards and
-                  customer-watch update. This saves the demo preference in the
-                  browser only; it does not start an AWS automation yet.
+                  customer-watch update. This saves the preferred schedule to
+                  shared app state; it does not start an AWS automation yet.
                 </p>
               </div>
             </div>
@@ -2777,7 +2777,7 @@
               </label>
             </div>
             <div class="split">
-              <button class="button" id="saveDailySchedule" type="button">Save demo schedule</button>
+              <button class="button" id="saveDailySchedule" type="button">Save schedule setting</button>
               <div class="code" id="dailyScheduleStatus">Daily update automation is not connected yet.</div>
             </div>
           </div>
@@ -3001,47 +3001,7 @@
         }
       ];
 
-      const starterCustomers = [
-        {
-          id: "cust-aster-mobility",
-          name: "Aster Mobility Systems",
-          website: "https://example.com/aster-mobility",
-          headquarters: "Raleigh, North Carolina, US",
-          sector: "Automotive",
-          subSector: "Connected mobility components and fleet software",
-          size: "Mid-market",
-          employeeEstimate: "250-1,000 employees",
-          revenueEstimate: "$50M-$1B annual revenue",
-          yearFounded: "2016",
-          ownership: "Privately held",
-          keyProducts: ["connected mobility components", "fleet software", "vehicle connectivity modules"],
-          targetMarkets: ["North America", "EU"],
-          subsidiaries: ["Aster Mobility Systems EU GmbH"],
-          sourceNotes: ["Fictional sample data for UI demonstration."],
-          markets: ["North America", "EU"],
-          summary: "Aster Mobility Systems is a fictional connected-mobility supplier with software, vehicle connectivity, and export exposure. Use it as sample data only.",
-          knownStandards: ["ISO/SAE 21434", "ISO 26262"],
-          guessedStandards: ["UNECE R155 / R156", "TISAX", "IEC 62443"],
-          hypercare: "Inactive",
-          owner: "NA team",
-          userNotes: "Sample profile. Replace with confirmed account intelligence before using in front of a customer.",
-          projects: [
-            {
-              name: "Prototype cybersecurity readiness review",
-              type: "Gap assessment",
-              date: "2025-09-15",
-              status: "Completed",
-              standards: ["ISO/SAE 21434", "UNECE R155 / R156"],
-              notes: "Fictional project record to show how completed assessments can drive future change notifications."
-            }
-          ],
-          actions: [
-            "Review connected-vehicle cybersecurity management against ISO/SAE 21434 and UNECE R155.",
-            "Position TISAX supplier-readiness support for North American suppliers working with EU automotive programs.",
-            "Discuss OT security and IEC 62443 alignment for manufacturing and plant environments."
-          ]
-        }
-      ];
+      const starterCustomers = [];
 
       const starterUsers = [
         {
@@ -3067,6 +3027,15 @@
         }
       ];
 
+      const appStateKeys = new Set([
+        "assuranceStandardsV2",
+        "assuranceCustomersV2",
+        "assuranceUsersV1",
+        "assuranceAdminRequestsV1",
+        "assuranceImpactReviewsV1",
+        "assuranceWatchScheduleV1"
+      ]);
+
       const store = {
         get(key, fallback) {
           try {
@@ -3078,6 +3047,7 @@
         },
         set(key, value) {
           localStorage.setItem(key, JSON.stringify(value));
+          if (!suppressRemoteSync && appStateKeys.has(key)) scheduleRemoteStateSave(key);
         }
       };
 
@@ -3090,12 +3060,18 @@
         includeCustomers: true
       };
 
-      let standards = store.get("assuranceStandardsV2", starterStandards);
-      let customers = store.get("assuranceCustomersV2", starterCustomers);
-      let users = store.get("assuranceUsersV1", starterUsers);
-      let adminRequests = store.get("assuranceAdminRequestsV1", []);
-      let impactReviews = store.get("assuranceImpactReviewsV1", []);
-      let watchSchedule = { ...defaultWatchSchedule, ...store.get("assuranceWatchScheduleV1", {}) };
+      let suppressRemoteSync = false;
+      let remoteStateLoaded = false;
+      let remoteSaveTimer = null;
+      let sharedStorageStatus = "not-configured";
+      let sharedStorageMessage = "";
+
+      let standards = starterStandards;
+      let customers = starterCustomers;
+      let users = starterUsers;
+      let adminRequests = [];
+      let impactReviews = [];
+      let watchSchedule = { ...defaultWatchSchedule };
       let selectedRegions = new Set(["Global"]);
       let currentResult = null;
       let expandedCustomerKey = "";
@@ -3103,68 +3079,6 @@
       let pendingDeletionCustomer = null;
       let pendingImpactReview = null;
       let pendingProjectCustomerKey = "";
-
-      const knownCompanies = {
-        aster: [
-          {
-            name: "Aster Mobility Systems",
-            website: "https://example.com/aster-mobility",
-            headquarters: "Raleigh, North Carolina, US",
-            sector: "Automotive",
-            subSector: "Connected mobility components and fleet software",
-            size: "Mid-market",
-            employeeEstimate: "250-1,000 employees",
-            markets: ["North America", "EU"],
-            summary: "Fictional connected-mobility supplier with vehicle software, components, export exposure, and cybersecurity readiness needs."
-          },
-          {
-            name: "Aster Industrial Controls",
-            website: "https://example.com/aster-controls",
-            headquarters: "Cleveland, Ohio, US",
-            sector: "Industrial / OT",
-            subSector: "Machine control systems and remote monitoring",
-            size: "Mid-market",
-            employeeEstimate: "250-1,000 employees",
-            markets: ["North America", "EU"],
-            summary: "Fictional industrial controls company with machinery safety, OT cybersecurity, and market-access exposure."
-          },
-          {
-            name: "Aster Medical Devices",
-            website: "https://example.com/aster-medical",
-            headquarters: "Minneapolis, Minnesota, US",
-            sector: "Medical Devices",
-            subSector: "Connected diagnostics and care devices",
-            size: "Enterprise",
-            employeeEstimate: "1,000-10,000 employees",
-            markets: ["North America", "EU"],
-            summary: "Fictional connected medical device maker with software, product cybersecurity, and regulatory assessment needs."
-          }
-        ],
-        nova: [
-          {
-            name: "Nova Rail Systems",
-            website: "https://example.com/nova-rail",
-            headquarters: "Toronto, Canada",
-            sector: "Automotive",
-            subSector: "Rail and mobility electronics",
-            size: "Enterprise",
-            employeeEstimate: "1,000-10,000 employees",
-            markets: ["North America", "EU", "UK"],
-            summary: "Fictional rail electronics supplier with safety, cybersecurity, and market-access exposure."
-          },
-          {
-            name: "Nova Cloud Security",
-            website: "https://example.com/nova-cloud",
-            headquarters: "Austin, Texas, US",
-            sector: "ICT / Connected Products",
-            subSector: "Cloud security and managed services",
-            size: "Mid-market",
-            employeeEstimate: "250-1,000 employees",
-            markets: ["North America", "EU"],
-            summary: "Fictional cloud security provider with ISMS, assessment, and EU customer assurance needs."
-          }
-        ]
-      };
 
       function normalize(value) {
         return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -3308,6 +3222,7 @@
         };
       }
 
+      suppressRemoteSync = true;
       standards = standards
         .map(normalizeStandardRecord)
         .filter((standard) => normalize(standard.name) !== "dora");
@@ -3327,6 +3242,7 @@
       });
       store.set("assuranceStandardsV2", standards);
       store.set("assuranceUsersV1", users);
+      suppressRemoteSync = false;
 
       function externalLink(url, label = url) {
         const clean = String(url || "").trim();
@@ -3355,9 +3271,125 @@
         return localStorage.getItem("assuranceHubApiUrl") || "";
       }
 
+      function storageModeLabel() {
+        if (sharedStorageStatus === "connected") return "Storage: shared AWS";
+        if (sharedStorageStatus === "syncing") return "Storage: syncing";
+        if (getApiUrl()) return "Storage: backend pending";
+        return "Storage: backend required";
+      }
+
       function setStatus(message, modeText) {
         document.getElementById("enrichmentStatus").textContent = message;
-        document.getElementById("apiMode").textContent = modeText || (getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
+        document.getElementById("apiMode").textContent = modeText || storageModeLabel();
+      }
+
+      function appStatePayload() {
+        return {
+          standards,
+          customers,
+          users,
+          adminRequests,
+          impactReviews,
+          watchSchedule
+        };
+      }
+
+      function cacheCurrentAppState() {
+        suppressRemoteSync = true;
+        store.set("assuranceStandardsV2", standards);
+        store.set("assuranceCustomersV2", customers);
+        store.set("assuranceUsersV1", users);
+        store.set("assuranceAdminRequestsV1", adminRequests);
+        store.set("assuranceImpactReviewsV1", impactReviews);
+        store.set("assuranceWatchScheduleV1", watchSchedule);
+        suppressRemoteSync = false;
+      }
+
+      function applySharedAppState(state = {}) {
+        suppressRemoteSync = true;
+        const nextStandards = Array.isArray(state.standards) && state.standards.length ? state.standards : starterStandards;
+        standards = nextStandards
+          .map(normalizeStandardRecord)
+          .filter((standard) => normalize(standard.name) !== "dora");
+        starterStandards.map(normalizeStandardRecord).forEach((starter) => {
+          const existing = standards.find((standard) => normalize(standard.name) === normalize(starter.name));
+          if (existing && starter.sourceUrl && !existing.sourceUrl) existing.sourceUrl = starter.sourceUrl;
+          if (normalize(starter.name) !== "dora" && !existing) standards.push(starter);
+        });
+        customers = safeList(state.customers).map(normalizeCustomerRecord);
+        users = (safeList(state.users).length ? safeList(state.users) : starterUsers).map(normalizeUserRecord);
+        starterUsers.map(normalizeUserRecord).forEach((starter) => {
+          if (!users.some((user) => normalize(user.name) === normalize(starter.name))) users.push(starter);
+        });
+        adminRequests = safeList(state.adminRequests);
+        impactReviews = safeList(state.impactReviews);
+        watchSchedule = { ...defaultWatchSchedule, ...(state.watchSchedule || {}) };
+        suppressRemoteSync = false;
+        cacheCurrentAppState();
+        renderStandards();
+        renderCustomers();
+        renderWatch();
+        renderAdminRequests();
+        renderTeamMembers();
+      }
+
+      async function callStateApi(task, payload = {}) {
+        const apiUrl = getApiUrl();
+        if (!apiUrl) throw new Error("No AWS API endpoint is saved.");
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ task, ...payload })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.error) {
+          throw new Error(data.detail || data.error || `API returned ${response.status}`);
+        }
+        return data;
+      }
+
+      async function loadSharedAppState() {
+        if (!getApiUrl()) {
+          sharedStorageStatus = "not-configured";
+          setStatus("Connect the AWS API endpoint in Settings before adding real customers.");
+          return;
+        }
+        sharedStorageStatus = "syncing";
+        setStatus("Loading shared workspace data from AWS...");
+        try {
+          const result = await callStateApi("state-load");
+          sharedStorageStatus = "connected";
+          remoteStateLoaded = true;
+          applySharedAppState(result.state || {});
+          const stamp = result.updatedAt ? ` Last saved ${new Date(result.updatedAt).toLocaleString()}.` : "";
+          setStatus(`Shared AWS storage connected.${stamp}`);
+        } catch (error) {
+          sharedStorageStatus = "error";
+          sharedStorageMessage = error.message;
+          setStatus(`Shared storage is not connected: ${error.message}`);
+        }
+      }
+
+      async function saveSharedAppState(reason = "update") {
+        if (!getApiUrl() || suppressRemoteSync) return;
+        sharedStorageStatus = "syncing";
+        setStatus("Saving workspace data to AWS...");
+        try {
+          await callStateApi("state-save", { state: appStatePayload(), reason });
+          sharedStorageStatus = "connected";
+          remoteStateLoaded = true;
+          setStatus("Saved to shared AWS storage.");
+        } catch (error) {
+          sharedStorageStatus = "error";
+          sharedStorageMessage = error.message;
+          setStatus(`Shared save failed: ${error.message}`);
+        }
+      }
+
+      function scheduleRemoteStateSave(reason = "update") {
+        if (!getApiUrl() || suppressRemoteSync) return;
+        clearTimeout(remoteSaveTimer);
+        remoteSaveTimer = setTimeout(() => saveSharedAppState(reason), 700);
       }
 
       function setLookupStep(activeIndex, message) {
@@ -3373,7 +3405,7 @@
         document.getElementById("enrichmentProgress").classList.toggle("hidden", !show);
       }
 
-      function showSaveVisual(message = "Customer saved to this browser workspace.") {
+      function showSaveVisual(message = "Customer saved to the shared workspace.") {
         const box = document.getElementById("saveVisual");
         box.classList.remove("hidden");
         box.querySelector("strong").textContent = message;
@@ -3408,53 +3440,7 @@
       }
 
       function candidateMatches(name) {
-        const key = normalize(name);
-        if (!key) return [];
-        const known = Object.entries(knownCompanies)
-          .filter(([company]) => key === company || company.includes(key) || key.includes(company))
-          .flatMap(([, candidates]) => candidates);
-        if (known.length > 1) return known;
-        if (known.length === 1 && key.length > 4) return known;
-        if (key.length >= 2 && key.length <= 12) {
-          const label = String(name || "").trim().replace(/\s+/g, " ");
-          const title = label.charAt(0).toUpperCase() + label.slice(1);
-          return [
-            {
-              name: `${title} Mobility Systems`,
-              website: "",
-              headquarters: "Unknown - verify with customer",
-              sector: "Automotive",
-              subSector: "Connected mobility or vehicle systems",
-              size: "Unknown",
-              employeeEstimate: "500-5,000 employees",
-              markets: ["North America", "EU"],
-              summary: "Possible customer entity generated from the search term. Confirm before enrichment."
-            },
-            {
-              name: `${title} Industrial Technologies`,
-              website: "",
-              headquarters: "Unknown - verify with customer",
-              sector: "Industrial / OT",
-              subSector: "Industrial automation or connected products",
-              size: "Unknown",
-              employeeEstimate: "500-5,000 employees",
-              markets: ["North America", "Global"],
-              summary: "Possible customer entity generated from the search term. Confirm before enrichment."
-            },
-            {
-              name: `${title} Medical Systems`,
-              website: "",
-              headquarters: "Unknown - verify with customer",
-              sector: "Medical Devices",
-              subSector: "Connected medical products or regulated software",
-              size: "Unknown",
-              employeeEstimate: "250-1,000 employees",
-              markets: ["North America", "EU"],
-              summary: "Possible customer entity generated from the search term. Confirm before enrichment."
-            }
-          ];
-        }
-        return known;
+        return [];
       }
 
       function standardsForProfile(profile, notes = "") {
@@ -3527,50 +3513,6 @@
         );
 
         return unique(actions).slice(0, 10);
-      }
-
-      function buildDemoProfile(input, confirmed = null) {
-        const base = confirmed || candidateMatches(input.name)[0] || {};
-        const sector = inferSector(input.name, input.sector, input.notes);
-        const markets = unique([...(base.markets || []), ...input.markets, ...(input.markets.includes("Global") ? ["North America", "EU"] : [])]);
-        const profile = {
-          id: `cust-${Date.now()}`,
-          name: base.name || input.name.trim(),
-          website: input.website || base.website || "",
-          headquarters: base.headquarters || (markets.includes("EU") ? "Unknown - verify EU headquarters or subsidiary" : "Unknown - verify with customer"),
-          sector: base.sector || sector,
-          subSector: base.subSector || sectorSubsector(sector, input.notes),
-          size: input.size || base.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"),
-          employeeEstimate: base.employeeEstimate || employeeEstimateFor(input.size || base.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"), sector, markets),
-          revenueEstimate: base.revenueEstimate || revenueEstimateFor(input.size || base.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise")),
-          yearFounded: base.yearFounded || "Unknown - verify",
-          ownership: base.ownership || "Unknown - verify",
-          keyProducts: base.keyProducts || keyProductsFor(sector),
-          targetMarkets: base.targetMarkets || markets,
-          subsidiaries: base.subsidiaries || [],
-          sourceNotes: ["Browser demo profile. Verify business facts before using for customer outreach."],
-          markets,
-          summary: base.summary || summaryFor(sector, input.name, markets),
-          knownStandards: [],
-          guessedStandards: [],
-          hypercare: "Inactive",
-          owner: "NA team",
-          evidenceNotes: [
-            "AI-assisted profile; verify against official customer sources before treating fields as confirmed.",
-            "Compliance guesses are based on sector, product context, and operating markets."
-          ]
-        };
-        const likely = standardsForProfile(profile, input.notes);
-        profile.guessedStandards = likely.map((item) => item.name);
-        profile.likelyStandards = likely.map((item) => ({
-          name: item.name,
-          domain: item.domain,
-          confidence: item.confidence,
-          why: reasonForStandard(item, profile)
-        }));
-        profile.actions = engagementActions(profile, likely);
-        profile.confidence = likely.some((item) => item.confidence === "high") ? "medium-high" : "medium";
-        return profile;
       }
 
       function employeeEstimateFor(size, sector, markets = []) {
@@ -3761,15 +3703,15 @@
           return;
         }
         document.getElementById("testApiEndpoint").disabled = true;
-        status.textContent = "Testing API Gateway endpoint with a small sample request...";
+        status.textContent = "Testing API Gateway endpoint with a BMW customer enrichment request...";
         try {
           const result = await enrichWithApi({
-            name: "Aster Mobility Systems",
+            name: "BMW",
             sector: "Automotive",
-            size: "Mid-market",
-            website: "",
-            markets: ["North America", "EU"],
-            notes: "Endpoint connection test from Assurance Hub."
+            size: "Global enterprise",
+            website: "https://www.bmw.com",
+            markets: ["North America", "EU", "Global"],
+            notes: "Endpoint connection test from Assurance Intelligence Hub."
           });
           const customer = normalizeApiResult(result);
           status.textContent = customer?.name
@@ -3793,6 +3735,10 @@
           notes: document.getElementById("lookupNotes")?.value || ""
         };
         if (!input.name.trim()) return;
+        if (!getApiUrl()) {
+          setStatus("Connect the AWS API endpoint in Settings before adding real customers.");
+          return;
+        }
 
         document.getElementById("runLookup").disabled = true;
         document.getElementById("saveResult")?.setAttribute("disabled", "disabled");
@@ -3803,7 +3749,7 @@
         document.getElementById("candidateDialogTitle").textContent = "Adding Customer";
         document.getElementById("candidateDialogCopy").textContent = "The hub is resolving the customer and building a profile summary for review.";
         setLookupStep(0, "Resolving customer entity");
-        setStatus(`Looking for ${input.name}...`, getApiUrl() ? "Mode: AWS API" : "Mode: browser demo");
+        setStatus(`Looking for ${input.name}...`);
 
         const candidates = !confirmed ? candidateMatches(input.name) : [];
         if (!confirmed && candidates.length > 1 && normalize(input.name).length <= 12) {
@@ -3835,10 +3781,16 @@
             setStatus("Calling the AI enrichment backend and checking customer context...");
             result = await enrichWithApi(input, confirmed);
           } catch (apiError) {
-            if (getApiUrl()) setStatus(`AWS API unavailable (${apiError.message}). Showing browser demo enrichment.`);
+            setStatus(`AI backend unavailable: ${apiError.message}. Check the API Gateway route, Lambda deployment, and environment variables.`);
+            return;
           }
           setLookupStep(2, "Inferring likely standards and compliance exposure");
-          currentResult = normalizeCustomerRecord(normalizeApiResult(result) || buildDemoProfile(input, confirmed));
+          const apiProfile = normalizeApiResult(result);
+          if (!apiProfile?.name) {
+            setStatus("The backend responded, but no customer profile was returned.");
+            return;
+          }
+          currentResult = normalizeCustomerRecord(apiProfile);
           if (!currentResult.employeeEstimate) {
             currentResult.employeeEstimate = employeeEstimateFor(currentResult.size, currentResult.sector, currentResult.markets);
           }
@@ -4395,7 +4347,7 @@
         renderWatch();
         showSaveVisual(`${currentResult.name} added to the customer list.`);
         document.getElementById("saveResult")?.setAttribute("disabled", "disabled");
-        setStatus(`${currentResult.name} saved locally. Shared database storage is not connected yet.`);
+        setStatus(`${currentResult.name} saved to the shared workspace.`);
       }
 
       function renderCustomers() {
@@ -4891,7 +4843,7 @@
       }
 
       function renderDailySchedule() {
-        setText("dashboardScheduleStatus", watchSchedule.status === "Active" ? "Admin active" : "Admin demo");
+        setText("dashboardScheduleStatus", watchSchedule.status === "Active" ? "Admin active" : "Admin configured");
         const status = document.getElementById("dailyUpdateStatus");
         if (!status) return;
         document.getElementById("dailyUpdateStatus").value = watchSchedule.status;
@@ -4905,7 +4857,7 @@
           watchSchedule.includeCustomers ? "hypercare customers" : ""
         ].filter(Boolean).join(" and ") || "no sources";
         document.getElementById("dailyScheduleStatus").textContent =
-          `${watchSchedule.status} demo: ${watchSchedule.frequency.toLowerCase()} at ${watchSchedule.time} ${watchSchedule.timezone}, covering ${scope}. Not connected to AWS automation yet.`;
+          `${watchSchedule.status}: ${watchSchedule.frequency.toLowerCase()} at ${watchSchedule.time} ${watchSchedule.timezone}, covering ${scope}. Not connected to AWS automation yet.`;
       }
 
       function saveDailySchedule() {
@@ -5888,8 +5840,9 @@
         document.getElementById("apiEndpoint").value = value;
         document.getElementById("apiSetupStatus").textContent = value
           ? "Endpoint saved. Use Test saved endpoint to confirm the Lambda connection."
-          : "Endpoint cleared. Browser demo enrichment is active.";
-        setStatus(value ? "AWS API endpoint saved. Future enrichments will try the backend first." : "API endpoint cleared. Browser demo enrichment is active.");
+          : "Endpoint cleared. Backend enrichment and shared storage are disconnected.";
+        setStatus(value ? "AWS API endpoint saved. Loading shared workspace data..." : "API endpoint cleared. Backend enrichment and shared storage are disconnected.");
+        if (value) loadSharedAppState();
       });
 
       document.getElementById("testApiEndpoint").addEventListener("click", testSavedEndpoint);
@@ -5997,7 +5950,8 @@
         scrollTop: !initialNavigationState.target,
         target: initialNavigationState.target
       });
-      setStatus("Ready to add a customer.");
+      setStatus(getApiUrl() ? "Ready to add a customer." : "Connect the AWS API endpoint in Settings before adding real customers.");
+      loadSharedAppState();
     </script>
   </body>
 </html>
