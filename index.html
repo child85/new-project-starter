@@ -487,6 +487,25 @@
         background: var(--warn);
       }
 
+      .recommendation-box {
+        display: grid;
+        gap: 12px;
+        padding: 18px;
+        border: 1px solid var(--blue);
+        border-left: 7px solid var(--blue);
+        background: #f7fbff;
+      }
+
+      .recommendation-box strong {
+        color: var(--blue-dark);
+      }
+
+      .recommendation-box p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.48;
+      }
+
       .standard-map {
         display: grid;
         gap: 12px;
@@ -2041,6 +2060,47 @@
           </section>
         </section>
 
+        <div class="dialog-overlay hidden" id="impactReviewDialog" role="dialog" aria-modal="true" aria-labelledby="impactReviewTitle">
+          <div class="dialog-panel">
+            <div class="panel-head">
+              <div>
+                <h2 id="impactReviewTitle">Review Customer Impact</h2>
+                <p id="impactReviewCopy">Review the AI recommendation, decide relevance, and create a notification task if follow-up is needed.</p>
+              </div>
+              <button class="button secondary" id="closeImpactReviewDialog" type="button">Close</button>
+            </div>
+            <form class="lookup-form" id="impactReviewForm">
+              <div class="recommendation-box" id="impactRecommendationBox"></div>
+              <div class="split">
+                <div class="field">
+                  <label for="impactRelevant">Impact decision</label>
+                  <select id="impactRelevant">
+                    <option>Relevant</option>
+                    <option>Not relevant</option>
+                    <option>Needs more review</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="impactOwner">Owner</label>
+                  <input id="impactOwner" placeholder="Account or service owner" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="impactNote">Review note</label>
+                <textarea id="impactNote" placeholder="Why this is relevant or not, what changed, and what the customer owner should do next."></textarea>
+              </div>
+              <label class="standard-choice">
+                <input id="createNotificationTask" type="checkbox" checked />
+                <div>
+                  <strong>Create customer notification task</strong>
+                  <p>Send this to Settings as an admin/task item so it is not lost after the review.</p>
+                </div>
+              </label>
+              <button class="button" type="submit">Save impact review</button>
+            </form>
+          </div>
+        </div>
+
         <section class="panel app-view" id="setup">
           <div class="panel-head">
             <div>
@@ -2413,12 +2473,14 @@
       let standards = store.get("assuranceStandardsV2", starterStandards);
       let customers = store.get("assuranceCustomersV2", starterCustomers);
       let adminRequests = store.get("assuranceAdminRequestsV1", []);
+      let impactReviews = store.get("assuranceImpactReviewsV1", []);
       let watchSchedule = { ...defaultWatchSchedule, ...store.get("assuranceWatchScheduleV1", {}) };
       let selectedRegions = new Set(["Global"]);
       let currentResult = null;
       let expandedCustomerKey = "";
       let expandedStandardKey = "";
       let pendingDeletionCustomer = null;
+      let pendingImpactReview = null;
 
       const knownCompanies = {
         aster: [
@@ -4204,6 +4266,132 @@
         }))).sort((a, b) => String(b.change.date || "").localeCompare(String(a.change.date || "")));
       }
 
+      function impactReviewKey(customer, standard, change) {
+        return normalize(`${profileKey(customer)} ${standard || ""} ${change?.date || ""} ${change?.title || ""}`);
+      }
+
+      function existingImpactReview(customer, standard, change) {
+        const key = impactReviewKey(customer, standard, change);
+        return impactReviews.find((review) => review.key === key);
+      }
+
+      function buildImpactRecommendation(customer, standardName, change) {
+        const confirmed = customerConfirmedStandardNames(customer).some((name) => normalize(name) === normalize(standardName));
+        const projects = safeList(customer.projects).filter((project) => safeList(project.standards).some((name) => normalize(name) === normalize(standardName)));
+        const text = normalize(`${change?.title || ""} ${change?.summary || ""} ${change?.impact || ""}`);
+        const highSignals = ["shall", "must", "deadline", "effective", "mandatory", "new requirement", "certification", "type approval", "cybersecurity", "safety"];
+        const signalCount = highSignals.filter((signal) => text.includes(signal)).length;
+        const level = change?.impact === "High" || signalCount >= 3 || confirmed ? "High" : signalCount >= 1 ? "Medium" : "Low";
+        const decision = confirmed || projects.length || level !== "Low" ? "Relevant" : "Needs more review";
+        const why = confirmed
+          ? `${standardName} is already confirmed or delivered for this customer, so a public change can affect prior work, claims, or hypercare outreach.`
+          : `${standardName} is currently AI-suggested or adjacent for this customer. The change may still matter if their products, subsidiaries, or markets depend on it.`;
+        const action = projects.length
+          ? `Check ${projects.map((project) => project.name).join(", ")} for affected scope, deliverables, and customer commitments.`
+          : "Confirm whether the customer's products, markets, or subsidiaries are in scope before sending an external notification.";
+        return {
+          level,
+          decision,
+          why,
+          action,
+          note: `${level} potential impact. ${why} ${action}`
+        };
+      }
+
+      function findImpactItem(customerKey, standardName = "") {
+        const customer = customers.find((item) => recordKey(profileKey(item)) === customerKey);
+        if (!customer) return null;
+        const matches = customerChangeMatches(customer);
+        const match = standardName
+          ? matches.find((item) => normalize(item.name) === normalize(standardName))
+          : matches[0];
+        if (!match) return null;
+        return {
+          customer,
+          standard: match.name,
+          change: match.change,
+          recommendation: buildImpactRecommendation(customer, match.name, match.change)
+        };
+      }
+
+      function openImpactReview(customerKey, standardName = "") {
+        const item = findImpactItem(customerKey, standardName);
+        if (!item) return;
+        pendingImpactReview = item;
+        const existing = existingImpactReview(item.customer, item.standard, item.change);
+        const recommendation = item.recommendation;
+        document.body.appendChild(document.getElementById("impactReviewDialog"));
+        document.getElementById("impactReviewDialog").classList.remove("hidden");
+        document.getElementById("impactReviewTitle").textContent = `Review impact: ${item.customer.name}`;
+        document.getElementById("impactReviewCopy").textContent = `${item.standard} changed on ${item.change.date || "an unknown date"}.`;
+        document.getElementById("impactRecommendationBox").innerHTML = `
+          <strong>AI recommendation: ${esc(recommendation.level)} impact, ${esc(recommendation.decision.toLowerCase())}</strong>
+          <p>${esc(recommendation.why)}</p>
+          <p><strong>Suggested next step:</strong> ${esc(recommendation.action)}</p>
+          <div class="notification-meta">
+            <span class="tag">${esc(item.standard)}</span>
+            <span class="tag">${esc(item.change.title || "Public change")}</span>
+            <span class="tag">${esc(item.change.impact || "Review")}</span>
+          </div>
+        `;
+        document.getElementById("impactRelevant").value = existing?.decision || recommendation.decision;
+        document.getElementById("impactOwner").value = existing?.owner || item.customer.owner || "NA team";
+        document.getElementById("impactNote").value = existing?.note || recommendation.note;
+        document.getElementById("createNotificationTask").checked = existing ? Boolean(existing.taskCreated) : recommendation.decision !== "Not relevant";
+      }
+
+      function closeImpactReviewDialog() {
+        pendingImpactReview = null;
+        document.getElementById("impactReviewDialog").classList.add("hidden");
+        document.getElementById("impactReviewForm").reset();
+      }
+
+      function saveImpactReview(event) {
+        event.preventDefault();
+        if (!pendingImpactReview) return;
+        const { customer, standard, change, recommendation } = pendingImpactReview;
+        const key = impactReviewKey(customer, standard, change);
+        const decision = document.getElementById("impactRelevant").value;
+        const owner = document.getElementById("impactOwner").value.trim() || customer.owner || "NA team";
+        const note = document.getElementById("impactNote").value.trim();
+        const createTask = document.getElementById("createNotificationTask").checked;
+        const review = {
+          id: existingImpactReview(customer, standard, change)?.id || `impact-${Date.now()}`,
+          key,
+          customerKey: profileKey(customer),
+          customerName: customer.name,
+          standard,
+          changeTitle: change.title || "Public change",
+          changeDate: change.date || "",
+          decision,
+          owner,
+          note,
+          recommendation,
+          taskCreated: createTask,
+          reviewedAt: new Date().toISOString()
+        };
+        impactReviews = [review, ...impactReviews.filter((item) => item.key !== key)];
+        store.set("assuranceImpactReviewsV1", impactReviews);
+        if (createTask && !adminRequests.some((request) => request.type === "notify-customer" && request.impactKey === key && request.status === "Pending")) {
+          adminRequests.unshift({
+            id: `req-${Date.now()}`,
+            type: "notify-customer",
+            status: "Pending",
+            impactKey: key,
+            customerKey: profileKey(customer),
+            customerName: customer.name,
+            standard,
+            owner,
+            reason: `${decision}: ${note || recommendation.note}`,
+            createdAt: new Date().toISOString()
+          });
+          saveAdminRequests();
+        }
+        closeImpactReviewDialog();
+        renderWatch();
+        setStatus(`Impact review saved for ${customer.name} and ${standard}.`);
+      }
+
       function renderStandardButtons(names) {
         return names.length ? names.map((name) => {
           const changed = Boolean(recentChangeForStandardName(name));
@@ -4266,27 +4454,31 @@
         setText("dashboardImpactedCount", impactedCustomers.length);
         setText("dashboardAlertCount", queue.length);
         renderDailySchedule();
-        document.getElementById("notificationList").innerHTML = queue.length ? queue.slice(0, 6).map((item) => `
-          <article class="notification-card">
-            <div class="row-top">
-              <div>
-                <strong>${esc(item.customer.name)} may be affected by ${esc(item.standard)}</strong>
-                <p>${esc(item.change.summary || "Review this standards change against the saved customer profile.")}</p>
+        document.getElementById("notificationList").innerHTML = queue.length ? queue.slice(0, 6).map((item) => {
+          const review = existingImpactReview(item.customer, item.standard, item.change);
+          const stateLabel = review ? `Reviewed: ${review.decision}` : (item.notify ? "Notification watch active" : "Needs review");
+          return `
+            <article class="notification-card">
+              <div class="row-top">
+                <div>
+                  <strong>${esc(item.customer.name)} may be affected by ${esc(item.standard)}</strong>
+                  <p>${esc(item.change.summary || "Review this standards change against the saved customer profile.")}</p>
+                </div>
+                <span class="tag ${review || item.notify ? "ok" : "warn"}">${esc(stateLabel)}</span>
               </div>
-              <span class="tag ${item.notify ? "ok" : "warn"}">${item.notify ? "Notification watch active" : "Needs review"}</span>
-            </div>
-            <div class="notification-meta">
-              <span class="tag">${esc(item.change.date || "Date unknown")}</span>
-              <span class="tag">${esc(item.change.impact || "Review")}</span>
-              <span class="tag">Owner: ${esc(item.customer.owner || "NA team")}</span>
-            </div>
-            <div class="notification-actions">
-              <button class="notification-action" type="button" data-review-impact="${esc(recordKey(profileKey(item.customer)))}">Review impact</button>
-              <button class="notification-action secondary" type="button" data-watch-standard="${esc(item.standard)}">Open standard</button>
-              ${item.notify ? "" : `<button class="notification-action warn" type="button" data-enable-watch="${esc(recordKey(profileKey(item.customer)))}">Add notification watch</button>`}
-            </div>
-          </article>
-        `).join("") : `
+              <div class="notification-meta">
+                <span class="tag">${esc(item.change.date || "Date unknown")}</span>
+                <span class="tag">${esc(item.change.impact || "Review")}</span>
+                <span class="tag">Owner: ${esc(review?.owner || item.customer.owner || "NA team")}</span>
+              </div>
+              <div class="notification-actions">
+                <button class="notification-action" type="button" data-review-impact="${esc(recordKey(profileKey(item.customer)))}" data-review-standard="${esc(item.standard)}">Review impact</button>
+                <button class="notification-action secondary" type="button" data-watch-standard="${esc(item.standard)}">Open standard</button>
+                ${item.notify ? "" : `<button class="notification-action warn" type="button" data-enable-watch="${esc(recordKey(profileKey(item.customer)))}">Add notification watch</button>`}
+              </div>
+            </article>
+          `;
+        }).join("") : `
           <article class="highlight-card">
             <strong>No customer impact alerts yet</strong>
             <p>Save customers with standards, then run the AI source update. Matching standards with public changes will appear here.</p>
@@ -4307,7 +4499,7 @@
             </div>
             <div class="tags" style="margin-top: 10px;">${matches.slice(0, 6).map((item) => `<button class="chip-button changed" type="button" data-watch-standard="${esc(item.name)}">${esc(item.name)}</button>`).join("")}</div>
             <div class="notification-actions" style="margin-top: 12px;">
-              <button class="notification-action" type="button" data-review-impact="${esc(recordKey(profileKey(customer)))}">Review customer impact</button>
+              <button class="notification-action" type="button" data-review-impact="${esc(recordKey(profileKey(customer)))}" data-review-standard="${esc(matches[0]?.name || "")}">Review customer impact</button>
               ${customer.hypercare === "Active" ? "" : `<button class="notification-action warn" type="button" data-enable-watch="${esc(recordKey(profileKey(customer)))}">Add notification watch</button>`}
             </div>
           </article>
@@ -4393,7 +4585,7 @@
           button.addEventListener("click", () => openCustomerFromWatch(button.dataset.watchCustomer));
         });
         document.querySelectorAll("[data-review-impact]").forEach((button) => {
-          button.addEventListener("click", () => openCustomerFromWatch(button.dataset.reviewImpact));
+          button.addEventListener("click", () => openImpactReview(button.dataset.reviewImpact, button.dataset.reviewStandard || ""));
         });
         document.querySelectorAll("[data-enable-watch]").forEach((button) => {
           button.addEventListener("click", () => {
@@ -4451,20 +4643,28 @@
         const list = document.getElementById("adminRequestList");
         if (!list) return;
         if (!adminRequests.length) {
-          list.innerHTML = `<article class="info-card"><strong>No admin requests</strong><p>Delete and clear-list requests will appear here for an administrator to review.</p></article>`;
+          list.innerHTML = `<article class="info-card"><strong>No admin requests</strong><p>Deletion, clear-list, and customer notification tasks will appear here for an administrator to review.</p></article>`;
           return;
         }
+        const requestTitle = (request) => {
+          if (request.type === "clear-customers") return "Clear customer list";
+          if (request.type === "notify-customer") return `Notify customer: ${request.customerName || "Customer"}`;
+          return `Delete customer: ${request.customerName || "Customer"}`;
+        };
+        const approveLabel = (request) => request.type === "notify-customer" ? "Mark task done" : "Admin approve";
         list.innerHTML = adminRequests.map((request, index) => `
           <article class="info-card">
             <div class="row-top">
-              <strong>${request.type === "clear-customers" ? "Clear customer list" : `Delete customer: ${esc(request.customerName)}`}</strong>
+              <strong>${esc(requestTitle(request))}</strong>
               <span class="tag warn">${esc(request.status)}</span>
             </div>
             <p>${esc(new Date(request.createdAt).toLocaleString())}</p>
+            ${request.type === "notify-customer" ? `<p class="row-copy"><strong>Standard:</strong> ${esc(request.standard || "Not specified")}</p>` : ""}
+            ${request.owner ? `<p class="row-copy"><strong>Owner:</strong> ${esc(request.owner)}</p>` : ""}
             ${request.reason ? `<p class="row-copy"><strong>Reason:</strong> ${esc(request.reason)}</p>` : ""}
             <div class="split">
               <button class="button secondary" data-dismiss-request="${index}" type="button">Dismiss request</button>
-              <button class="button" data-approve-request="${index}" type="button">Admin approve</button>
+              <button class="button" data-approve-request="${index}" type="button">${esc(approveLabel(request))}</button>
             </div>
           </article>
         `).join("");
@@ -4530,6 +4730,8 @@
         requestCustomerDeletion(pendingDeletionCustomer, reason);
         closeCustomerDeletionDialog();
       });
+      document.getElementById("closeImpactReviewDialog").addEventListener("click", closeImpactReviewDialog);
+      document.getElementById("impactReviewForm").addEventListener("submit", saveImpactReview);
 
       document.getElementById("requestClearCustomers").addEventListener("click", () => {
         adminRequests.unshift({
