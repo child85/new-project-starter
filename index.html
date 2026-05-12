@@ -3399,13 +3399,13 @@
           summary: readTextField("reviewCustomerSummary"),
           sourceNotes: readNotesField("reviewCustomerSourceNotes"),
           sourceLinks: readNotesField("reviewCustomerSourceLinks"),
-          sourceConfidence: readTextField("reviewCustomerConfidence") || profile.sourceConfidence || profile.confidence || "medium",
+          sourceConfidence: profile.sourceConfidence || profile.confidence || "medium",
           lastVerifiedAt: new Date().toISOString(),
           evidenceNotes: readNotesField("reviewCustomerEvidence"),
           actions: readNotesField("reviewCustomerActions"),
           guessedStandards: standardNames,
           likelyStandards,
-          confidence: readTextField("reviewCustomerConfidence") || profile.confidence || "medium"
+          confidence: profile.confidence || "medium"
         });
       }
 
@@ -3690,7 +3690,6 @@
                 ${reviewInput("Customer name", "reviewCustomerName", profile.name, "Legal or commonly used company name")}
                 ${reviewInput("Website", "reviewCustomerWebsite", profile.website, "https://example.com")}
                 ${reviewInput("Headquarters", "reviewCustomerHeadquarters", profile.headquarters, "City, country")}
-                ${reviewInput("Confidence", "reviewCustomerConfidence", profile.confidence || "medium", "low, medium, high")}
               </div>
             </section>
 
