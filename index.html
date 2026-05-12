@@ -1033,20 +1033,61 @@
 
       .customer-detail {
         display: none;
-        gap: 14px;
-        padding-top: 18px;
-        border-top: 1px solid var(--line);
+        gap: 20px;
+        padding: 22px;
+        border: 1px solid var(--blue);
+        border-left: 8px solid var(--blue);
+        background: #f7fbff;
       }
 
       .customer-row.open .customer-detail,
       .customer-card.open .customer-detail {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: 1fr;
         align-items: start;
         grid-column: 1 / -1;
       }
 
-      .customer-card.open .customer-detail > .row-copy,
+      .customer-card.open {
+        border-color: var(--blue);
+        box-shadow: 0 12px 32px rgba(0, 75, 120, 0.12);
+      }
+
+      .customer-card.open .customer-summary h3 {
+        color: var(--blue-dark);
+      }
+
+      .customer-profile-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(250px, 0.36fr);
+        gap: 20px;
+        align-items: stretch;
+      }
+
+      .customer-profile-hero h4,
+      .customer-profile-section h4 {
+        margin: 0 0 10px;
+        color: var(--blue-dark);
+        font-size: 1.12rem;
+      }
+
+      .customer-profile-hero p {
+        margin: 0;
+        color: var(--copy);
+        font-size: 1.03rem;
+        line-height: 1.58;
+      }
+
+      .customer-profile-section {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .customer-card.open .customer-detail > .customer-profile-hero,
+      .customer-card.open .customer-detail > .customer-profile-section,
       .customer-card.open .customer-detail > .project-list,
       .customer-card.open .customer-detail > .split {
         grid-column: 1 / -1;
@@ -1994,6 +2035,13 @@
           subSector: "Connected mobility components and fleet software",
           size: "Mid-market",
           employeeEstimate: "250-1,000 employees",
+          revenueEstimate: "$50M-$1B annual revenue",
+          yearFounded: "2016",
+          ownership: "Privately held",
+          keyProducts: ["connected mobility components", "fleet software", "vehicle connectivity modules"],
+          targetMarkets: ["North America", "EU"],
+          subsidiaries: ["Aster Mobility Systems EU GmbH"],
+          sourceNotes: ["Fictional sample data for UI demonstration."],
           markets: ["North America", "EU"],
           summary: "Aster Mobility Systems is a fictional connected-mobility supplier with software, vehicle connectivity, and export exposure. Use it as sample data only.",
           knownStandards: ["ISO/SAE 21434", "ISO 26262"],
@@ -2178,11 +2226,22 @@
           userNotes: "",
           projects: [],
           hypercare: "Inactive",
+          revenueEstimate: "",
+          yearFounded: "",
+          ownership: "",
+          keyProducts: [],
+          targetMarkets: [],
+          subsidiaries: [],
+          sourceNotes: [],
           ...customer,
           knownStandards: safeList(customer.knownStandards),
           guessedStandards: safeList(customer.guessedStandards),
           likelyStandards: safeList(customer.likelyStandards),
           evidenceNotes: safeList(customer.evidenceNotes),
+          keyProducts: safeList(customer.keyProducts),
+          targetMarkets: safeList(customer.targetMarkets),
+          subsidiaries: safeList(customer.subsidiaries),
+          sourceNotes: safeList(customer.sourceNotes),
           actions: safeList(customer.actions),
           projects: Array.isArray(customer.projects) ? customer.projects : []
         };
@@ -2431,6 +2490,13 @@
           subSector: base.subSector || sectorSubsector(sector, input.notes),
           size: input.size || base.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"),
           employeeEstimate: base.employeeEstimate || employeeEstimateFor(input.size || base.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"), sector, markets),
+          revenueEstimate: base.revenueEstimate || revenueEstimateFor(input.size || base.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise")),
+          yearFounded: base.yearFounded || "Unknown - verify",
+          ownership: base.ownership || "Unknown - verify",
+          keyProducts: base.keyProducts || keyProductsFor(sector),
+          targetMarkets: base.targetMarkets || markets,
+          subsidiaries: base.subsidiaries || [],
+          sourceNotes: ["Browser demo profile. Verify business facts before using for customer outreach."],
           markets,
           summary: base.summary || summaryFor(sector, input.name, markets),
           knownStandards: [],
@@ -2466,6 +2532,27 @@
         return "Unknown - estimate during account review";
       }
 
+      function revenueEstimateFor(size) {
+        const text = normalize(size);
+        if (text.includes("global enterprise")) return "$10B+ annual revenue";
+        if (text.includes("enterprise")) return "$1B-$10B annual revenue";
+        if (text.includes("mid market") || text.includes("mid-market")) return "$50M-$1B annual revenue";
+        if (text.includes("small")) return "$10M-$50M annual revenue";
+        if (text.includes("startup")) return "Pre-revenue to $25M annual revenue";
+        return "Unknown - verify";
+      }
+
+      function keyProductsFor(sector) {
+        const map = {
+          "Automotive": ["connected vehicle systems", "mobility software", "vehicle components"],
+          "Industrial / OT": ["automation systems", "control software", "connected industrial equipment"],
+          "Medical Devices": ["connected medical devices", "regulated software", "diagnostic systems"],
+          "Financial Services": ["digital services", "ICT operations", "customer platforms"],
+          "ICT / Connected Products": ["connected products", "software platforms", "cloud-enabled services"]
+        };
+        return map[sector] || ["products and services to verify"];
+      }
+
       function sectorSubsector(sector, notes) {
         const text = normalize(notes);
         if (sector === "Automotive") return text.includes("supplier") ? "Automotive supplier / connected vehicle components" : "OEM, supplier, mobility, or vehicle systems";
@@ -2484,11 +2571,12 @@
         const standardNames = likelyStandards.slice(0, 3).map((item) => item.name).filter(Boolean);
         const base = sourceSummary || summaryFor(profile.sector, profile.name, profile.markets);
         const employeeText = profile.employeeEstimate ? ` Estimated employee range: ${profile.employeeEstimate}.` : "";
+        const revenueText = profile.revenueEstimate ? ` Estimated revenue range: ${profile.revenueEstimate}.` : "";
         const standardsText = standardNames.length
           ? ` The most important initial standards to review are ${standardNames.join(", ")} because of the customer's sector, product context, and market exposure.`
           : " No strong standard match was found yet; add products, subsidiaries, or market details to improve the fit.";
         const noteText = notes ? ` User hint considered: ${notes.trim()}` : "";
-        return `${base}${employeeText}${standardsText}${noteText}`;
+        return `${base}${employeeText}${revenueText}${standardsText}${noteText}`;
       }
 
       function reasonForStandard(standard, profile) {
@@ -2648,6 +2736,13 @@
           subSector: customer.subSector || customer.sub_sector || customer.customer_profile?.market_position || "",
           size: customer.size || customer.customer_profile?.company_size || "",
           employeeEstimate: customer.employeeEstimate || customer.employee_estimate || customer.employee_count || customer.customer_profile?.employee_count || "",
+          revenueEstimate: customer.revenueEstimate || customer.revenue_estimate || customer.annual_revenue || customer.customer_profile?.annual_revenue || "",
+          yearFounded: customer.yearFounded || customer.year_founded || customer.founded || "",
+          ownership: customer.ownership || customer.ownership_type || customer.company_type || "",
+          keyProducts: customer.keyProducts || customer.key_products || customer.products || customer.productsServices || [],
+          targetMarkets: customer.targetMarkets || customer.target_markets || customer.markets || [],
+          subsidiaries: customer.subsidiaries || customer.operating_subsidiaries || [],
+          sourceNotes: customer.sourceNotes || customer.source_notes || [],
           markets: customer.markets || customer.operating_regions || [customer.region || "Global"],
           summary: customer.summary || customer.notes || customer.customer_profile?.executive_summary || "",
           knownStandards: customer.knownStandards || customer.known_compliance || customer.compliance || [],
@@ -2732,6 +2827,9 @@
             ${fact("Sub-sector", profile.subSector || "Unknown")}
             ${fact("Size", profile.size || "Unknown")}
             ${fact("Employee estimate", profile.employeeEstimate || "Unknown - verify")}
+            ${fact("Revenue estimate", profile.revenueEstimate || "Unknown - verify")}
+            ${fact("Founded", profile.yearFounded || "Unknown - verify")}
+            ${fact("Ownership", profile.ownership || "Unknown - verify")}
             ${fact("Markets", regionsText(profile.markets))}
           </div>
           <article class="info-card">
@@ -2808,6 +2906,9 @@
             ${fact("Sub-sector", profile.subSector || "Unknown")}
             ${fact("Size", profile.size || "Unknown")}
             ${fact("Employee estimate", profile.employeeEstimate || "Unknown - verify")}
+            ${fact("Revenue estimate", profile.revenueEstimate || "Unknown - verify")}
+            ${fact("Founded", profile.yearFounded || "Unknown - verify")}
+            ${fact("Ownership", profile.ownership || "Unknown - verify")}
             ${fact("Markets", regionsText(profile.markets))}
           </div>
           <div class="subpanel">
@@ -2867,6 +2968,10 @@
                 <label for="editCustomerEmployees">Employee Estimate</label>
                 <input id="editCustomerEmployees" value="${esc(profile.employeeEstimate || "")}" />
               </div>
+              <div class="field">
+                <label for="editCustomerRevenue">Revenue Estimate</label>
+                <input id="editCustomerRevenue" value="${esc(profile.revenueEstimate || "")}" />
+              </div>
             </div>
             <div class="split">
               <div class="field">
@@ -2877,6 +2982,14 @@
                 <label for="editCustomerSubSector">Sub-sector</label>
                 <input id="editCustomerSubSector" value="${esc(profile.subSector || "")}" />
               </div>
+              <div class="field">
+                <label for="editCustomerFounded">Founded</label>
+                <input id="editCustomerFounded" value="${esc(profile.yearFounded || "")}" />
+              </div>
+              <div class="field">
+                <label for="editCustomerOwnership">Ownership</label>
+                <input id="editCustomerOwnership" value="${esc(profile.ownership || "")}" />
+              </div>
             </div>
             <div class="field">
               <label for="editCustomerSummary">Customer Summary</label>
@@ -2885,6 +2998,14 @@
             <div class="field">
               <label for="editCustomerMarkets">Markets</label>
               <input id="editCustomerMarkets" value="${esc(regionsText(profile.markets))}" />
+            </div>
+            <div class="field">
+              <label for="editCustomerProducts">Key Products / Services</label>
+              <input id="editCustomerProducts" value="${esc(regionsText(profile.keyProducts))}" />
+            </div>
+            <div class="field">
+              <label for="editCustomerSubsidiaries">Relevant Subsidiaries / Entities</label>
+              <input id="editCustomerSubsidiaries" value="${esc(regionsText(profile.subsidiaries))}" />
             </div>
             <h4>5. Add internal customer notes</h4>
             <div class="split">
@@ -2952,6 +3073,11 @@
         return `<div class="profile-fact"><span>${esc(label)}</span><strong>${html ? value : esc(value)}</strong></div>`;
       }
 
+      function detailList(values, emptyText = "Not saved yet") {
+        const list = safeList(values).map(itemLabel).filter(Boolean);
+        return list.length ? renderTags(list) : `<span class="row-copy">${esc(emptyText)}</span>`;
+      }
+
       function saveLookupProfile(profile) {
         const normalized = normalizeCustomerRecord(profile);
         const existingIndex = customers.findIndex((customer) => profileKey(customer) === profileKey(normalized));
@@ -2986,7 +3112,13 @@
           subSector: document.getElementById("editCustomerSubSector")?.value.trim() || "",
           size: document.getElementById("editCustomerSize")?.value.trim() || "",
           employeeEstimate: document.getElementById("editCustomerEmployees")?.value.trim() || "",
+          revenueEstimate: document.getElementById("editCustomerRevenue")?.value.trim() || "",
+          yearFounded: document.getElementById("editCustomerFounded")?.value.trim() || "",
+          ownership: document.getElementById("editCustomerOwnership")?.value.trim() || "",
+          keyProducts: document.getElementById("editCustomerProducts")?.value.split(",").map((item) => item.trim()).filter(Boolean) || currentResult.keyProducts,
+          subsidiaries: document.getElementById("editCustomerSubsidiaries")?.value.split(",").map((item) => item.trim()).filter(Boolean) || currentResult.subsidiaries,
           markets: document.getElementById("editCustomerMarkets")?.value.split(",").map((item) => item.trim()).filter(Boolean) || currentResult.markets,
+          targetMarkets: document.getElementById("editCustomerMarkets")?.value.split(",").map((item) => item.trim()).filter(Boolean) || currentResult.targetMarkets,
           summary: document.getElementById("editCustomerSummary")?.value.trim() || "",
           owner: document.getElementById("customerOwner")?.value.trim() || currentResult.owner || "NA team",
           hypercare: document.getElementById("customerHypercare")?.value || currentResult.hypercare || "Inactive",
@@ -3042,18 +3174,58 @@
                 <button class="icon-button" data-delete-request="${index}" type="button" title="Request customer deletion" aria-label="Request customer deletion">&#128465;</button>
               </div>
               <div class="customer-detail">
-                <span class="row-copy">${esc(customer.size || "Unknown size")} | ${esc(customer.employeeEstimate || "Employee estimate not saved")} | ${esc(customer.headquarters || "Headquarters not saved")}</span>
-                <div class="row-copy">Website: ${externalLink(customer.website, customer.website || "Not saved")}</div>
-                ${customer.userNotes ? `<div class="row-copy">Notes: ${esc(customer.userNotes)}</div>` : ""}
-                <div class="info-card">
-                  <strong>AI suggested or publicly known standards</strong>
-                  <div class="tags">${renderTags(safeList(customer.guessedStandards).slice(0, 12)) || `<span class="row-copy">No suggested standards saved.</span>`}</div>
+                <div class="customer-profile-hero">
+                  <div class="customer-profile-section">
+                    <h4>Customer Profile</h4>
+                    <p>${esc(customer.summary || "No short customer description saved yet.")}</p>
+                    <div class="tags">
+                      <span class="tag">${esc(customer.sector || "Unknown sector")}</span>
+                      <span class="tag">${esc(customer.size || "Unknown size")}</span>
+                      <span class="tag">${esc(customer.confidence || "medium")} confidence</span>
+                    </div>
+                  </div>
+                  <div class="customer-profile-section">
+                    <h4>Account Status</h4>
+                    <div class="tags">
+                      <span class="tag ${customer.hypercare === "Active" ? "ok" : ""}">Hypercare: ${esc(customer.hypercare || "Inactive")}</span>
+                      <span class="tag">Owner: ${esc(customer.owner || "NA team")}</span>
+                    </div>
+                    ${customer.userNotes ? `<p>Notes: ${esc(customer.userNotes)}</p>` : `<p>No internal notes saved yet.</p>`}
+                  </div>
                 </div>
-                <div class="info-card">
-                  <strong>Standards covered in our projects / assessments</strong>
-                  <div class="tags">${renderTags(unique((customer.projects || []).flatMap((project) => safeList(project.standards)))) || `<span class="row-copy">No delivered standards saved yet.</span>`}</div>
+                <div class="customer-profile-section">
+                  <h4>Business Facts</h4>
+                  <div class="profile-grid">
+                    ${fact("Website", externalLink(customer.website, customer.website || "Not saved"), true)}
+                    ${fact("Headquarters", customer.headquarters || "Unknown - verify")}
+                    ${fact("Employees", customer.employeeEstimate || "Unknown - verify")}
+                    ${fact("Revenue", customer.revenueEstimate || "Unknown - verify")}
+                    ${fact("Founded", customer.yearFounded || "Unknown - verify")}
+                    ${fact("Ownership", customer.ownership || "Unknown - verify")}
+                    ${fact("Sector", customer.sector || "Unknown")}
+                    ${fact("Sub-sector", customer.subSector || "Unknown")}
+                    ${fact("Markets", regionsText(customer.markets))}
+                  </div>
                 </div>
-                <div class="project-list">
+                <div class="customer-profile-section">
+                  <h4>Products, Services, and Entities</h4>
+                  <div class="profile-grid">
+                    ${fact("Key products / services", detailList(customer.keyProducts, "No product details saved yet"), true)}
+                    ${fact("Target markets", detailList(customer.targetMarkets?.length ? customer.targetMarkets : customer.markets, "No target markets saved yet"), true)}
+                    ${fact("Relevant subsidiaries / entities", detailList(customer.subsidiaries, "No subsidiaries saved yet"), true)}
+                  </div>
+                </div>
+                <div class="customer-profile-section">
+                  <h4>Compliance Profile</h4>
+                  <div class="profile-grid">
+                    ${fact("AI suggested or publicly known standards", renderTags(safeList(customer.guessedStandards).slice(0, 12)) || `<span class="row-copy">No suggested standards saved.</span>`, true)}
+                    ${fact("Standards covered in our projects / assessments", renderTags(unique((customer.projects || []).flatMap((project) => safeList(project.standards)))) || `<span class="row-copy">No delivered standards saved yet.</span>`, true)}
+                    ${fact("Evidence / source notes", detailList([...safeList(customer.evidenceNotes), ...safeList(customer.sourceNotes)], "No evidence notes saved yet"), true)}
+                  </div>
+                </div>
+                <div class="customer-profile-section">
+                  <h4>Projects and Assessments</h4>
+                  <div class="project-list">
                   ${customer.projects?.length ? customer.projects.map((project) => `
                     <div class="project-card">
                       <strong>${esc(project.name)}</strong>
@@ -3062,6 +3234,7 @@
                       ${project.notes ? `<p class="row-copy">${esc(project.notes)}</p>` : ""}
                     </div>
                   `).join("") : `<p class="row-copy">No projects or assessments saved yet.</p>`}
+                  </div>
                 </div>
                 <div class="split">
                   <button class="button secondary" data-load-customer="${index}" type="button">Edit profile</button>

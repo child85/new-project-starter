@@ -501,6 +501,13 @@ Return this exact top-level shape:
     "sector": "sector",
     "subSector": "sub-sector",
     "size": "startup | mid-market | enterprise | global enterprise",
+    "employeeEstimate": "estimated employee count or range with source caveat",
+    "revenueEstimate": "estimated annual revenue or range with source caveat",
+    "yearFounded": "year founded or Unknown - verify",
+    "ownership": "public | private | subsidiary | Unknown - verify",
+    "keyProducts": ["main product or service lines"],
+    "targetMarkets": ["markets or regions served"],
+    "subsidiaries": ["relevant subsidiaries, business units, or legal entities if known"],
     "markets": ["North America", "EU", "Global"],
     "summary": "two sentence plain-English profile",
     "knownStandards": [],
@@ -512,12 +519,15 @@ Return this exact top-level shape:
     "owner": "NA team",
     "actions": ["10 concise engagement, cross-sell, or upsell ideas"],
     "evidenceNotes": ["assumptions and source-review notes"],
+    "sourceNotes": ["where key facts appear to come from or what must be verified"],
     "confidence": "low|medium|medium-high|high"
   }
 }
 
 Rules:
 - Users are NA-based, but customers may be global and may have EU, UK, China, or other subsidiaries.
+- Provide a practical business profile, not only compliance guesses. Include employee estimate, revenue estimate, founded year, ownership, products/services, subsidiaries, and markets when available.
+- If a fact is uncertain, use "Unknown - verify" or an explicit range instead of inventing precision.
 - Never state guessed standards as confirmed requirements.
 - Include exactly 10 actions.
 - Prefer standards relevant to cybersecurity, functional safety, OT security, connected products, automotive, medical devices, financial resilience, and global market access.`;
@@ -540,6 +550,13 @@ function deterministicEnrichment(body) {
       sector,
       subSector: sectorSubSector(sector),
       size: body.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"),
+      employeeEstimate: employeeEstimateFor(body.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"), sector, markets),
+      revenueEstimate: revenueEstimateFor(body.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise")),
+      yearFounded: "Unknown - verify",
+      ownership: "Unknown - verify",
+      keyProducts: keyProductsFor(sector),
+      targetMarkets: markets,
+      subsidiaries: [],
       markets,
       summary: `${name} appears to fit the ${sector} context with ${markets.join(", ")} exposure. Review these AI-assisted guesses before treating them as confirmed customer intelligence.`,
       knownStandards: [],
@@ -552,9 +569,44 @@ function deterministicEnrichment(body) {
         "Deterministic fallback was used because no Anthropic or OpenAI API key is configured.",
         "Confirm customer facts, subsidiaries, and standards before outreach."
       ],
+      sourceNotes: [
+        "Fallback profile uses user-entered hints and sector logic only. Configure Claude for AI-enriched business metadata."
+      ],
       confidence: "medium"
     }
   };
+}
+
+function employeeEstimateFor(size, sector, markets = []) {
+  const text = normalize(`${size} ${sector} ${markets.join(" ")}`);
+  if (text.includes("global enterprise")) return "10,000+ employees";
+  if (text.includes("enterprise")) return "1,000-10,000 employees";
+  if (text.includes("mid market") || text.includes("mid-market")) return "250-1,000 employees";
+  if (text.includes("small")) return "50-250 employees";
+  if (text.includes("startup")) return "10-100 employees";
+  if (text.includes("automotive") || text.includes("industrial")) return "500-5,000 employees";
+  return "Unknown - verify";
+}
+
+function revenueEstimateFor(size) {
+  const text = normalize(size);
+  if (text.includes("global enterprise")) return "$10B+ annual revenue";
+  if (text.includes("enterprise")) return "$1B-$10B annual revenue";
+  if (text.includes("mid market") || text.includes("mid-market")) return "$50M-$1B annual revenue";
+  if (text.includes("small")) return "$10M-$50M annual revenue";
+  if (text.includes("startup")) return "Pre-revenue to $25M annual revenue";
+  return "Unknown - verify";
+}
+
+function keyProductsFor(sector) {
+  const map = {
+    "Automotive": ["connected vehicle systems", "mobility software", "vehicle components"],
+    "Industrial / OT": ["automation systems", "control software", "connected industrial equipment"],
+    "Medical Devices": ["connected medical devices", "regulated software", "diagnostic systems"],
+    "Financial Services": ["digital services", "ICT operations", "customer platforms"],
+    "ICT / Connected Products": ["connected products", "software platforms", "cloud-enabled services"]
+  };
+  return map[sector] || ["products and services to verify"];
 }
 
 function inferSector(text) {
