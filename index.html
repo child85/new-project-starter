@@ -1415,9 +1415,49 @@
 
       .standard-detail {
         display: grid;
-        gap: 18px;
-        padding-bottom: 22px;
+        gap: 14px;
+        padding: 22px 24px 24px;
         border-top: 1px solid var(--line);
+        background: #f8fafc;
+      }
+
+      .standard-detail > .row-copy,
+      .standard-detail > .info-card,
+      .standard-detail > .tags,
+      .standard-detail > .last-change,
+      .standard-detail > .change-list {
+        margin-right: 0;
+        margin-left: 0;
+      }
+
+      .standard-source-card {
+        border-left: 6px solid var(--blue);
+        box-shadow: 0 4px 14px rgba(18, 48, 70, 0.06);
+      }
+
+      .standard-source-card p,
+      .standard-source-card a {
+        overflow-wrap: anywhere;
+      }
+
+      .standard-topic-strip {
+        padding: 12px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .standard-history {
+        gap: 12px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .standard-history-title {
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--line);
+        color: var(--blue-dark);
+        font-weight: 800;
       }
 
       .standard-quick-meta {
@@ -1462,10 +1502,10 @@
       .customer-detail {
         display: none;
         gap: 20px;
-        padding: 22px;
-        border: 1px solid var(--blue);
+        padding: 24px;
+        border: 1px solid #c7d7e2;
         border-left: 8px solid var(--blue);
-        background: #f7fbff;
+        background: #f8fafc;
       }
 
       .customer-row.open .customer-detail,
@@ -1509,8 +1549,13 @@
       .customer-profile-section {
         display: grid;
         gap: 14px;
-        padding: 18px;
-        border: 1px solid var(--line);
+        padding: 20px;
+        border: 1px solid #d3e0e8;
+        background: #ffffff;
+        box-shadow: 0 4px 14px rgba(18, 48, 70, 0.05);
+      }
+
+      .customer-detail .tag {
         background: #ffffff;
       }
 
@@ -1600,8 +1645,9 @@
       .last-change {
         display: grid;
         gap: 8px;
-        padding: 14px;
+        padding: 16px 18px;
         border: 1px solid var(--blue);
+        border-left: 6px solid var(--blue);
         background: var(--soft-blue);
       }
 
@@ -4308,7 +4354,7 @@
             </div>
             ${expanded ? `
               <div class="standard-detail">
-                <div class="info-card">
+                <div class="info-card standard-source-card">
                   <strong>Official source website</strong>
                   <p>${standard.sourceUrl ? externalLink(standard.sourceUrl, standard.sourceUrl) : "No official source URL saved yet. Add one when editing this standard."}</p>
                   ${standard.sourceConfidence ? `<p>Source confidence: ${esc(standard.sourceConfidence)}</p>` : ""}
@@ -4317,10 +4363,12 @@
                   ${standard.sourceEvidence ? `<p>${esc(standard.sourceEvidence)}</p>` : ""}
                 </div>
                 ${standard.internalNotes ? `<div class="row-copy">TUV Rheinland notes: ${esc(standard.internalNotes)}</div>` : ""}
-                <div class="tags">${renderTags(standard.topics)}</div>
+                <div class="tags standard-topic-strip">${renderTags(standard.topics)}</div>
                 ${renderLastChange(standard)}
-                <div class="change-list">
-                  ${standard.changes?.length ? standard.changes.map((change) => `
+                ${standard.changes?.length ? `
+                <div class="change-list standard-history">
+                  <div class="standard-history-title">Change history</div>
+                  ${standard.changes.map((change) => `
                     <div class="change-card">
                       <div class="row-top">
                         <strong>${esc(change.title || "Public change")}</strong>
@@ -4329,8 +4377,9 @@
                       <span>${esc(change.date || "Date unknown")} ${change.url || standard.sourceUrl ? `| ${externalLink(change.url || standard.sourceUrl, "source website")}` : "| source not saved"}</span>
                       <p class="row-copy">${esc(change.summary || "No summary saved.")}</p>
                     </div>
-                  `).join("") : `<p class="row-copy">No public changes saved yet.</p>`}
+                  `).join("")}
                 </div>
+                ` : ""}
               </div>
             ` : ""}
           </article>
