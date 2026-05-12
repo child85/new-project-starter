@@ -506,6 +506,100 @@
         line-height: 1.48;
       }
 
+      .command-strip,
+      .task-board,
+      .source-grid,
+      .profile-section-grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .command-strip {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .command-card {
+        display: grid;
+        gap: 8px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-left: 7px solid var(--blue);
+        background: #ffffff;
+      }
+
+      .command-card strong {
+        color: var(--blue-dark);
+        font-size: 1.5rem;
+      }
+
+      .command-card span {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .task-board {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .task-card {
+        display: grid;
+        gap: 10px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .task-card strong {
+        color: var(--blue-dark);
+      }
+
+      .task-card.overdue {
+        border-left: 7px solid var(--warn);
+      }
+
+      .lifecycle {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .lifecycle .tag {
+        font-size: 0.76rem;
+      }
+
+      .lifecycle .active {
+        color: #ffffff;
+        border-color: var(--blue);
+        background: var(--blue);
+      }
+
+      .source-grid,
+      .profile-section-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .source-item {
+        display: grid;
+        gap: 6px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        background: #f8fafc;
+      }
+
+      .source-item span {
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .source-item strong {
+        color: var(--ink);
+        font-size: 1rem;
+      }
+
       .standard-map {
         display: grid;
         gap: 12px;
@@ -513,7 +607,7 @@
 
       .standard-map-row {
         display: grid;
-        grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(180px, 0.45fr);
+        grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1fr) minmax(0, 1fr) minmax(160px, 0.55fr) minmax(170px, 0.45fr);
         gap: 12px;
         align-items: stretch;
         padding: 16px;
@@ -1560,6 +1654,10 @@
         .metric-grid,
         .service-strip,
         .app-shell,
+        .command-strip,
+        .task-board,
+        .source-grid,
+        .profile-section-grid,
         .dashboard-grid {
           grid-template-columns: 1fr 1fr;
         }
@@ -1596,6 +1694,10 @@
         .section-grid,
         .dashboard-grid,
         .setup-grid,
+        .command-strip,
+        .task-board,
+        .source-grid,
+        .profile-section-grid,
         .split,
         .wide-split,
         .profile-grid,
@@ -1749,6 +1851,61 @@
               </form>
             </div>
           </div>
+
+          <div class="dialog-overlay hidden" id="projectDialog" role="dialog" aria-modal="true" aria-labelledby="projectDialogTitle">
+            <div class="dialog-panel">
+              <div class="panel-head">
+                <div>
+                  <h2 id="projectDialogTitle">Add Project / Assessment</h2>
+                  <p id="projectDialogCopy">Save delivered work so standards changes can be tied back to real customer commitments.</p>
+                </div>
+                <button class="button secondary" id="closeProjectDialog" type="button">Close</button>
+              </div>
+              <form class="lookup-form" id="projectForm">
+                <div class="split">
+                  <div class="field">
+                    <label for="projectDialogName">Project name</label>
+                    <input id="projectDialogName" required placeholder="Example: ISO 21434 gap assessment" />
+                  </div>
+                  <div class="field">
+                    <label for="projectDialogType">Assessment type</label>
+                    <select id="projectDialogType">
+                      <option>Gap assessment</option>
+                      <option>Certification</option>
+                      <option>Testing</option>
+                      <option>Audit</option>
+                      <option>Advisory</option>
+                      <option>Hypercare</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="split">
+                  <div class="field">
+                    <label for="projectDialogDate">Date</label>
+                    <input id="projectDialogDate" type="date" />
+                  </div>
+                  <div class="field">
+                    <label for="projectDialogStatus">Status</label>
+                    <select id="projectDialogStatus">
+                      <option>Planned</option>
+                      <option>In progress</option>
+                      <option>Completed</option>
+                      <option>Hypercare</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="projectDialogStandards">Standards covered</label>
+                  <input id="projectDialogStandards" placeholder="ISO/SAE 21434, ISO 26262, IEC 62443" />
+                </div>
+                <div class="field">
+                  <label for="projectDialogNotes">Notes</label>
+                  <textarea id="projectDialogNotes" placeholder="Outcome, scope, report/certificate reference, or hypercare notes."></textarea>
+                </div>
+                <button class="button" type="submit">Save project</button>
+              </form>
+            </div>
+          </div>
         </section>
 
         <section class="section-grid app-view" id="compliance">
@@ -1874,6 +2031,39 @@
                 <div class="field">
                   <label for="stdSourceUrl">Official / Reference URL</label>
                   <input id="stdSourceUrl" placeholder="https://..." />
+                </div>
+                <div class="split">
+                  <div class="field">
+                    <label for="stdSourceConfidence">Source confidence</label>
+                    <select id="stdSourceConfidence">
+                      <option>AI inferred - verify</option>
+                      <option>Official source verified</option>
+                      <option>Secondary source only</option>
+                      <option>Internal knowledge</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="stdWatchPriority">Watch priority</label>
+                    <select id="stdWatchPriority">
+                      <option>Medium</option>
+                      <option>High</option>
+                      <option>Low</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="split">
+                  <div class="field">
+                    <label for="stdChangeDate">Last change date</label>
+                    <input id="stdChangeDate" type="date" />
+                  </div>
+                  <div class="field">
+                    <label for="stdChangeTitle">Last change title</label>
+                    <input id="stdChangeTitle" placeholder="Example: Amendment published" />
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="stdChangeSummary">Last change summary</label>
+                  <textarea id="stdChangeSummary" placeholder="Short summary of the latest public change, if known."></textarea>
                 </div>
                 <div class="field">
                   <label for="stdDescription">Plain-English Description</label>
@@ -2019,6 +2209,25 @@
               <p>Jump to change notifications waiting for review.</p>
             </button>
           </div>
+          <section class="dashboard-section">
+            <div class="row-top">
+              <div>
+                <h3>Today&apos;s Command Center</h3>
+                <p class="row-copy">Operational snapshot for reviews, owners, due dates, and customer notifications.</p>
+              </div>
+            </div>
+            <div class="command-strip" id="watchCommandStrip"></div>
+          </section>
+          <section class="dashboard-section" id="watchTaskBoardSection">
+            <div class="row-top">
+              <div>
+                <h3>Owned Follow-Up Tasks</h3>
+                <p class="row-copy">Customer notification tasks created during impact review, grouped by priority and status.</p>
+              </div>
+              <button class="button secondary" type="button" data-view="setup">Manage team</button>
+            </div>
+            <div class="task-board" id="watchTaskBoard"></div>
+          </section>
           <div class="dashboard-grid">
             <section id="watchNotificationsSection">
               <h3>Change Notifications</h3>
@@ -2080,14 +2289,37 @@
                     <option>Needs more review</option>
                   </select>
                 </div>
-                <div class="field">
-                  <label for="impactOwner">Owner</label>
-                  <input id="impactOwner" placeholder="Account or service owner" />
-                </div>
+              <div class="field">
+                <label for="impactOwner">Owner</label>
+                <select id="impactOwner"></select>
               </div>
               <div class="field">
-                <label for="impactNote">Review note</label>
-                <textarea id="impactNote" placeholder="Why this is relevant or not, what changed, and what the customer owner should do next."></textarea>
+                <label for="impactStatus">Review status</label>
+                <select id="impactStatus">
+                  <option>New</option>
+                  <option>In review</option>
+                  <option>Relevant</option>
+                  <option>Not relevant</option>
+                  <option>Customer notified</option>
+                  <option>Closed</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="impactPriority">Task priority</label>
+                <select id="impactPriority">
+                  <option>Medium</option>
+                  <option>High</option>
+                  <option>Low</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="impactDueDate">Task due date</label>
+                <input id="impactDueDate" type="date" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="impactNote">Review note</label>
+              <textarea id="impactNote" placeholder="Why this is relevant or not, what changed, and what the customer owner should do next."></textarea>
               </div>
               <label class="standard-choice">
                 <input id="createNotificationTask" type="checkbox" checked />
@@ -2116,11 +2348,42 @@
           <div class="panel-head" style="border-top: 1px solid var(--line);">
             <div>
               <h2>Admin Area</h2>
-              <p>Deletion actions are staged as requests here. In the production version, this area should require administrative rights.</p>
+              <p>Deletion requests, customer notification tasks, and maintenance actions are staged here. In the production version, this area should require administrative rights.</p>
             </div>
             <button class="button secondary" id="requestClearCustomers" type="button">Request clear customer list</button>
           </div>
           <div class="admin-list" id="adminRequestList"></div>
+
+          <div class="setup-box">
+            <div class="panel-head compact-head">
+              <div>
+                <h2>Team Members</h2>
+                <p>Users here can own impact reviews and customer notification tasks. This is browser-saved demo data until the hub has shared backend storage.</p>
+              </div>
+            </div>
+            <form class="split" id="teamMemberForm">
+              <div class="field">
+                <label for="teamMemberName">Name</label>
+                <input id="teamMemberName" placeholder="Example: Account owner" required />
+              </div>
+              <div class="field">
+                <label for="teamMemberEmail">Email</label>
+                <input id="teamMemberEmail" type="email" placeholder="name@example.com" />
+              </div>
+              <div class="field">
+                <label for="teamMemberRole">Role</label>
+                <select id="teamMemberRole">
+                  <option>Account owner</option>
+                  <option>Service owner</option>
+                  <option>Standards owner</option>
+                  <option>Admin</option>
+                  <option>Shared queue</option>
+                </select>
+              </div>
+              <button class="button" type="submit">Add team member</button>
+            </form>
+            <div class="admin-list" id="teamMemberList"></div>
+          </div>
 
           <div class="setup-box">
             <div class="panel-head compact-head">
@@ -2447,6 +2710,30 @@
         }
       ];
 
+      const starterUsers = [
+        {
+          id: "user-na-team",
+          name: "NA team",
+          email: "",
+          role: "Shared queue",
+          active: true
+        },
+        {
+          id: "user-account-owner",
+          name: "Account owner",
+          email: "",
+          role: "Account owner",
+          active: true
+        },
+        {
+          id: "user-standards-owner",
+          name: "Standards owner",
+          email: "",
+          role: "Standards owner",
+          active: true
+        }
+      ];
+
       const store = {
         get(key, fallback) {
           try {
@@ -2472,6 +2759,7 @@
 
       let standards = store.get("assuranceStandardsV2", starterStandards);
       let customers = store.get("assuranceCustomersV2", starterCustomers);
+      let users = store.get("assuranceUsersV1", starterUsers);
       let adminRequests = store.get("assuranceAdminRequestsV1", []);
       let impactReviews = store.get("assuranceImpactReviewsV1", []);
       let watchSchedule = { ...defaultWatchSchedule, ...store.get("assuranceWatchScheduleV1", {}) };
@@ -2481,6 +2769,7 @@
       let expandedStandardKey = "";
       let pendingDeletionCustomer = null;
       let pendingImpactReview = null;
+      let pendingProjectCustomerKey = "";
 
       const knownCompanies = {
         aster: [
@@ -2604,6 +2893,29 @@
           .join("");
       }
 
+      function activeUsers() {
+        return users.filter((user) => user.active !== false);
+      }
+
+      function userNameOptions(selected = "") {
+        const selectedName = selected || "NA team";
+        const base = activeUsers();
+        const options = base.some((user) => normalize(user.name) === normalize(selectedName))
+          ? base
+          : [...base, normalizeUserRecord({ name: selectedName, role: "Account owner" })];
+        return options.map((user) => `<option value="${esc(user.name)}" ${normalize(user.name) === normalize(selectedName) ? "selected" : ""}>${esc(user.name)}${user.role ? ` - ${esc(user.role)}` : ""}</option>`).join("");
+      }
+
+      function isoDateOffset(days = 0) {
+        const date = new Date();
+        date.setDate(date.getDate() + days);
+        return date.toISOString().slice(0, 10);
+      }
+
+      function isOverdue(dateValue) {
+        return Boolean(dateValue && dateValue < new Date().toISOString().slice(0, 10));
+      }
+
       function normalizeCustomerRecord(customer) {
         return {
           userNotes: "",
@@ -2616,6 +2928,9 @@
           targetMarkets: [],
           subsidiaries: [],
           sourceNotes: [],
+          sourceConfidence: "",
+          sourceLinks: [],
+          lastVerifiedAt: "",
           ...customer,
           knownStandards: safeList(customer.knownStandards),
           guessedStandards: safeList(customer.guessedStandards),
@@ -2625,6 +2940,7 @@
           targetMarkets: safeList(customer.targetMarkets),
           subsidiaries: safeList(customer.subsidiaries),
           sourceNotes: safeList(customer.sourceNotes),
+          sourceLinks: safeList(customer.sourceLinks),
           actions: safeList(customer.actions),
           projects: Array.isArray(customer.projects) ? customer.projects : []
         };
@@ -2637,12 +2953,25 @@
           sourceCheckedAt: "",
           sourceStatus: "",
           sourceEvidence: "",
+          sourceConfidence: "",
+          watchPriority: "Medium",
           internalNotes: "",
           changes: [],
           ...standard,
           markets: safeList(standard.markets),
           topics: safeList(standard.topics),
           changes: Array.isArray(standard.changes) ? standard.changes : []
+        };
+      }
+
+      function normalizeUserRecord(user) {
+        const name = String(user?.name || "").trim();
+        return {
+          id: user?.id || `user-${Date.now()}`,
+          name: name || "Unnamed user",
+          email: String(user?.email || "").trim(),
+          role: user?.role || "Account owner",
+          active: user?.active !== false
         };
       }
 
@@ -2659,7 +2988,12 @@
         }
       });
       customers = customers.map(normalizeCustomerRecord);
+      users = users.map(normalizeUserRecord);
+      starterUsers.map(normalizeUserRecord).forEach((starter) => {
+        if (!users.some((user) => normalize(user.name) === normalize(starter.name))) users.push(starter);
+      });
       store.set("assuranceStandardsV2", standards);
+      store.set("assuranceUsersV1", users);
 
       function externalLink(url, label = url) {
         const clean = String(url || "").trim();
@@ -3031,6 +3365,9 @@
           subsidiaries: readCsvField("reviewCustomerSubsidiaries"),
           summary: readTextField("reviewCustomerSummary"),
           sourceNotes: readNotesField("reviewCustomerSourceNotes"),
+          sourceLinks: readNotesField("reviewCustomerSourceLinks"),
+          sourceConfidence: readTextField("reviewCustomerConfidence") || profile.sourceConfidence || profile.confidence || "medium",
+          lastVerifiedAt: new Date().toISOString(),
           evidenceNotes: readNotesField("reviewCustomerEvidence"),
           actions: readNotesField("reviewCustomerActions"),
           guessedStandards: standardNames,
@@ -3206,6 +3543,9 @@
           targetMarkets: customer.targetMarkets || customer.target_markets || customer.markets || sourceProfile.target_markets || business.targetMarkets || [],
           subsidiaries: customer.subsidiaries || customer.operating_subsidiaries || customer.business_units || sourceProfile.subsidiaries || business.subsidiaries || [],
           sourceNotes: customer.sourceNotes || customer.source_notes || sourceProfile.source_notes || business.sourceNotes || [],
+          sourceLinks: customer.sourceLinks || customer.source_links || customer.sources || sourceProfile.source_links || business.sourceLinks || [],
+          sourceConfidence: customer.sourceConfidence || customer.source_confidence || customer.confidence || "AI inferred - verify",
+          lastVerifiedAt: customer.lastVerifiedAt || customer.last_verified_at || new Date().toISOString(),
           markets: customer.markets || customer.operating_regions || sourceProfile.markets || business.markets || [customer.region || "Global"],
           summary: customer.summary || customer.notes || sourceProfile.executive_summary || business.summary || "",
           knownStandards: customer.knownStandards || customer.known_compliance || customer.compliance || [],
@@ -3303,6 +3643,7 @@
               <div class="review-field-grid">
                 ${reviewInput("Employee estimate", "reviewCustomerEmployees", profile.employeeEstimate, "Example: 10,000+ employees")}
                 ${reviewInput("Revenue estimate", "reviewCustomerRevenue", profile.revenueEstimate, "Example: $10B+ annual revenue")}
+                ${reviewInput("Company size", "reviewCustomerSize", profile.size, "Mid-market, Enterprise, SMB")}
                 ${reviewInput("Founded", "reviewCustomerFounded", profile.yearFounded, "Example: 1916")}
                 ${reviewInput("Ownership", "reviewCustomerOwnership", profile.ownership, "Public company, private, subsidiary")}
                 ${reviewInput("Sector", "reviewCustomerSector", profile.sector, "Automotive, Industrial / OT, ICT")}
@@ -3347,6 +3688,7 @@
               <div class="review-field-grid">
                 ${reviewTextarea("Short customer summary", "reviewCustomerSummary", shortSummary(profile.summary || "", 520), "One or two plain-English sentences for the customer card")}
                 ${reviewTextarea("Source notes", "reviewCustomerSourceNotes", safeList(profile.sourceNotes).join("\n"), "Where facts appear to come from, or what must be verified")}
+                ${reviewTextarea("Source links", "reviewCustomerSourceLinks", safeList(profile.sourceLinks).join("\n"), "Official website, annual report, standards registry, or other source URL")}
                 ${reviewTextarea("Engagement ideas", "reviewCustomerActions", actionNotes.join("\n"), "One practical account action per line")}
               </div>
             </section>
@@ -3514,7 +3856,7 @@
             <div class="split">
               <div class="field">
                 <label for="customerOwner">Account / Service Owner</label>
-                <input id="customerOwner" value="${esc(profile.owner || "NA team")}" />
+                <select id="customerOwner">${userNameOptions(profile.owner || "NA team")}</select>
               </div>
               <div class="field">
                 <label for="customerHypercare">Hypercare</label>
@@ -3581,6 +3923,13 @@
         return list.length ? renderTags(list) : `<span class="row-copy">${esc(emptyText)}</span>`;
       }
 
+      function sourceLinkList(values) {
+        const list = safeList(values).map(itemLabel).filter(Boolean);
+        return list.length
+          ? list.map((url) => `<div>${externalLink(url, url)}</div>`).join("")
+          : `<span class="row-copy">No citation links saved yet.</span>`;
+      }
+
       function saveLookupProfile(profile) {
         const normalized = normalizeCustomerRecord(profile);
         const existingIndex = customers.findIndex((customer) => profileKey(customer) === profileKey(normalized));
@@ -3590,6 +3939,45 @@
         store.set("assuranceCustomersV2", customers);
         renderCustomers();
         renderWatch();
+      }
+
+      function openProjectDialog(customer) {
+        if (!customer) return;
+        pendingProjectCustomerKey = profileKey(customer);
+        document.getElementById("projectDialogTitle").textContent = `Add Project / Assessment: ${customer.name}`;
+        document.getElementById("projectForm").reset();
+        document.getElementById("projectDialogDate").value = isoDateOffset(0);
+        document.getElementById("projectDialogStandards").value = customerStandardNames(customer).slice(0, 4).join(", ");
+        document.getElementById("projectDialog").classList.remove("hidden");
+        document.getElementById("projectDialogName").focus();
+      }
+
+      function closeProjectDialog() {
+        pendingProjectCustomerKey = "";
+        document.getElementById("projectDialog").classList.add("hidden");
+        document.getElementById("projectForm").reset();
+      }
+
+      function saveProjectRecord(event) {
+        event.preventDefault();
+        const customer = customers.find((item) => profileKey(item) === pendingProjectCustomerKey);
+        if (!customer) return;
+        const project = {
+          name: readTextField("projectDialogName"),
+          type: document.getElementById("projectDialogType").value,
+          date: document.getElementById("projectDialogDate").value,
+          status: document.getElementById("projectDialogStatus").value,
+          standards: readCsvField("projectDialogStandards"),
+          notes: readTextField("projectDialogNotes")
+        };
+        if (!project.name) return;
+        customer.projects = [...safeList(customer.projects), project];
+        customer.knownStandards = unique([...safeList(customer.knownStandards), ...project.standards]);
+        store.set("assuranceCustomersV2", customers);
+        closeProjectDialog();
+        renderCustomers();
+        renderWatch();
+        setStatus(`${project.name} added to ${customer.name}.`);
       }
 
       function saveCurrentResult() {
@@ -3711,6 +4099,31 @@
                   </div>
                 </div>
                 <div class="customer-profile-section">
+                  <h4>Data Confidence and Sources</h4>
+                  <div class="source-grid">
+                    <div class="source-item">
+                      <span>Profile confidence</span>
+                      <strong>${esc(customer.confidence || "medium")}</strong>
+                      <p class="row-copy">${esc(customer.sourceConfidence || "AI-assisted profile. Verify before customer-facing use.")}</p>
+                    </div>
+                    <div class="source-item">
+                      <span>Last verified</span>
+                      <strong>${customer.lastVerifiedAt ? esc(new Date(customer.lastVerifiedAt).toLocaleDateString()) : "Not verified"}</strong>
+                      <p class="row-copy">Use citations to separate confirmed facts from AI inference.</p>
+                    </div>
+                    <div class="source-item">
+                      <span>Citation links</span>
+                      <strong>Sources</strong>
+                      ${sourceLinkList(customer.sourceLinks)}
+                    </div>
+                    <div class="source-item">
+                      <span>Evidence notes</span>
+                      <strong>Reasoning</strong>
+                      ${detailList([...safeList(customer.evidenceNotes), ...safeList(customer.sourceNotes)], "No evidence notes saved yet")}
+                    </div>
+                  </div>
+                </div>
+                <div class="customer-profile-section">
                   <h4>Products, Services, and Entities</h4>
                   <div class="profile-grid">
                     ${fact("Key products / services", detailList(customer.keyProducts, "No product details saved yet"), true)}
@@ -3727,7 +4140,10 @@
                   </div>
                 </div>
                 <div class="customer-profile-section">
-                  <h4>Projects and Assessments</h4>
+                  <div class="row-top">
+                    <h4>Projects and Assessments</h4>
+                    <button class="button secondary" data-add-project="${index}" type="button">Add project</button>
+                  </div>
                   <div class="project-list">
                   ${customer.projects?.length ? customer.projects.map((project) => `
                     <div class="project-card">
@@ -3773,6 +4189,9 @@
             renderCustomers();
             renderWatch();
           });
+        });
+        list.querySelectorAll("[data-add-project]").forEach((button) => {
+          button.addEventListener("click", () => openProjectDialog(customers[Number(button.dataset.addProject)]));
         });
         list.querySelectorAll("[data-delete-request]").forEach((button) => {
           button.addEventListener("click", () => openCustomerDeletionDialog(customers[Number(button.dataset.deleteRequest)]));
@@ -3822,6 +4241,7 @@
                 <p class="row-copy">${esc(shortSummary(standard.description, 180))}</p>
                 <div class="standard-quick-meta">
                   <span class="tag ${standard.status === "Review" ? "warn" : "ok"}">${esc(standard.status)}</span>
+                  <span class="tag ${standard.watchPriority === "High" ? "warn" : "dark"}">${esc(standard.watchPriority || "Medium")} priority</span>
                   <span class="tag ${change ? "warn" : "dark"}">${change ? `Changed ${esc(change.date || "date unknown")}` : "No saved change"}</span>
                   ${standard.sourceUrl ? `<span class="tag">Source saved</span>` : `<span class="tag warn">Source missing</span>`}
                 </div>
@@ -3834,6 +4254,7 @@
                 <div class="info-card">
                   <strong>Official source website</strong>
                   <p>${standard.sourceUrl ? externalLink(standard.sourceUrl, standard.sourceUrl) : "No official source URL saved yet. Add one when editing this standard."}</p>
+                  ${standard.sourceConfidence ? `<p>Source confidence: ${esc(standard.sourceConfidence)}</p>` : ""}
                   ${standard.sourceCheckedAt ? `<p>Last live AI source check: ${esc(new Date(standard.sourceCheckedAt).toLocaleString())}</p>` : ""}
                   ${standard.sourceStatus ? `<p>Source status: ${esc(standard.sourceStatus)}</p>` : ""}
                   ${standard.sourceEvidence ? `<p>${esc(standard.sourceEvidence)}</p>` : ""}
@@ -3874,7 +4295,10 @@
         const text = normalize(`${name} ${seed.domain} ${seed.sector} ${seed.topics}`);
         const known = standards.find((standard) => normalize(standard.name) === normalize(name));
         if (known) return { ...known, sourceStatus: known.sourceStatus || "matched_existing_record" };
-        const domain = seed.domain || (text.includes("safety") || text.includes("sil") ? "Functional Safety" : "Cybersecurity");
+        const safetySignals = ["safety", "sil", "61508", "61511", "26262", "13849", "62061", "functional"];
+        const domain = seed.domain && seed.domain !== "Cybersecurity"
+          ? seed.domain
+          : (safetySignals.some((signal) => text.includes(signal)) ? "Functional Safety" : (seed.domain || "Cybersecurity"));
         const sector = seed.sector || (text.includes("vehicle") || text.includes("automotive") ? "Automotive" : text.includes("industrial") || text.includes("ot") ? "Industrial / OT" : "ICT / Connected Products");
         const markets = safeList(seed.markets).length ? safeList(seed.markets) : (text.includes("eu") ? ["EU", "Global"] : ["Global"]);
         const topics = safeList(seed.topics).length ? safeList(seed.topics) : unique([name, domain, sector].join(" ").split(" ").filter((item) => item.length > 3)).slice(0, 5);
@@ -3886,8 +4310,16 @@
           topics,
           description: seed.description || `${name} is a ${domain.toLowerCase()} reference for ${sector.toLowerCase()} contexts. Review the official source and internal notes before using it for customer advice.`,
           sourceUrl: seed.sourceUrl || "",
+          sourceConfidence: seed.sourceConfidence || (seed.sourceUrl ? "Official source verified" : "AI inferred - verify"),
+          watchPriority: seed.watchPriority || "Medium",
           internalNotes: seed.internalNotes || "AI-assisted draft. Confirm source, applicability, and service angle before publishing broadly.",
-          changes: [],
+          changes: seed.changeTitle ? [{
+            date: seed.changeDate || isoDateOffset(0),
+            title: seed.changeTitle,
+            summary: seed.changeSummary || "AI-assisted draft change note. Review against the official source.",
+            impact: seed.watchPriority === "High" ? "High" : "Medium",
+            url: seed.sourceUrl || ""
+          }] : [],
           status: "Review",
           sourceStatus: "browser_assisted_draft"
         };
@@ -3902,6 +4334,11 @@
           topics: document.getElementById("stdTopics").value.split(",").map((item) => item.trim()).filter(Boolean),
           description: document.getElementById("stdDescription").value.trim(),
           sourceUrl: document.getElementById("stdSourceUrl").value.trim(),
+          sourceConfidence: document.getElementById("stdSourceConfidence").value,
+          watchPriority: document.getElementById("stdWatchPriority").value,
+          changeDate: document.getElementById("stdChangeDate").value,
+          changeTitle: document.getElementById("stdChangeTitle").value.trim(),
+          changeSummary: document.getElementById("stdChangeSummary").value.trim(),
           internalNotes: document.getElementById("stdInternalNotes").value.trim()
         };
       }
@@ -3914,6 +4351,12 @@
         document.getElementById("stdTopics").value = regionsText(record.topics);
         document.getElementById("stdDescription").value = record.description || "";
         document.getElementById("stdSourceUrl").value = record.sourceUrl || "";
+        document.getElementById("stdSourceConfidence").value = record.sourceConfidence || "AI inferred - verify";
+        document.getElementById("stdWatchPriority").value = record.watchPriority || "Medium";
+        const latest = latestChangeFor(record);
+        document.getElementById("stdChangeDate").value = latest?.date || "";
+        document.getElementById("stdChangeTitle").value = latest?.title || "";
+        document.getElementById("stdChangeSummary").value = latest?.summary || "";
         document.getElementById("stdInternalNotes").value = record.internalNotes || "";
       }
 
@@ -4294,6 +4737,7 @@
           decision,
           why,
           action,
+          priority: level === "High" ? "High" : level === "Low" ? "Low" : "Medium",
           note: `${level} potential impact. ${why} ${action}`
         };
       }
@@ -4333,9 +4777,15 @@
             <span class="tag">${esc(item.change.title || "Public change")}</span>
             <span class="tag">${esc(item.change.impact || "Review")}</span>
           </div>
+          <div class="lifecycle">
+            ${["New", "In review", "Relevant", "Customer notified", "Closed"].map((step) => `<span class="tag ${step === (existing?.status || "New") ? "active" : ""}">${esc(step)}</span>`).join("")}
+          </div>
         `;
         document.getElementById("impactRelevant").value = existing?.decision || recommendation.decision;
-        document.getElementById("impactOwner").value = existing?.owner || item.customer.owner || "NA team";
+        document.getElementById("impactOwner").innerHTML = userNameOptions(existing?.owner || item.customer.owner || "NA team");
+        document.getElementById("impactStatus").value = existing?.status || (recommendation.decision === "Relevant" ? "In review" : "New");
+        document.getElementById("impactPriority").value = existing?.priority || recommendation.priority || "Medium";
+        document.getElementById("impactDueDate").value = existing?.dueDate || isoDateOffset(recommendation.priority === "High" ? 3 : 7);
         document.getElementById("impactNote").value = existing?.note || recommendation.note;
         document.getElementById("createNotificationTask").checked = existing ? Boolean(existing.taskCreated) : recommendation.decision !== "Not relevant";
       }
@@ -4352,7 +4802,10 @@
         const { customer, standard, change, recommendation } = pendingImpactReview;
         const key = impactReviewKey(customer, standard, change);
         const decision = document.getElementById("impactRelevant").value;
-        const owner = document.getElementById("impactOwner").value.trim() || customer.owner || "NA team";
+        const owner = document.getElementById("impactOwner").value || customer.owner || "NA team";
+        const status = document.getElementById("impactStatus").value;
+        const priority = document.getElementById("impactPriority").value;
+        const dueDate = document.getElementById("impactDueDate").value;
         const note = document.getElementById("impactNote").value.trim();
         const createTask = document.getElementById("createNotificationTask").checked;
         const review = {
@@ -4364,6 +4817,9 @@
           changeTitle: change.title || "Public change",
           changeDate: change.date || "",
           decision,
+          status,
+          priority,
+          dueDate,
           owner,
           note,
           recommendation,
@@ -4382,6 +4838,9 @@
             customerName: customer.name,
             standard,
             owner,
+            priority,
+            dueDate,
+            taskStatus: "Open",
             reason: `${decision}: ${note || recommendation.note}`,
             createdAt: new Date().toISOString()
           });
@@ -4440,6 +4899,37 @@
         `).join("");
       }
 
+      function notificationTasks() {
+        return adminRequests
+          .filter((request) => request.type === "notify-customer")
+          .sort((a, b) => {
+            const priorityOrder = { High: 0, Medium: 1, Low: 2 };
+            return (priorityOrder[a.priority] ?? 1) - (priorityOrder[b.priority] ?? 1)
+              || String(a.dueDate || "9999-12-31").localeCompare(String(b.dueDate || "9999-12-31"));
+          });
+      }
+
+      function renderTaskBoard(tasks) {
+        if (!tasks.length) {
+          return `<article class="task-card"><strong>No owned follow-up tasks</strong><p class="row-copy">Review an impacted customer and select "Create customer notification task" to create the first task.</p></article>`;
+        }
+        return tasks.slice(0, 9).map((task) => `
+          <article class="task-card ${isOverdue(task.dueDate) ? "overdue" : ""}">
+            <div class="row-top">
+              <strong>${esc(task.customerName || "Customer")}</strong>
+              <span class="tag ${task.priority === "High" ? "warn" : "dark"}">${esc(task.priority || "Medium")}</span>
+            </div>
+            <p class="row-copy">${esc(task.standard || "Standard not specified")}</p>
+            <div class="notification-meta">
+              <span class="tag">Owner: ${esc(task.owner || "NA team")}</span>
+              <span class="tag">Due: ${esc(task.dueDate || "Not set")}</span>
+              <span class="tag">${esc(task.taskStatus || "Open")}</span>
+            </div>
+            <p class="row-copy">${esc(shortSummary(task.reason || "", 160))}</p>
+          </article>
+        `).join("");
+      }
+
       function renderWatch() {
         const active = customers.filter((customer) => customer.hypercare === "Active");
         const changes = changeItems();
@@ -4447,6 +4937,9 @@
           .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
           .slice(0, 4);
         const queue = notificationQueue();
+        const tasks = notificationTasks();
+        const reviewsOpen = impactReviews.filter((review) => !["Customer notified", "Closed", "Not relevant"].includes(review.status)).length;
+        const overdueTasks = tasks.filter((task) => isOverdue(task.dueDate)).length;
         const impactedCustomers = unique(queue.map((item) => item.customer.name));
         const linkCount = customers.reduce((total, customer) => total + customerStandardNames(customer).length, 0);
         setText("dashboardStandardCount", standards.length);
@@ -4454,9 +4947,16 @@
         setText("dashboardImpactedCount", impactedCustomers.length);
         setText("dashboardAlertCount", queue.length);
         renderDailySchedule();
+        document.getElementById("watchCommandStrip").innerHTML = `
+          <article class="command-card"><span>Open reviews</span><strong>${reviewsOpen}</strong><p class="row-copy">Impact reviews not closed yet.</p></article>
+          <article class="command-card"><span>Notification tasks</span><strong>${tasks.length}</strong><p class="row-copy">Customer follow-up items in the task queue.</p></article>
+          <article class="command-card"><span>Overdue</span><strong>${overdueTasks}</strong><p class="row-copy">Tasks past due date.</p></article>
+          <article class="command-card"><span>Team owners</span><strong>${activeUsers().length}</strong><p class="row-copy">Active users available for assignment.</p></article>
+        `;
+        document.getElementById("watchTaskBoard").innerHTML = renderTaskBoard(tasks);
         document.getElementById("notificationList").innerHTML = queue.length ? queue.slice(0, 6).map((item) => {
           const review = existingImpactReview(item.customer, item.standard, item.change);
-          const stateLabel = review ? `Reviewed: ${review.decision}` : (item.notify ? "Notification watch active" : "Needs review");
+          const stateLabel = review ? `${review.status || "Reviewed"}: ${review.decision}` : (item.notify ? "Notification watch active" : "Needs review");
           return `
             <article class="notification-card">
               <div class="row-top">
@@ -4530,6 +5030,7 @@
             <span>Confirmed / project standards</span>
             <span>AI suggested standards</span>
             <span>Change status</span>
+            <span>Owner / task status</span>
           </div>
           ${customers
             .slice()
@@ -4538,6 +5039,8 @@
               const confirmed = customerConfirmedStandardNames(customer);
               const suggested = customerSuggestedStandardNames(customer);
               const matches = customerChangeMatches(customer);
+              const customerTasks = tasks.filter((task) => normalize(task.customerName) === normalize(customer.name));
+              const reviewStates = matches.map((match) => existingImpactReview(customer, match.name, match.change)).filter(Boolean);
               return `
                 <div class="standard-map-row">
                   <div>
@@ -4549,7 +5052,12 @@
                   <div class="tags">${renderStandardButtons(suggested)}</div>
                   <div class="tags">
                     <span class="tag ${matches.length ? "warn" : "ok"}">${matches.length ? `${matches.length} change match${matches.length === 1 ? "" : "es"}` : "No change match"}</span>
+                    ${reviewStates.length ? `<span class="tag ok">${reviewStates.length} reviewed</span>` : ""}
                     <span class="tag ${customer.hypercare === "Active" ? "ok" : "dark"}">${customer.hypercare === "Active" ? "Notify" : "Not watched"}</span>
+                  </div>
+                  <div class="tags">
+                    <span class="tag">Owner: ${esc(customer.owner || "NA team")}</span>
+                    <span class="tag ${customerTasks.length ? "warn" : "ok"}">${customerTasks.length ? `${customerTasks.length} task${customerTasks.length === 1 ? "" : "s"}` : "No open task"}</span>
                   </div>
                 </div>
               `;
@@ -4602,6 +5110,38 @@
       function saveAdminRequests() {
         store.set("assuranceAdminRequestsV1", adminRequests);
         renderAdminRequests();
+      }
+
+      function saveUsers() {
+        users = users.map(normalizeUserRecord);
+        store.set("assuranceUsersV1", users);
+        renderTeamMembers();
+        renderWatch();
+      }
+
+      function renderTeamMembers() {
+        const list = document.getElementById("teamMemberList");
+        if (!list) return;
+        list.innerHTML = users.length ? users.map((user, index) => `
+          <article class="info-card">
+            <div class="row-top">
+              <div>
+                <strong>${esc(user.name)}</strong>
+                <p class="row-copy">${esc(user.role || "Team member")}${user.email ? ` | ${esc(user.email)}` : ""}</p>
+              </div>
+              <span class="tag ${user.active ? "ok" : "warn"}">${user.active ? "Active" : "Inactive"}</span>
+            </div>
+            <div class="notification-actions">
+              <button class="notification-action secondary" type="button" data-toggle-user="${index}">${user.active ? "Deactivate" : "Activate"}</button>
+            </div>
+          </article>
+        `).join("") : `<article class="info-card"><strong>No team members</strong><p>Add at least one owner before assigning notification tasks.</p></article>`;
+        list.querySelectorAll("[data-toggle-user]").forEach((button) => {
+          button.addEventListener("click", () => {
+            users[Number(button.dataset.toggleUser)].active = !users[Number(button.dataset.toggleUser)].active;
+            saveUsers();
+          });
+        });
       }
 
       function openCustomerDeletionDialog(customer) {
@@ -4661,6 +5201,7 @@
             <p>${esc(new Date(request.createdAt).toLocaleString())}</p>
             ${request.type === "notify-customer" ? `<p class="row-copy"><strong>Standard:</strong> ${esc(request.standard || "Not specified")}</p>` : ""}
             ${request.owner ? `<p class="row-copy"><strong>Owner:</strong> ${esc(request.owner)}</p>` : ""}
+            ${request.priority ? `<p class="row-copy"><strong>Priority:</strong> ${esc(request.priority)}${request.dueDate ? ` | Due: ${esc(request.dueDate)}` : ""}${request.taskStatus ? ` | Status: ${esc(request.taskStatus)}` : ""}</p>` : ""}
             ${request.reason ? `<p class="row-copy"><strong>Reason:</strong> ${esc(request.reason)}</p>` : ""}
             <div class="split">
               <button class="button secondary" data-dismiss-request="${index}" type="button">Dismiss request</button>
@@ -4689,6 +5230,15 @@
         if (request.type === "delete-customer") {
           customers = customers.filter((customer) => profileKey(customer) !== request.customerKey);
           if (expandedCustomerKey === request.customerKey) expandedCustomerKey = "";
+        }
+        if (request.type === "notify-customer") {
+          impactReviews = impactReviews.map((review) => review.key === request.impactKey ? {
+            ...review,
+            status: "Customer notified",
+            taskCreated: true,
+            taskCompletedAt: new Date().toISOString()
+          } : review);
+          store.set("assuranceImpactReviewsV1", impactReviews);
         }
         store.set("assuranceCustomersV2", customers);
         adminRequests.splice(index, 1);
@@ -4730,8 +5280,29 @@
         requestCustomerDeletion(pendingDeletionCustomer, reason);
         closeCustomerDeletionDialog();
       });
+      document.getElementById("closeProjectDialog").addEventListener("click", closeProjectDialog);
+      document.getElementById("projectForm").addEventListener("submit", saveProjectRecord);
       document.getElementById("closeImpactReviewDialog").addEventListener("click", closeImpactReviewDialog);
       document.getElementById("impactReviewForm").addEventListener("submit", saveImpactReview);
+
+      document.getElementById("teamMemberForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const name = document.getElementById("teamMemberName").value.trim();
+        if (!name) return;
+        const record = normalizeUserRecord({
+          id: `user-${Date.now()}`,
+          name,
+          email: document.getElementById("teamMemberEmail").value.trim(),
+          role: document.getElementById("teamMemberRole").value,
+          active: true
+        });
+        const existingIndex = users.findIndex((user) => normalize(user.name) === normalize(record.name));
+        if (existingIndex >= 0) users[existingIndex] = { ...users[existingIndex], ...record };
+        else users.push(record);
+        event.target.reset();
+        saveUsers();
+        setStatus(`${record.name} added as a task owner.`);
+      });
 
       document.getElementById("requestClearCustomers").addEventListener("click", () => {
         adminRequests.unshift({
@@ -4787,13 +5358,21 @@
           topics: document.getElementById("stdTopics").value.split(",").map((item) => item.trim()).filter(Boolean),
           description: document.getElementById("stdDescription").value.trim(),
           sourceUrl: document.getElementById("stdSourceUrl").value.trim(),
+          sourceConfidence: document.getElementById("stdSourceConfidence").value,
+          watchPriority: document.getElementById("stdWatchPriority").value,
           internalNotes: document.getElementById("stdInternalNotes").value.trim(),
-          changes: [],
+          changes: document.getElementById("stdChangeTitle").value.trim() ? [{
+            date: document.getElementById("stdChangeDate").value || isoDateOffset(0),
+            title: document.getElementById("stdChangeTitle").value.trim(),
+            summary: document.getElementById("stdChangeSummary").value.trim(),
+            impact: document.getElementById("stdWatchPriority").value === "High" ? "High" : "Medium",
+            url: document.getElementById("stdSourceUrl").value.trim()
+          }] : [],
           status: "Watch"
         });
         const existingIndex = standards.findIndex((standard) => normalize(standard.name) === normalize(record.name));
         if (existingIndex >= 0) {
-          standards[existingIndex] = normalizeStandardRecord({ ...standards[existingIndex], ...record, changes: standards[existingIndex].changes || [] });
+          standards[existingIndex] = normalizeStandardRecord({ ...standards[existingIndex], ...record, changes: mergeChangeLists(record.changes, standards[existingIndex].changes || []) });
         } else {
           standards.unshift(record);
         }
@@ -4925,6 +5504,7 @@
       renderCustomers();
       renderWatch();
       renderAdminRequests();
+      renderTeamMembers();
       const initialNavigationState = navigationStateFromHash();
       history.replaceState(
         initialNavigationState,
