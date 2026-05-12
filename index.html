@@ -602,7 +602,7 @@
 
       .standard-map {
         display: grid;
-        gap: 12px;
+        gap: 14px;
       }
 
       .standard-map-row {
@@ -631,6 +631,120 @@
         font-size: 1.05rem;
       }
 
+      .customer-standard-card {
+        display: grid;
+        grid-template-columns: minmax(230px, 0.75fr) minmax(0, 1.35fr) minmax(210px, 0.55fr);
+        gap: 18px;
+        align-items: stretch;
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-left: 6px solid var(--blue);
+        background: #ffffff;
+        box-shadow: 0 6px 18px rgba(18, 48, 70, 0.06);
+      }
+
+      .customer-standard-card.has-change {
+        border-left-color: var(--warn);
+      }
+
+      .customer-standard-main {
+        display: grid;
+        align-content: start;
+        gap: 10px;
+      }
+
+      .customer-standard-main h4 {
+        margin: 0;
+        color: var(--blue-dark);
+        font-size: 1.12rem;
+      }
+
+      .customer-standard-main p {
+        margin: 0;
+      }
+
+      .customer-standard-meta,
+      .customer-standard-status {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .customer-standard-standards {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .standard-mini-panel {
+        display: grid;
+        align-content: start;
+        gap: 10px;
+        min-height: 118px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        background: #f8fafc;
+      }
+
+      .standard-mini-panel h5 {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .standard-mini-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: flex-start;
+      }
+
+      .standard-mini-list .row-copy {
+        margin: 0;
+      }
+
+      .customer-standard-actions {
+        display: grid;
+        align-content: start;
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        background: #fbfdff;
+      }
+
+      .status-badge {
+        display: inline-flex;
+        min-height: 30px;
+        align-items: center;
+        width: fit-content;
+        padding: 4px 10px;
+        border: 1px solid var(--line);
+        color: var(--ink);
+        background: #ffffff;
+        font-size: 0.82rem;
+        font-weight: 800;
+      }
+
+      .status-badge.warn {
+        border-color: #f0b35c;
+        color: #8a4d00;
+        background: #fff7ed;
+      }
+
+      .status-badge.ok {
+        border-color: #6fc08b;
+        color: var(--ok);
+        background: #f1fff6;
+      }
+
+      .status-badge.dark {
+        color: var(--muted);
+        background: #f6f9fb;
+      }
+
       .chip-button {
         min-height: 32px;
         padding: 4px 9px;
@@ -644,6 +758,15 @@
         border-color: var(--warn);
         color: var(--warn);
         background: #fff7ed;
+      }
+
+      .chip-button.compact {
+        min-height: 28px;
+        max-width: 100%;
+        padding: 3px 8px;
+        font-size: 0.78rem;
+        line-height: 1.2;
+        text-align: left;
       }
 
       .chip-button:hover,
@@ -864,6 +987,7 @@
         color: var(--panel);
         background: var(--blue);
         font-weight: 800;
+        white-space: nowrap;
       }
 
       .button.secondary {
@@ -1744,7 +1868,9 @@
         .wide-split,
         .profile-grid,
         .review-field-grid,
-        .standard-map-row {
+        .standard-map-row,
+        .customer-standard-card,
+        .customer-standard-standards {
           grid-template-columns: 1fr 1fr;
         }
       }
@@ -1783,6 +1909,8 @@
         .review-field-grid,
         .review-actions,
         .standard-map-row,
+        .customer-standard-card,
+        .customer-standard-standards,
         .customer-card.open .customer-detail,
         .customer-card,
         .controls,
@@ -4964,6 +5092,20 @@
         }).join("") : `<span class="row-copy">No standards saved yet</span>`;
       }
 
+      function renderCompactStandardButtons(names, limit = 6) {
+        const cleanNames = unique(safeList(names).map(itemLabel).filter(Boolean));
+        const visible = cleanNames.slice(0, limit);
+        const hiddenCount = Math.max(0, cleanNames.length - visible.length);
+        if (!visible.length) return `<span class="row-copy">None saved yet</span>`;
+        return `
+          ${visible.map((name) => {
+            const changed = Boolean(recentChangeForStandardName(name));
+            return `<button class="chip-button compact ${changed ? "changed" : ""}" type="button" data-watch-standard="${esc(name)}">${esc(name)}</button>`;
+          }).join("")}
+          ${hiddenCount ? `<span class="status-badge dark">+${hiddenCount} more</span>` : ""}
+        `;
+      }
+
       function renderCoverageGaps(queue) {
         const gaps = [];
         const customersWithoutStandards = customers.filter((customer) => !customerStandardNames(customer).length);
@@ -5153,13 +5295,6 @@
           </article>
         `;
         document.getElementById("customerStandardsMatrix").innerHTML = customers.length ? `
-          <div class="standard-map-row header">
-            <span>Customer</span>
-            <span>Confirmed / project standards</span>
-            <span>AI suggested standards</span>
-            <span>Change status</span>
-            <span>Owner / task status</span>
-          </div>
           ${customers
             .slice()
             .sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")))
@@ -5169,25 +5304,39 @@
               const matches = customerChangeMatches(customer);
               const customerTasks = tasks.filter((task) => normalize(task.customerName) === normalize(customer.name));
               const reviewStates = matches.map((match) => existingImpactReview(customer, match.name, match.change)).filter(Boolean);
+              const pendingReviews = Math.max(0, matches.length - reviewStates.length);
               return `
-                <div class="standard-map-row">
-                  <div>
+                <article class="customer-standard-card ${matches.length ? "has-change" : ""}">
+                  <div class="customer-standard-main">
                     <h4>${esc(customer.name)}</h4>
-                    <p class="row-copy">${esc(customer.sector || "Unknown sector")} | ${esc(customer.owner || "NA team")}</p>
+                    <p class="row-copy">${esc(shortSummary(customer.summary, 220) || "No short customer description saved yet.")}</p>
+                    <div class="customer-standard-meta">
+                      <span class="status-badge dark">${esc(customer.sector || "Unknown sector")}</span>
+                      <span class="status-badge dark">${esc(regionsText(customer.markets))}</span>
+                    </div>
+                  </div>
+                  <div class="customer-standard-standards">
+                    <div class="standard-mini-panel">
+                      <h5>Confirmed / project standards</h5>
+                      <div class="standard-mini-list">${renderCompactStandardButtons(confirmed, 6)}</div>
+                    </div>
+                    <div class="standard-mini-panel">
+                      <h5>AI suggested standards</h5>
+                      <div class="standard-mini-list">${renderCompactStandardButtons(suggested, 6)}</div>
+                    </div>
+                  </div>
+                  <div class="customer-standard-actions">
+                    <div class="customer-standard-status">
+                      <span class="status-badge ${matches.length ? "warn" : "ok"}">${matches.length ? `${matches.length} change match${matches.length === 1 ? "" : "es"}` : "No change match"}</span>
+                      ${reviewStates.length ? `<span class="status-badge ok">${reviewStates.length} reviewed</span>` : ""}
+                      ${pendingReviews ? `<span class="status-badge warn">${pendingReviews} to review</span>` : ""}
+                      <span class="status-badge ${customer.hypercare === "Active" ? "ok" : "dark"}">${customer.hypercare === "Active" ? "Notify on change" : "Not watched"}</span>
+                      <span class="status-badge dark">Owner: ${esc(customer.owner || "NA team")}</span>
+                      <span class="status-badge ${customerTasks.length ? "warn" : "ok"}">${customerTasks.length ? `${customerTasks.length} task${customerTasks.length === 1 ? "" : "s"}` : "No open task"}</span>
+                    </div>
                     <button class="chip-button" type="button" data-watch-customer="${esc(recordKey(profileKey(customer)))}">Open profile</button>
                   </div>
-                  <div class="tags">${renderStandardButtons(confirmed)}</div>
-                  <div class="tags">${renderStandardButtons(suggested)}</div>
-                  <div class="tags">
-                    <span class="tag ${matches.length ? "warn" : "ok"}">${matches.length ? `${matches.length} change match${matches.length === 1 ? "" : "es"}` : "No change match"}</span>
-                    ${reviewStates.length ? `<span class="tag ok">${reviewStates.length} reviewed</span>` : ""}
-                    <span class="tag ${customer.hypercare === "Active" ? "ok" : "dark"}">${customer.hypercare === "Active" ? "Notify" : "Not watched"}</span>
-                  </div>
-                  <div class="tags">
-                    <span class="tag">Owner: ${esc(customer.owner || "NA team")}</span>
-                    <span class="tag ${customerTasks.length ? "warn" : "ok"}">${customerTasks.length ? `${customerTasks.length} task${customerTasks.length === 1 ? "" : "s"}` : "No open task"}</span>
-                  </div>
-                </div>
+                </article>
               `;
             }).join("")}
         ` : `
