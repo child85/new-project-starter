@@ -2166,6 +2166,31 @@
         color: var(--blue-dark);
       }
 
+      .api-warning {
+        display: grid;
+        gap: 10px;
+        margin: 0 26px 22px;
+        padding: 18px 20px;
+        border: 1px solid #d5a34a;
+        border-left: 4px solid #d5a34a;
+        background: #fff9ec;
+      }
+
+      .api-warning strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .api-warning p {
+        margin: 0;
+        color: var(--copy);
+        line-height: 1.55;
+      }
+
+      .api-warning.hidden {
+        display: none;
+      }
+
       .workflow-step,
       .command-card,
       .recommendation-box {
@@ -2372,6 +2397,11 @@
                   <textarea id="lookupNotes" hidden></textarea>
                   <button class="button" id="runLookup" type="submit">Find customer</button>
                 </form>
+                <div id="lookupApiWarning" class="api-warning hidden">
+                  <strong>Customer lookup is not connected yet.</strong>
+                  <p>This browser/domain does not have the AWS API endpoint saved. Open Settings, paste the API Gateway URL, save it, then test the endpoint.</p>
+                  <button class="button secondary" id="openSettingsFromLookup" type="button">Open Settings</button>
+                </div>
                 <div id="enrichmentProgress" class="work-visual hidden">
                   <strong id="lookupStepTitle">Preparing customer lookup</strong>
                   <div class="progress-rail"><span></span></div>
@@ -3565,6 +3595,10 @@
         document.getElementById("apiMode").textContent = modeText || storageModeLabel();
       }
 
+      function showLookupApiWarning(show) {
+        document.getElementById("lookupApiWarning")?.classList.toggle("hidden", !show);
+      }
+
       function appStatePayload() {
         return {
           standards,
@@ -4011,10 +4045,12 @@
         };
         if (!input.name.trim()) return;
         if (!getApiUrl()) {
-          setStatus("Connect the AWS API endpoint in Settings before adding real customers.");
+          showLookupApiWarning(true);
+          setStatus("Customer lookup is blocked because this domain does not have the AWS API endpoint saved yet.", "Storage: endpoint missing");
           return;
         }
 
+        showLookupApiWarning(false);
         document.getElementById("runLookup").disabled = true;
         document.getElementById("saveResult")?.setAttribute("disabled", "disabled");
         document.getElementById("candidateBox").classList.add("hidden");
@@ -6124,15 +6160,24 @@
         document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity, enrich the profile, and show a summary before anything is saved.";
         document.getElementById("candidateBox").classList.add("hidden");
         document.getElementById("saveVisual").classList.add("hidden");
+        showLookupApiWarning(false);
         showEnrichmentProgress(false);
         selectedRegions = new Set(["Global"]);
         document.getElementById("candidateDialog").classList.remove("hidden");
         document.getElementById("lookupName").focus();
       });
 
+      document.getElementById("openSettingsFromLookup").addEventListener("click", () => {
+        document.getElementById("candidateDialog").classList.add("hidden");
+        activateView("setup");
+        document.getElementById("apiEndpoint").focus();
+        document.getElementById("apiSetupStatus").textContent = "Paste the API Gateway URL here, save it, then use Test saved endpoint before adding a customer.";
+      });
+
       ["lookupName", "lookupSector", "lookupSize", "lookupWebsite", "lookupNotes"].forEach((id) => {
         document.getElementById(id)?.addEventListener("input", () => {
           document.getElementById("candidateBox").classList.add("hidden");
+          showLookupApiWarning(false);
         });
       });
 
@@ -6279,6 +6324,7 @@
         document.getElementById("apiSetupStatus").textContent = value
           ? "Endpoint saved. Use Test saved endpoint to confirm the Lambda connection."
           : "Endpoint cleared. Backend enrichment and shared storage are disconnected.";
+        if (value) showLookupApiWarning(false);
         setStatus(value ? "AWS API endpoint saved. Loading shared workspace data..." : "API endpoint cleared. Backend enrichment and shared storage are disconnected.");
         if (value) loadSharedAppState();
       });
