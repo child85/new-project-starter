@@ -73,6 +73,7 @@ The Lambda supports these task types through the same API Gateway endpoint:
 
 - Customer enrichment: send a customer payload with `name`, optional hints, and `standards`.
 - Standards enrichment: send `{ "task": "standards-update", "standards": [...] }`.
+- Backend health check: send `{ "task": "health-check" }`.
 - Shared state load: send `{ "task": "state-load" }`.
 - Shared state save: send `{ "task": "state-save", "state": { ... } }`.
 

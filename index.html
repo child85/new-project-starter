@@ -3782,20 +3782,13 @@
           return;
         }
         document.getElementById("testApiEndpoint").disabled = true;
-        status.textContent = "Testing API Gateway endpoint with a BMW customer enrichment request...";
+        status.textContent = "Testing API Gateway endpoint and Lambda health...";
         try {
-          const result = await enrichWithApi({
-            name: "BMW",
-            sector: "Automotive",
-            size: "Global enterprise",
-            website: "https://www.bmw.com",
-            markets: ["North America", "EU", "Global"],
-            notes: "Endpoint connection test from Assurance Intelligence Hub."
-          });
-          const customer = normalizeApiResult(result);
-          status.textContent = customer?.name
-            ? `Connected. Lambda returned an enrichment profile for ${customer.name}.`
-            : "Connected, but the response shape was not recognized. Check the Lambda response body.";
+          const result = await callStateApi("health-check");
+          const checks = result.checks || {};
+          const storage = checks.sharedStorage || "unknown";
+          const ai = checks.aiProvider || "unknown";
+          status.textContent = `Connected. Lambda health check passed. AI: ${ai}. Shared storage: ${storage}.`;
         } catch (error) {
           status.textContent = `Connection failed: ${error.message}. Check API Gateway route, CORS, Lambda trigger permission, and Lambda environment variables.`;
         } finally {

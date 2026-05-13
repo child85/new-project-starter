@@ -29,6 +29,11 @@ export async function handler(event) {
 
   try {
     const body = parseRequestBody(event);
+    if (body.task === "health-check") {
+      const result = await healthCheck();
+      return response(200, result);
+    }
+
     if (body.task === "state-load") {
       const result = await loadAppState();
       return response(200, result);
@@ -82,6 +87,39 @@ function parseRequestBody(event) {
     ? Buffer.from(event.body, "base64").toString("utf8")
     : event.body;
   return JSON.parse(rawBody || "{}");
+}
+
+async function healthCheck() {
+  const checks = {
+    lambda: "ok",
+    aiProvider: process.env.ANTHROPIC_API_KEY
+      ? `anthropic:${process.env.ANTHROPIC_MODEL || "default"}`
+      : process.env.OPENAI_API_KEY
+        ? `openai:${process.env.OPENAI_MODEL || "default"}`
+        : "rule-based fallback",
+    sharedStorage: process.env.APP_STATE_TABLE ? "configured" : "not configured",
+    customerAuditTable: process.env.CUSTOMER_TABLE ? "configured" : "not configured",
+    standardsAuditTable: process.env.STANDARDS_TABLE ? "configured" : "not configured"
+  };
+
+  let updatedAt = "";
+  if (process.env.APP_STATE_TABLE) {
+    try {
+      const state = await loadAppState();
+      checks.sharedStorage = "connected";
+      updatedAt = state.updatedAt || "";
+    } catch (error) {
+      checks.sharedStorage = "error";
+      checks.sharedStorageDetail = error.message;
+    }
+  }
+
+  return {
+    status: checks.sharedStorage === "error" ? "degraded" : "ok",
+    checks,
+    updatedAt,
+    timestamp: new Date().toISOString()
+  };
 }
 
 function appStateTableName() {
@@ -701,7 +739,7 @@ function keyProductsFor(sector) {
 }
 
 function inferSector(text) {
-  if (text.includes("vehicle") || text.includes("automotive") || text.includes("bmw")) return "Automotive";
+  if (text.includes("vehicle") || text.includes("automotive")) return "Automotive";
   if (text.includes("industrial") || text.includes("automation") || text.includes("plant") || text.includes("ot")) return "Industrial / OT";
   if (text.includes("medical") || text.includes("health")) return "Medical Devices";
   if (text.includes("finance") || text.includes("bank")) return "Financial Services";
