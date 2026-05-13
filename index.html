@@ -66,6 +66,18 @@
         display: flex;
         align-items: flex-start;
         gap: 14px;
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .brand:hover .brand-title strong,
+      .brand:focus-visible .brand-title strong {
+        color: var(--blue-dark);
+      }
+
+      .brand:focus-visible {
+        outline: 3px solid var(--blue);
+        outline-offset: 6px;
       }
 
       .brand-mark {
@@ -2082,13 +2094,13 @@
 
     <header class="site-header">
       <div class="header-inner">
-        <div class="brand" aria-label="TRNA AI Hub">
+        <a class="brand" id="homeBrand" href="#watch" aria-label="Go to Daily Watch start">
           <div class="brand-mark">TRNA</div>
           <div class="brand-title">
             <strong>Assurance Intelligence Hub</strong>
             <span>TRNA AI Hub</span>
           </div>
-        </div>
+        </a>
         <div class="utility">
           <div class="global-search">
             <span class="search-icon" aria-hidden="true"></span>
@@ -6081,6 +6093,10 @@
         if (!event.target.closest(".global-search")) {
           document.getElementById("globalSearchResults")?.classList.add("hidden");
         }
+      });
+      document.getElementById("homeBrand").addEventListener("click", (event) => {
+        event.preventDefault();
+        activateView("watch", { scrollTop: true });
       });
 
       let currentViewId = document.querySelector(".app-view.active")?.id || "watch";
