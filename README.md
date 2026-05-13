@@ -77,6 +77,8 @@ The Lambda supports these task types through the same API Gateway endpoint:
 - Shared state load: send `{ "task": "state-load" }`.
 - Shared state save: send `{ "task": "state-save", "state": { ... } }`.
 
+Customer enrichment should return AI-backed profile data. If Claude or OpenAI is missing or failing, the Lambda returns a rule-based fallback with low confidence. The website blocks saving that fallback profile so unknown website, headquarters, employee count, or revenue estimates are not mistaken for confirmed customer intelligence.
+
 ## AWS Setup Checklist
 
 1. Host `index.html` in the S3 static website bucket.

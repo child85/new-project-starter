@@ -3856,6 +3856,14 @@
             setStatus(`AI backend unavailable: ${apiError.message}. Check the API Gateway route, Lambda deployment, and environment variables.`);
             return;
           }
+          const backendCandidates = normalizeApiCandidates(result);
+          if (!confirmed && backendCandidates.length > 1) {
+            clearInterval(progressTimer);
+            showEnrichmentProgress(false);
+            renderCandidates(backendCandidates, input);
+            setStatus("The AI backend found multiple possible customer matches. Choose the correct one before enrichment continues.");
+            return;
+          }
           setLookupStep(2, "Inferring likely standards and compliance exposure");
           const apiProfile = normalizeApiResult(result);
           if (!apiProfile?.name) {
@@ -3863,6 +3871,9 @@
             return;
           }
           currentResult = normalizeCustomerRecord(apiProfile);
+          if (isFallbackProfile(currentResult)) {
+            currentResult.confidence = "low";
+          }
           if (!currentResult.employeeEstimate) {
             currentResult.employeeEstimate = employeeEstimateFor(currentResult.size, currentResult.sector, currentResult.markets);
           }
@@ -3914,8 +3925,29 @@
           projects: Array.isArray(customer.projects) ? customer.projects : [],
           actions: customer.actions || customer.engagement_actions || customer.suggested_tasks?.map((task) => task.title || task) || [],
           evidenceNotes: customer.evidenceNotes || customer.evidence_notes || [],
-          confidence: customer.confidence || "medium"
+          confidence: customer.confidence || "medium",
+          backendStatus: result.status || customer.status || "",
+          backendNotice: result.notice || customer.notice || ""
         };
+      }
+
+      function normalizeApiCandidates(result) {
+        return safeList(result?.candidates || result?.candidateSuggestions || result?.possibleMatches)
+          .map((candidate) => ({
+            name: candidate.name || candidate.legalName || candidate.title || "",
+            website: candidate.website || candidate.url || "",
+            headquarters: candidate.headquarters || candidate.hq || "Unknown - verify",
+            sector: candidate.sector || "Unknown sector",
+            summary: candidate.summary || candidate.why || "Possible match returned by the AI backend.",
+            confidence: candidate.confidence || "medium"
+          }))
+          .filter((candidate) => candidate.name);
+      }
+
+      function isFallbackProfile(profile) {
+        const status = normalize(profile?.backendStatus || "");
+        const notes = normalize([...safeList(profile?.sourceNotes), ...safeList(profile?.evidenceNotes), profile?.backendNotice].join(" "));
+        return status.includes("fallback") || notes.includes("fallback") || notes.includes("ai provider was not available");
       }
 
       function renderCandidates(candidates, input) {
@@ -3935,7 +3967,9 @@
               <div>
                 <strong>${esc(candidate.name)}</strong>
                 <p class="row-copy">${esc(candidate.headquarters)} | ${esc(candidate.sector)} | ${esc(candidate.summary)}</p>
+                ${candidate.website ? `<p class="row-copy">${externalLink(candidate.website, candidate.website)}</p>` : ""}
               </div>
+              <span class="tag ${candidate.confidence === "high" ? "ok" : "warn"}">${esc(candidate.confidence || "medium")} confidence</span>
               <button class="button secondary" type="button" data-candidate="${index}">Use this customer</button>
             </article>
           `).join("")}
@@ -3968,8 +4002,11 @@
         const box = document.getElementById("candidateBox");
         document.getElementById("candidateDialog").classList.remove("hidden");
         document.getElementById("candidateDialog").classList.add("review-mode");
-        document.getElementById("candidateDialogTitle").textContent = "Customer found";
-        document.getElementById("candidateDialogCopy").textContent = "Review the quick summary. Save it if this is the right customer, or open the details only if something needs editing.";
+        const fallback = isFallbackProfile(profile);
+        document.getElementById("candidateDialogTitle").textContent = fallback ? "AI enrichment needs attention" : "Customer found";
+        document.getElementById("candidateDialogCopy").textContent = fallback
+          ? "The backend returned a rule-based fallback instead of real AI-enriched customer data. Fix the AI provider and run the lookup again before saving."
+          : "Review the quick summary. Save it if this is the right customer, or open the details only if something needs editing.";
         box.classList.remove("hidden");
         const likely = standardSummaryItems(profile);
         const standardNames = likely.map((item) => item.name).filter(Boolean);
@@ -3978,6 +4015,13 @@
         const actionNotes = safeList(profile.actions).slice(0, 10);
         box.innerHTML = `
           <form class="review-form" id="quickCustomerProfileForm">
+            ${fallback ? `
+              <section class="info-card" style="border-color: var(--warn); background: #fff8ef;">
+                <strong>AI enrichment did not complete</strong>
+                <p>This profile came from the rule-based fallback, so it should not be saved as customer intelligence yet. Check the Lambda AI key/model configuration, then search again.</p>
+                ${profile.backendNotice ? `<p class="row-copy">${esc(profile.backendNotice)}</p>` : ""}
+              </section>
+            ` : ""}
             <section class="review-summary-card">
               <div class="row-top">
                 <div>
@@ -4076,7 +4120,7 @@
             </details>
 
             <div class="review-actions">
-              <button class="button" id="confirmSaveCustomer" type="submit">Save customer</button>
+              <button class="button" id="confirmSaveCustomer" type="submit" ${fallback ? "disabled" : ""}>${fallback ? "Fix AI backend before saving" : "Save customer"}</button>
               <button class="button secondary" id="reviewFullCustomer" type="button">Open full editor</button>
             </div>
           </form>
@@ -4084,6 +4128,10 @@
         `;
         document.getElementById("quickCustomerProfileForm").addEventListener("submit", (event) => {
           event.preventDefault();
+          if (isFallbackProfile(profile)) {
+            setStatus("This result is a fallback profile. Fix the AI backend and run the lookup again before saving.");
+            return;
+          }
           currentResult = readCustomerReviewForm(profile);
           saveLookupProfile(currentResult);
           showSaveVisual(`${currentResult.name} saved.`);

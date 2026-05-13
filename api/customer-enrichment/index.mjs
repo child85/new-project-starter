@@ -63,6 +63,7 @@ export async function handler(event) {
     } catch (aiError) {
       result = deterministicEnrichment(body);
       result.status = "ai_error_fallback";
+      result.notice = `AI enrichment failed: ${aiError.message}`;
       result.customer.evidence_notes = [
         ...(result.customer.evidence_notes || []),
         `AI enrichment failed: ${aiError.message}`
@@ -622,6 +623,16 @@ ${JSON.stringify(standards, null, 2)}
 Return this exact top-level shape:
 {
   "status": "completed",
+  "candidates": [
+    {
+      "name": "possible legal or brand entity",
+      "website": "https://...",
+      "headquarters": "city, country",
+      "sector": "sector",
+      "summary": "why this may be the intended customer",
+      "confidence": "low|medium|high"
+    }
+  ],
   "customer": {
     "name": "confirmed customer name",
     "website": "https://...",
@@ -654,6 +665,7 @@ Return this exact top-level shape:
 
 Rules:
 - Users are NA-based, but customers may be global and may have EU, UK, China, or other subsidiaries.
+- If the customer name is ambiguous, abbreviated, or low-confidence, return 2 to 5 candidates. If the intended company is obvious, return one candidate matching the final customer.
 - Provide a practical business profile, not only compliance guesses. Put employee estimate, revenue estimate, founded year, ownership, products/services, subsidiaries, and markets in their dedicated JSON fields, not only inside the summary.
 - Keep summary to one or two short plain-English sentences. Do not bury employee count, revenue, or source caveats in the summary if a dedicated field exists.
 - If a fact is uncertain, use "Unknown - verify" or an explicit range instead of inventing precision.
@@ -672,6 +684,8 @@ function deterministicEnrichment(body) {
 
   return {
     status: "completed_rule_based_fallback",
+    notice: "Rule-based fallback was used. Configure or fix the AI provider before treating this as customer intelligence.",
+    candidates: [],
     customer: {
       name,
       website: body.website || body.confirmedEntity?.website || "",
@@ -679,15 +693,15 @@ function deterministicEnrichment(body) {
       sector,
       subSector: sectorSubSector(sector),
       size: body.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"),
-      employeeEstimate: employeeEstimateFor(body.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"), sector, markets),
-      revenueEstimate: revenueEstimateFor(body.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise")),
+      employeeEstimate: body.size ? employeeEstimateFor(body.size, sector, markets) : "Unknown - verify with AI or customer source",
+      revenueEstimate: body.size ? revenueEstimateFor(body.size) : "Unknown - verify with AI or customer source",
       yearFounded: "Unknown - verify",
       ownership: "Unknown - verify",
       keyProducts: keyProductsFor(sector),
       targetMarkets: markets,
       subsidiaries: [],
       markets,
-      summary: `${name} appears to fit the ${sector} context with ${markets.join(", ")} exposure. Review these AI-assisted guesses before treating them as confirmed customer intelligence.`,
+      summary: `${name} was not enriched by AI. The fallback only matched the entered name and market hints to a broad ${sector} profile, so verify the entity before saving.`,
       knownStandards: [],
       guessedStandards: likelyStandards.map((item) => item.name),
       likelyStandards,
@@ -695,13 +709,14 @@ function deterministicEnrichment(body) {
       owner: "NA team",
       actions: engagementActions(sector, markets, name),
       evidenceNotes: [
-        "Deterministic fallback was used because no Anthropic or OpenAI API key is configured.",
+        "Rule-based fallback was used because the AI provider was not available.",
         "Confirm customer facts, subsidiaries, and standards before outreach."
       ],
       sourceNotes: [
-        "Fallback profile uses user-entered hints and sector logic only. Configure Claude for AI-enriched business metadata."
+        "Fallback profile uses user-entered hints and sector logic only. Configure or repair Claude for AI-enriched business metadata."
       ],
-      confidence: "medium"
+      sourceConfidence: "Rule-based fallback only - AI enrichment did not run",
+      confidence: "low"
     }
   };
 }
