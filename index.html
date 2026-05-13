@@ -2595,6 +2595,11 @@
                   <p id="standardAiStatus">Enter a standard name, then let AI draft the description, source review fields, markets, topics, and internal notes.</p>
                   <button class="button secondary" id="enrichStandardWithAi" type="button">Enrich standard with AI</button>
                 </div>
+                <div id="standardApiWarning" class="api-warning hidden">
+                  <strong>AI standard enrichment is not connected on this domain.</strong>
+                  <p>Open Settings, paste the API Gateway URL, save it, and test the endpoint. Without that, this form can only create a local draft from known patterns.</p>
+                  <button class="button secondary" id="openSettingsFromStandard" type="button">Open Settings</button>
+                </div>
                 <div class="split">
                   <div class="field">
                     <label for="stdDomain">Domain</label>
@@ -3597,6 +3602,10 @@
 
       function showLookupApiWarning(show) {
         document.getElementById("lookupApiWarning")?.classList.toggle("hidden", !show);
+      }
+
+      function showStandardApiWarning(show) {
+        document.getElementById("standardApiWarning")?.classList.toggle("hidden", !show);
       }
 
       function appStatePayload() {
@@ -4962,28 +4971,29 @@
       }
 
       function enrichStandardSeed(seed) {
-        const name = seed.name || "";
-        const text = normalize(`${name} ${seed.domain} ${seed.sector} ${seed.topics}`);
+        const catalogRecord = knownStandardDraft(seed);
+        const name = catalogRecord?.name || seed.name || "";
+        const text = normalize(`${name} ${catalogRecord?.domain || seed.domain} ${catalogRecord?.sector || seed.sector} ${catalogRecord?.topics || seed.topics}`);
         const known = standards.find((standard) => normalize(standard.name) === normalize(name));
         if (known) return { ...known, sourceStatus: known.sourceStatus || "matched_existing_record" };
         const safetySignals = ["safety", "sil", "61508", "61511", "26262", "13849", "62061", "functional"];
-        const domain = seed.domain && seed.domain !== "Cybersecurity"
+        const domain = catalogRecord?.domain || (seed.domain && seed.domain !== "Cybersecurity"
           ? seed.domain
-          : (safetySignals.some((signal) => text.includes(signal)) ? "Functional Safety" : (seed.domain || "Cybersecurity"));
-        const sector = seed.sector || (text.includes("vehicle") || text.includes("automotive") ? "Automotive" : text.includes("industrial") || text.includes("ot") ? "Industrial / OT" : "ICT / Connected Products");
-        const markets = safeList(seed.markets).length ? safeList(seed.markets) : (text.includes("eu") ? ["EU", "Global"] : ["Global"]);
-        const topics = safeList(seed.topics).length ? safeList(seed.topics) : unique([name, domain, sector].join(" ").split(" ").filter((item) => item.length > 3)).slice(0, 5);
+          : (safetySignals.some((signal) => text.includes(signal)) ? "Functional Safety" : (seed.domain || "Cybersecurity")));
+        const sector = catalogRecord?.sector || seed.sector || (text.includes("vehicle") || text.includes("automotive") ? "Automotive" : text.includes("industrial") || text.includes("ot") ? "Industrial / OT" : "ICT / Connected Products");
+        const markets = safeList(catalogRecord?.markets).length ? safeList(catalogRecord.markets) : (safeList(seed.markets).length ? safeList(seed.markets) : (text.includes("eu") ? ["EU", "Global"] : ["Global"]));
+        const topics = safeList(catalogRecord?.topics).length ? safeList(catalogRecord.topics) : (safeList(seed.topics).length ? safeList(seed.topics) : unique([name, domain, sector].join(" ").split(" ").filter((item) => item.length > 3)).slice(0, 5));
         return {
           name,
           domain,
           sector,
           markets,
           topics,
-          description: seed.description || `${name} is a ${domain.toLowerCase()} reference for ${sector.toLowerCase()} contexts. Review the official source and internal notes before using it for customer advice.`,
-          sourceUrl: seed.sourceUrl || "",
-          sourceConfidence: seed.sourceConfidence || (seed.sourceUrl ? "Official source verified" : "AI inferred - verify"),
+          description: catalogRecord?.description || seed.description || `${name} is a ${domain.toLowerCase()} reference for ${sector.toLowerCase()} contexts. Review the official source and internal notes before using it for customer advice.`,
+          sourceUrl: catalogRecord?.sourceUrl || seed.sourceUrl || "",
+          sourceConfidence: catalogRecord?.sourceConfidence || seed.sourceConfidence || (seed.sourceUrl ? "Official source verified" : "AI inferred - verify"),
           watchPriority: seed.watchPriority || "Medium",
-          internalNotes: seed.internalNotes || "AI-assisted draft. Confirm source, applicability, and service angle before publishing broadly.",
+          internalNotes: catalogRecord?.internalNotes || seed.internalNotes || "AI-assisted draft. Confirm source, applicability, and service angle before publishing broadly.",
           changes: seed.changeTitle ? [{
             date: seed.changeDate || isoDateOffset(0),
             title: seed.changeTitle,
@@ -4994,6 +5004,24 @@
           status: "Review",
           sourceStatus: "browser_assisted_draft"
         };
+      }
+
+      function knownStandardDraft(seed) {
+        const name = normalize(seed.name || "");
+        if (name === "cmmc" || name.includes("cybersecurity maturity model certification")) {
+          return {
+            name: "CMMC",
+            domain: "Cybersecurity",
+            sector: "ICT / Connected Products",
+            markets: ["North America", "US"],
+            topics: ["defense contractors", "controlled unclassified information", "supplier cybersecurity", "assessment readiness", "NIST SP 800-171"],
+            description: "CMMC is the U.S. Department of Defense cybersecurity certification program for contractors that handle Federal Contract Information or Controlled Unclassified Information. It helps verify that defense suppliers have required cyber controls in place before working on covered contracts.",
+            sourceUrl: "https://dodcio.defense.gov/CMMC/",
+            sourceConfidence: "Official source saved - verify current rule text",
+            internalNotes: "Strong fit for U.S. defense suppliers, manufacturers, software providers, and service organizations in the DoD supply chain. Review CMMC level, contract clauses, CUI handling, and NIST SP 800-171 alignment before scoping an assessment."
+          };
+        }
+        return null;
       }
 
       function readStandardFormSeed() {
@@ -5034,19 +5062,34 @@
       async function enrichStandardForm() {
         const status = document.getElementById("standardAiStatus");
         const button = document.getElementById("enrichStandardWithAi");
-        const seed = readStandardFormSeed();
+        const seed = { ...readStandardFormSeed() };
+        const knownDraft = knownStandardDraft(seed);
+        if (knownDraft && !seed.sourceUrl) {
+          Object.assign(seed, {
+            domain: knownDraft.domain,
+            sector: knownDraft.sector,
+            markets: knownDraft.markets,
+            topics: knownDraft.topics,
+            description: seed.description || knownDraft.description,
+            sourceUrl: knownDraft.sourceUrl,
+            sourceConfidence: knownDraft.sourceConfidence,
+            internalNotes: seed.internalNotes || knownDraft.internalNotes
+          });
+        }
         if (!seed.name) {
           status.textContent = "Enter a standard or regulation name first.";
           document.getElementById("stdName").focus();
           return;
         }
         button.disabled = true;
+        showStandardApiWarning(!getApiUrl());
         status.textContent = getApiUrl()
           ? "Asking the AWS AI backend to enrich the standard from its source..."
-          : "No AWS API endpoint saved. Creating a browser-assisted draft from the name and hints.";
+          : "AI backend is not connected on this domain. Filling a local draft only.";
         try {
           let record = null;
           if (getApiUrl()) {
+            showStandardApiWarning(false);
             const response = await fetch(getApiUrl(), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -5060,10 +5103,11 @@
           fillStandardForm(enriched);
           status.textContent = record
             ? "AI enrichment filled the draft. Review the fields, then save."
-            : "Browser-assisted draft filled. Review and improve before saving.";
+            : "Local draft filled from known source patterns. Connect the AWS API endpoint for live AI enrichment.";
         } catch (error) {
           const enriched = normalizeStandardRecord(enrichStandardSeed(seed));
           fillStandardForm(enriched);
+          showStandardApiWarning(true);
           status.textContent = `AI enrichment failed: ${error.message}. A local draft was filled so you can continue.`;
         } finally {
           button.disabled = false;
@@ -6241,6 +6285,7 @@
         document.body.appendChild(dialog);
         dialog.classList.remove("hidden");
         document.getElementById("standardAiStatus").textContent = "Enter a standard name, then let AI draft the description, source review fields, markets, topics, and internal notes.";
+        showStandardApiWarning(false);
         if (defaultDomain) document.getElementById("stdDomain").value = defaultDomain;
         document.getElementById("stdName").focus();
       }
@@ -6260,9 +6305,16 @@
         document.getElementById("standardDialog").classList.add("hidden");
         document.getElementById("standardForm").reset();
         document.getElementById("standardAiStatus").textContent = "Enter a standard name, then let AI draft the description, source review fields, markets, topics, and internal notes.";
+        showStandardApiWarning(false);
       });
       document.getElementById("runAiStandardUpdate").addEventListener("click", runAiStandardUpdateScan);
       document.getElementById("enrichStandardWithAi").addEventListener("click", enrichStandardForm);
+      document.getElementById("openSettingsFromStandard").addEventListener("click", () => {
+        document.getElementById("standardDialog").classList.add("hidden");
+        activateView("setup");
+        document.getElementById("apiEndpoint").focus();
+        document.getElementById("apiSetupStatus").textContent = "Paste the API Gateway URL here, save it, then use Test saved endpoint before running AI standard enrichment.";
+      });
 
       document.getElementById("standardForm").addEventListener("submit", (event) => {
         event.preventDefault();
