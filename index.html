@@ -10,15 +10,16 @@
         --blue-dark: #005a96;
         --gold: #b9a150;
         --ink: #1d232b;
+        --copy: #2f3740;
         --muted: #5b6570;
-        --line: #cbd5dc;
-        --page: #dfe5e9;
+        --line: #d5e0e7;
+        --page: #e7edf1;
         --panel: #ffffff;
-        --soft: #eef5fa;
-        --soft-blue: #dff0fa;
+        --soft: #f6f9fb;
+        --soft-blue: #e7f3fa;
         --warn: #a45b00;
         --ok: #177245;
-        --shadow: 0 22px 58px rgba(22, 31, 41, 0.16);
+        --shadow: 0 14px 34px rgba(22, 31, 41, 0.1);
       }
 
       * { box-sizing: border-box; }
@@ -30,6 +31,8 @@
         color: var(--ink);
         background: var(--page);
         font-family: Arial, Helvetica, sans-serif;
+        font-size: 16px;
+        line-height: 1.55;
       }
 
       button,
@@ -1992,7 +1995,210 @@
         line-height: 1.5;
       }
 
+      .detail-list {
+        margin: 6px 0 0;
+        padding-left: 1.05rem;
+        color: var(--copy);
+        font-weight: 400;
+        line-height: 1.55;
+      }
+
+      .detail-list li {
+        margin: 6px 0;
+      }
+
+      .profile-fact-value {
+        color: var(--copy);
+        font-weight: 400;
+      }
+
       .hidden { display: none; }
+
+      /* TUV-inspired readability pass: lighter body typography, softer data containers. */
+      .brand-mark {
+        font-weight: 700;
+      }
+
+      .brand-title strong,
+      .panel-head h2,
+      .panel-head h3,
+      .customer-profile-hero h4,
+      .customer-profile-section h4,
+      .standard-row .row-title strong,
+      .customer-name-button,
+      .review-summary-card h3,
+      .review-section h3 {
+        font-weight: 600;
+      }
+
+      .metric span,
+      label,
+      .profile-fact span,
+      .confidence span,
+      .standard-history-title,
+      .nav-section-label {
+        font-weight: 600;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+
+      .button,
+      .chip,
+      .tag,
+      .text-link,
+      .review-details summary,
+      .action-row::before,
+      .setup-step span,
+      .setup-step strong {
+        font-weight: 600;
+      }
+
+      .panel,
+      .dialog-panel,
+      .form-step,
+      .result-card,
+      .review-details,
+      .review-section,
+      .customer-profile-section,
+      .project-card,
+      .change-card,
+      .setup-step,
+      .standard-choice,
+      .standard-topic-strip,
+      .standard-history,
+      .info-card {
+        border-color: var(--line);
+        box-shadow: none;
+      }
+
+      .panel-head p,
+      .intro-copy p,
+      .result-hero p,
+      .review-section p,
+      .info-card p,
+      .row-title span,
+      .row-copy,
+      .project-card span,
+      .change-card span,
+      .last-change p,
+      .customer-profile-hero p,
+      .standards-route span {
+        color: var(--copy);
+        line-height: 1.58;
+      }
+
+      .tag {
+        border-color: #bfd5e4;
+        color: var(--blue-dark);
+        background: #fbfdff;
+        font-size: 0.9rem;
+        line-height: 1.25;
+      }
+
+      .chip {
+        font-weight: 600;
+      }
+
+      .profile-grid {
+        gap: 1px;
+        border: 1px solid var(--line);
+        background: var(--line);
+      }
+
+      .profile-fact {
+        min-height: auto;
+        padding: 18px 20px;
+      }
+
+      .profile-fact span {
+        margin-bottom: 6px;
+        font-size: 0.86rem;
+      }
+
+      .profile-fact strong {
+        display: block;
+        color: var(--ink);
+        font-size: 1rem;
+        font-weight: 600;
+        line-height: 1.45;
+      }
+
+      .info-card {
+        padding: 18px 20px;
+        background: #ffffff;
+      }
+
+      .info-card strong {
+        color: var(--ink);
+        font-weight: 600;
+      }
+
+      .review-summary-card {
+        border-color: var(--line);
+        border-left-width: 4px;
+        background: #fbfdff;
+      }
+
+      .standard-row {
+        border: 1px solid var(--line);
+        border-left: 5px solid var(--blue);
+        box-shadow: none;
+      }
+
+      .standard-row > .row-top,
+      .standard-detail,
+      .controls,
+      .status-line {
+        background: #f8fafc;
+      }
+
+      .standard-row.expanded {
+        border-color: var(--blue);
+      }
+
+      .last-change {
+        border-color: #bfd5e4;
+        border-left-width: 4px;
+        background: #eef7fc;
+      }
+
+      .text-link {
+        color: var(--blue-dark);
+      }
+
+      .workflow-step,
+      .command-card,
+      .recommendation-box {
+        border-left-width: 4px;
+      }
+
+      .workflow-step {
+        min-height: auto;
+        border-top-width: 3px;
+      }
+
+      .workflow-step span,
+      .command-card span,
+      .metric span {
+        font-size: 0.88rem;
+      }
+
+      .workflow-step strong,
+      .system-status-card strong,
+      .command-card strong,
+      .subpanel h4,
+      .form-step h4 {
+        font-weight: 500;
+      }
+
+      .metric strong {
+        font-weight: 500;
+      }
+
+      .command-card:hover,
+      .command-card:focus-visible {
+        box-shadow: none;
+      }
 
       @media (max-width: 1180px) {
         .section-grid,
@@ -4342,12 +4548,12 @@
       }
 
       function fact(label, value, html = false) {
-        return `<div class="profile-fact"><span>${esc(label)}</span><strong>${html ? value : esc(value)}</strong></div>`;
+        return `<div class="profile-fact"><span>${esc(label)}</span>${html ? `<div class="profile-fact-value">${value}</div>` : `<strong>${esc(value)}</strong>`}</div>`;
       }
 
       function detailList(values, emptyText = "Not saved yet") {
         const list = safeList(values).map(itemLabel).filter(Boolean);
-        return list.length ? renderTags(list) : `<span class="row-copy">${esc(emptyText)}</span>`;
+        return list.length ? `<ul class="detail-list">${list.map((value) => `<li>${esc(value)}</li>`).join("")}</ul>` : `<span class="row-copy">${esc(emptyText)}</span>`;
       }
 
       function sourceLinkList(values) {
