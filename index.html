@@ -104,26 +104,13 @@
         font-size: 1rem;
       }
 
-      .utility-button {
-        min-height: 42px;
-        padding: 0 16px;
-        border: 1px solid var(--blue);
-        color: var(--blue-dark);
-        background: #ffffff;
-        font-weight: 800;
-      }
-
-      .utility-button.primary {
-        color: #ffffff;
-        background: var(--blue);
-      }
-
       .global-search {
         position: relative;
         display: flex;
         align-items: center;
         gap: 10px;
-        min-width: 320px;
+        width: min(520px, 42vw);
+        min-width: 360px;
         min-height: 42px;
         padding: 0 12px;
         border: 1px solid var(--line);
@@ -2075,9 +2062,9 @@
         }
 
         .utility,
-        .global-search,
-        .utility-button {
+        .global-search {
           width: 100%;
+          min-width: 0;
         }
 
         .content {
@@ -2103,8 +2090,6 @@
           </div>
         </div>
         <div class="utility">
-          <button class="utility-button primary" id="headerAddCustomer" type="button">Add Customer</button>
-          <button class="utility-button" data-view="setup" type="button">Settings</button>
           <div class="global-search">
             <span class="search-icon" aria-hidden="true"></span>
             <input id="globalSearch" type="search" placeholder="Search customers, standards, tasks" autocomplete="off" aria-label="Search customers, standards, tasks" />
@@ -5916,10 +5901,6 @@
       }
 
       document.getElementById("lookupForm").addEventListener("submit", runLookup);
-      document.getElementById("headerAddCustomer").addEventListener("click", () => {
-        activateView("customers", { scrollTop: false });
-        requestAnimationFrame(() => document.getElementById("openCustomerDialog").click());
-      });
       document.getElementById("openCustomerDialog").addEventListener("click", () => {
         document.getElementById("candidateDialogTitle").textContent = "Add Customer";
         document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity, enrich the profile, and show a summary before anything is saved.";
