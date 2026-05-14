@@ -356,16 +356,76 @@ async function enrichWithClaude(body) {
 
 function parseJsonObject(text) {
   const trimmed = String(text || "").trim();
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-    if (fenced) return JSON.parse(fenced[1].trim());
-    const start = trimmed.indexOf("{");
-    const end = trimmed.lastIndexOf("}");
-    if (start >= 0 && end > start) return JSON.parse(trimmed.slice(start, end + 1));
-    throw new Error("AI provider returned text that was not valid JSON.");
+  const candidates = [];
+  candidates.push(trimmed);
+
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) candidates.push(fenced[1].trim());
+
+  const extracted = extractFirstJsonObject(trimmed);
+  if (extracted) candidates.push(extracted);
+
+  for (const candidate of candidates) {
+    const parsed = tryParseJson(candidate);
+    if (parsed) return parsed;
   }
+
+  for (const candidate of candidates) {
+    const repaired = repairAiJson(candidate);
+    const parsed = tryParseJson(repaired);
+    if (parsed) return parsed;
+  }
+
+  throw new Error("AI provider returned text that was not valid JSON.");
+}
+
+function tryParseJson(value) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function extractFirstJsonObject(text) {
+  const start = text.indexOf("{");
+  if (start < 0) return "";
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = inString;
+      continue;
+    }
+    if (char === "\"") {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+    if (char === "{") depth += 1;
+    if (char === "}") depth -= 1;
+    if (depth === 0) return text.slice(start, index + 1);
+  }
+  const end = text.lastIndexOf("}");
+  return end > start ? text.slice(start, end + 1) : "";
+}
+
+function repairAiJson(text) {
+  return String(text || "")
+    .replace(/^\uFEFF/, "")
+    .replace(/[“”]/g, "\"")
+    .replace(/[‘’]/g, "'")
+    .replace(/,\s*([}\]])/g, "$1")
+    .replace(/("(?:[^"\\]|\\.)*")(\s*\n\s*)(")/g, "$1,$2$3")
+    .replace(/([}\]])(\s*\n\s*)(")/g, "$1,$2$3")
+    .replace(/(")(\s*\n\s*)([{\[])/g, "$1,$2$3")
+    .replace(/([}\]])(\s*\n\s*)([{\[])/g, "$1,$2$3");
 }
 
 async function enrichStandardsUpdate(body) {
