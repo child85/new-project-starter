@@ -1121,6 +1121,7 @@ Return this exact shape:
 Rules:
 - Do not say the customer is affected merely because the standard changed. Tie impact to confirmed/project standards first, then guessed standards, markets, sector, products, and subsidiaries.
 - If the change note is only a watch item or not a real public change, say that clearly in specificChange and set decision to "Needs more review" unless project evidence makes it relevant.
+- If the change note says no official amendment/change has been published yet, state that no customer notification is needed until an actual public change is saved.
 - Keep it practical for a consultant deciding whether to notify a customer owner.
 - Separate known facts from assumptions.`;
 }
@@ -1148,10 +1149,10 @@ function deterministicImpactRecommendation(input) {
   const guessed = input.customer.guessedStandards.some((name) => normalize(name) === normalize(input.standard.name));
   const projects = input.customer.projects.filter((project) => project.standards.some((name) => normalize(name) === normalize(input.standard.name)));
   const text = normalize(`${input.change.title} ${input.change.summary} ${input.change.impact}`);
-  const isWatchOnly = /watch item|track public|source review|review this/i.test(`${input.change.title} ${input.change.summary}`);
+  const isWatchOnly = isMonitoringOnlyChange(input.change);
   const signalCount = ["shall", "must", "deadline", "effective", "mandatory", "new requirement", "certification", "type approval", "safety", "cybersecurity"].filter((signal) => text.includes(signal)).length;
   const level = !isWatchOnly && (confirmed || projects.length || signalCount >= 3) ? "High" : signalCount || guessed ? "Medium" : "Low";
-  const decision = isWatchOnly && !projects.length ? "Needs more review" : confirmed || projects.length || guessed ? "Relevant" : "Needs more review";
+  const decision = isWatchOnly ? "Needs more review" : confirmed || projects.length || guessed ? "Relevant" : "Needs more review";
   const projectNames = projects.map((project) => project.name).filter(Boolean);
   const specificChange = input.change.summary
     ? `${input.change.title}: ${input.change.summary}`
@@ -1164,7 +1165,7 @@ function deterministicImpactRecommendation(input) {
     input.customer.sector ? `Customer sector: ${input.customer.sector}.` : ""
   ].filter(Boolean);
   const customerImpact = isWatchOnly
-    ? `This saved note is not specific enough to justify an external customer notification by itself. Use it to verify whether ${input.customer.name}'s ${input.customer.sector || "business"} scope has a real exposure to ${input.standard.name}.`
+    ? `This is a monitoring note, not an actual published change. It should not trigger customer outreach until a real amendment, interpretation, or requirement change is saved.`
     : `${input.customer.name} may need a review of affected ${input.customer.sector || "business"} evidence, project claims, or market-access assumptions tied to ${input.standard.name}.`;
   return {
     status: "local_structured_review",
@@ -1196,6 +1197,25 @@ function deterministicImpactRecommendation(input) {
     notificationDraft: `${input.customer.name}: ${input.standard.name} has a saved change note (${input.change.date || "date unknown"}). Please review whether this affects active projects, delivered evidence, or planned compliance work before customer outreach.`,
     reviewNote: `${level} impact review. Specific change: ${specificChange} Customer impact: ${customerImpact}`
   };
+}
+
+function isMonitoringOnlyChange(change) {
+  const text = normalize(`${change?.title || ""} ${change?.summary || ""} ${change?.impact || ""}`);
+  const signals = [
+    "watch item",
+    "track public",
+    "active monitoring",
+    "monitoring for public",
+    "potential future changes",
+    "no formal amendment",
+    "no formal change",
+    "no public change",
+    "has been published yet",
+    "source review",
+    "ai source review",
+    "current source page says"
+  ];
+  return signals.some((signal) => text.includes(signal));
 }
 
 function choose(value, fallback) {

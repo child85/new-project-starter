@@ -4003,6 +4003,32 @@
         }
       }
 
+      function sourceLabelForUrl(url) {
+        const clean = String(url || "").trim();
+        if (!clean) return "source website";
+        try {
+          const parsed = new URL(clean.startsWith("http") ? clean : `https://${clean}`);
+          const host = parsed.hostname.replace(/^www\./, "");
+          if (host.includes("eur-lex.europa.eu")) return "EUR-Lex";
+          if (host.includes("iso.org")) return "ISO";
+          if (host.includes("unece.org")) return "UNECE";
+          if (host.includes("webstore.iec.ch")) return "IEC Webstore";
+          if (host.includes("iec.ch")) return "IEC";
+          if (host.includes("csrc.nist.gov")) return "NIST CSRC";
+          if (host.includes("isa.org")) return "ISA";
+          if (host.includes("ul.com")) return "UL";
+          if (host.includes("enx.com")) return "ENX / TISAX";
+          if (host.includes("gov.uk")) return "GOV.UK";
+          return host;
+        } catch {
+          return clean;
+        }
+      }
+
+      function sourceLink(url) {
+        return externalLink(url, sourceLabelForUrl(url));
+      }
+
       function cleanEndpoint(value) {
         const trimmed = String(value || "").trim();
         if (!trimmed) return "";
@@ -5367,8 +5393,30 @@
 
       function latestChangeFor(standard) {
         return safeList(standard.changes)
+          .filter(isActualPublicChange)
           .slice()
           .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))[0] || null;
+      }
+
+      function isActualPublicChange(change) {
+        const text = normalize(`${change?.title || ""} ${change?.summary || ""} ${change?.impact || ""}`);
+        if (!text) return false;
+        const monitoringSignals = [
+          "watch item",
+          "track public",
+          "active monitoring",
+          "monitoring for public",
+          "potential future changes",
+          "no formal amendment",
+          "no formal change",
+          "no public change",
+          "has been published yet",
+          "source review",
+          "ai source review",
+          "review this standards change",
+          "current source page says"
+        ];
+        return !monitoringSignals.some((signal) => text.includes(signal));
       }
 
       function renderLastChange(standard) {
@@ -5377,8 +5425,8 @@
           return `
             <div class="last-change">
               <strong>Last change</strong>
-              <p>No public change has been saved for this standard or regulation yet.</p>
-              ${standard.sourceUrl ? `<div class="row-copy">Watch source: ${externalLink(standard.sourceUrl, "official source website")}</div>` : ""}
+              <p>No actual public change has been saved for this standard or regulation yet.</p>
+              ${standard.sourceUrl ? `<div class="row-copy">Watch source: ${sourceLink(standard.sourceUrl)}</div>` : ""}
             </div>
           `;
         }
@@ -5390,7 +5438,7 @@
               <span class="tag ${change.impact === "High" ? "warn" : "dark"}">${esc(change.date || "Date unknown")}</span>
             </div>
             <p>${esc(change.summary || "No change content saved yet.")}</p>
-            ${sourceUrl ? `<div class="row-copy">Update source: ${externalLink(sourceUrl, "open source website")}</div>` : ""}
+            ${sourceUrl ? `<div class="row-copy">Update source: ${sourceLink(sourceUrl)}</div>` : ""}
           </div>
         `;
       }
@@ -5432,12 +5480,12 @@
                 <div class="change-list standard-history">
                   <div class="standard-history-title">Change history</div>
                   ${standard.changes.map((change) => `
-                    <div class="change-card">
+                    <div class="change-card ${isActualPublicChange(change) ? "" : "muted-change"}">
                       <div class="row-top">
                         <strong>${esc(change.title || "Public change")}</strong>
-                        <span class="tag ${change.impact === "High" ? "warn" : "dark"}">${esc(change.impact || "Review")}</span>
+                        <span class="tag ${isActualPublicChange(change) ? (change.impact === "High" ? "warn" : "dark") : "dark"}">${esc(isActualPublicChange(change) ? (change.impact || "Review") : "Monitoring note")}</span>
                       </div>
-                      <span>${esc(change.date || "Date unknown")} ${change.url || standard.sourceUrl ? `| ${externalLink(change.url || standard.sourceUrl, "source website")}` : "| source not saved"}</span>
+                      <span>${esc(change.date || "Date unknown")} ${change.url || standard.sourceUrl ? `| ${sourceLink(change.url || standard.sourceUrl)}` : "| source not saved"}</span>
                       <p class="row-copy">${esc(change.summary || "No summary saved.")}</p>
                     </div>
                   `).join("")}
@@ -6084,7 +6132,9 @@
       }
 
       function changeItems() {
-        return standards.flatMap((standard) => safeList(standard.changes).map((change) => ({ ...change, standard: standard.name })));
+        return standards.flatMap((standard) => safeList(standard.changes)
+          .filter(isActualPublicChange)
+          .map((change) => ({ ...change, standard: standard.name })));
       }
 
       function recentChangeForStandardName(name) {
@@ -6126,14 +6176,15 @@
         const highSignals = ["shall", "must", "deadline", "effective", "mandatory", "new requirement", "certification", "type approval", "cybersecurity", "safety"];
         const signalCount = highSignals.filter((signal) => text.includes(signal)).length;
         const watchOnly = normalize(`${change?.title || ""} ${change?.summary || ""}`).includes("watch item") || normalize(`${change?.summary || ""}`).includes("track public");
+        const actualChange = isActualPublicChange(change);
         const level = !watchOnly && (change?.impact === "High" || signalCount >= 3 || confirmed || projects.length) ? "High" : signalCount >= 1 || guessed ? "Medium" : "Low";
-        const decision = watchOnly && !projects.length ? "Needs more review" : (confirmed || projects.length || guessed || level !== "Low" ? "Relevant" : "Needs more review");
+        const decision = !actualChange ? "Needs more review" : (confirmed || projects.length || guessed || level !== "Low" ? "Relevant" : "Needs more review");
         const projectNames = projects.map((project) => project.name).filter(Boolean);
         const specificChange = change?.summary
           ? `${change?.title || "Public change"}: ${change.summary}`
           : `${change?.title || "Public change"} has a saved change note, but no detailed change summary has been captured yet.`;
         const customerImpact = watchOnly
-          ? `This is a watch note, not enough by itself for a customer notification. First verify whether ${customer.name}'s products, projects, or markets are actually in scope for ${standardName}.`
+          ? `This is a monitoring note, not an actual published change. It should not trigger customer outreach until a real amendment, interpretation, or requirement change is saved.`
           : `${customer.name} may need a focused review of ${standardName} evidence, project commitments, or market-access claims tied to ${regionsText(customer.markets)} operations.`;
         const whyThisCustomer = [
           confirmed ? `${standardName} is saved as a confirmed or delivered standard for this customer.` : "",
@@ -6189,7 +6240,7 @@
               <div class="impact-review-panel impact-focus primary">
                 <span>Specific saved change</span>
                 <p>${esc(recommendation.specificChange || item.change.summary || "No detailed change content saved yet.")}</p>
-                ${sourceUrl ? `<p>Source: ${externalLink(sourceUrl, "open source website")}</p>` : `<p>Source: no source link saved for this change.</p>`}
+                ${sourceUrl ? `<p>Source: ${sourceLink(sourceUrl)}</p>` : `<p>Source: no source link saved for this change.</p>`}
               </div>
               <div class="impact-review-panel impact-focus secondary">
                 <span>Customer-specific impact</span>
@@ -6570,6 +6621,14 @@
 
       function openImpactReviews() {
         return impactReviews
+          .filter((review) => {
+            const standard = standardRecordByName(review.standard);
+            if (!standard) return false;
+            return safeList(standard.changes)
+              .filter(isActualPublicChange)
+              .some((change) => normalize(change.title || "") === normalize(review.changeTitle || "")
+                || String(change.date || "") === String(review.changeDate || ""));
+          })
           .filter((review) => !["Customer notified", "Closed", "Not relevant"].includes(review.status))
           .sort((a, b) => {
             const priorityOrder = { High: 0, Medium: 1, Low: 2 };
