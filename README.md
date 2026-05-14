@@ -1,6 +1,6 @@
-# Assurance Intelligence Hub
+# TRNA Compliance Clipboard
 
-Static frontend and AWS backend starter for the TRNA Assurance Intelligence Hub.
+Static frontend and AWS backend starter for the TRNA Compliance Clipboard (`TRNA CCB`).
 
 ## Current Site
 
@@ -13,6 +13,7 @@ The hub is intended to help NA-based team members work with global customers:
 - keep a standards library with official source links and last-change notes
 - review which customers are tied to which standards
 - create customer notification tasks when a standard or regulation changes
+- select a current user role, assign owners, and keep an audit trail of key changes
 
 Customer data is no longer seeded with fake saved records. The browser keeps a temporary local cache so the page can render quickly, but shared records should be loaded and saved through the AWS backend.
 
@@ -28,8 +29,8 @@ flowchart LR
     Lambda --> State["DynamoDB<br/>APP_STATE_TABLE<br/>shared hub state"]
     Lambda -. audit .-> Customers["DynamoDB<br/>CUSTOMER_TABLE"]
     Lambda -. audit .-> Standards["DynamoDB<br/>STANDARDS_TABLE"]
-    Watch["EventBridge daily schedule"] -. future .-> Lambda
-    Lambda -. future .-> Notify["Email / Teams<br/>customer notifications"]
+    Watch["GitHub Actions or AWS schedule<br/>daily standards watch"] --> Gateway
+    Lambda --> Notify["Teams webhook / SES email<br/>customer notifications"]
 ```
 
 In this setup:
@@ -37,9 +38,22 @@ In this setup:
 - S3 hosts the public website.
 - API Gateway provides the HTTPS endpoint the page calls.
 - Lambda runs customer enrichment, standards source checks, and app-state load/save.
-- `APP_STATE_TABLE` is the shared database for the hub state: customers, standards, users, admin requests, impact reviews, tasks, and schedule settings.
+- `APP_STATE_TABLE` is the shared database for the hub state: customers, standards, users, admin requests, impact reviews, tasks, schedule settings, and audit events.
 - Optional audit tables can store individual enrichment runs and standards source-review history.
-- EventBridge can later call the same Lambda daily for scheduled standards/regulations checks.
+- GitHub Actions or an AWS scheduler can call the same API Gateway endpoint daily for scheduled standards/regulations checks.
+- Teams and/or email delivery can send customer notification tasks once the Lambda delivery environment variables are configured.
+
+## Roles and Audit Trail
+
+The website now has three workspace roles:
+
+- `Admin`: manages API endpoint settings, users, schedules, baseline standards, and admin requests.
+- `Consultant`: adds customers, standards, projects, impact reviews, and customer notification tasks.
+- `Viewer`: reviews dashboards and records without saving operational changes.
+
+This is a shared workspace role selector inside the page, not production SSO. For broader rollout, connect AWS Cognito, Microsoft Entra ID, or another identity provider so roles are enforced by sign-in rather than a browser selector.
+
+Key changes are saved into `auditEvents` in `APP_STATE_TABLE` and shown in the Settings audit trail.
 
 ## Lambda Environment Variables
 
@@ -59,6 +73,9 @@ Optional:
 
 - `CUSTOMER_TABLE`: DynamoDB table name for customer enrichment audit records.
 - `STANDARDS_TABLE`: DynamoDB table name for standards source-review audit records.
+- `TEAMS_WEBHOOK_URL`: optional Microsoft Teams incoming webhook for daily watch summaries and notification tasks.
+- `NOTIFICATION_FROM_EMAIL`: optional verified SES sender address for email delivery.
+- `DEFAULT_NOTIFICATION_EMAIL` or `NOTIFICATION_TO_EMAIL`: fallback recipient for watch summaries or tasks without an owner email.
 - `OPENAI_API_KEY`: optional fallback OpenAI API key.
 - `OPENAI_MODEL`: optional OpenAI model override.
 - `STANDARDS_BATCH_SIZE`: optional number of standards to check per run. Default is `6`, maximum is `12`.
@@ -76,6 +93,8 @@ The Lambda supports these task types through the same API Gateway endpoint:
 - Backend health check: send `{ "task": "health-check" }`.
 - Shared state load: send `{ "task": "state-load" }`.
 - Shared state save: send `{ "task": "state-save", "state": { ... } }`.
+- Scheduled standards watch: send `{ "task": "scheduled-standards-watch", "actor": { "name": "GitHub Actions", "role": "Automation" } }`.
+- Send one customer notification task: send `{ "task": "send-notification", "requestId": "req-..." }`.
 
 Customer enrichment should return AI-backed profile data. If Claude or OpenAI is missing or failing, the Lambda returns a rule-based fallback with low confidence. The website blocks saving that fallback profile so unknown website, headquarters, employee count, or revenue estimates are not mistaken for confirmed customer intelligence.
 
@@ -90,6 +109,8 @@ Customer enrichment should return AI-backed profile data. If Claude or OpenAI is
 7. Copy the API Gateway invoke URL into the website Settings section.
 8. Test the saved endpoint from the website.
 9. Add a customer and confirm it persists after refreshing or opening the site from another browser.
+10. Add `TRNA_CCB_API_URL` as a GitHub repository secret if you want the daily watch workflow to call the deployed backend.
+11. Add `TEAMS_WEBHOOK_URL` and/or SES email variables in Lambda when customer notification tasks should be delivered outside the website.
 
 ## API Gateway Trigger
 
@@ -137,4 +158,10 @@ The deploy workflow excludes `.github`, `README.md`, `api`, and `aws` so backend
 
 ## Standards Change Watch
 
-The repo also includes `.github/workflows/standards-change-watch.yml`, scheduled for a daily run. It is currently a scaffold: the next production step is to call the deployed API endpoint with the saved standards list, compare returned source-review notes against watched customers, and notify the responsible account owner.
+The repo includes `.github/workflows/standards-change-watch.yml`, scheduled for a daily run. It calls the deployed API Gateway endpoint with `task: scheduled-standards-watch`.
+
+Required GitHub repository secret:
+
+- `TRNA_CCB_API_URL`: the same API Gateway URL saved in the website Settings section.
+
+The workflow also accepts the older `ASSURANCE_HUB_API_URL` secret as a fallback. The Lambda loads shared standards and customers from `APP_STATE_TABLE`, checks source pages, writes the updated shared state and audit event, then sends a Teams/email summary if notification environment variables are configured.

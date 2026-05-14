@@ -199,6 +199,27 @@
         color: var(--muted);
       }
 
+      .identity-chip {
+        display: grid;
+        min-width: 220px;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+        color: var(--copy);
+        font-size: 0.92rem;
+        line-height: 1.25;
+      }
+
+      .identity-chip strong {
+        color: var(--blue-dark);
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+
+      .identity-chip span {
+        color: var(--muted);
+      }
+
       .primary-nav {
         position: sticky;
         top: 104px;
@@ -2250,6 +2271,53 @@
         display: none;
       }
 
+      .access-note {
+        display: grid;
+        gap: 10px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        border-left: 4px solid var(--blue);
+        background: #f8fafc;
+        color: var(--copy);
+      }
+
+      .access-note p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .audit-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .audit-event {
+        display: grid;
+        grid-template-columns: minmax(150px, 0.32fr) minmax(0, 1fr) minmax(150px, 0.32fr);
+        gap: 14px;
+        align-items: start;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .audit-event strong {
+        color: var(--blue-dark);
+        font-weight: 600;
+      }
+
+      .audit-event span,
+      .audit-event p {
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .audit-event code {
+        color: var(--ink);
+        background: var(--soft);
+        padding: 2px 4px;
+      }
+
       .workflow-step,
       .command-card,
       .recommendation-box {
@@ -2352,6 +2420,7 @@
         .customer-card.open .customer-detail,
         .customer-card,
         .controls,
+        .audit-event,
         .standards-route-grid {
           grid-template-columns: 1fr;
         }
@@ -2366,6 +2435,7 @@
         }
 
         .utility,
+        .identity-chip,
         .global-search {
           width: 100%;
           min-width: 0;
@@ -2394,6 +2464,10 @@
           </div>
         </a>
         <div class="utility">
+          <button class="identity-chip" id="currentUserChip" type="button" aria-label="Open user and access settings">
+            <strong id="currentUserName">NA team</strong>
+            <span id="currentUserRole">Consultant</span>
+          </button>
           <div class="global-search">
             <span class="search-icon" aria-hidden="true"></span>
             <input id="globalSearch" type="search" placeholder="Search customers, standards, tasks" autocomplete="off" aria-label="Search customers, standards, tasks" />
@@ -3062,6 +3136,29 @@
             </div>
           </div>
 
+          <div class="setup-box">
+            <div class="panel-head compact-head">
+              <div>
+                <h2>User Access</h2>
+                <p>Select who is using the hub right now. Admin can maintain settings, consultants can create customer and standard work, and viewers can review dashboards.</p>
+              </div>
+            </div>
+            <div class="split">
+              <div class="field">
+                <label for="currentUserSelect">Current user</label>
+                <select id="currentUserSelect"></select>
+              </div>
+              <div class="field">
+                <label>Current access</label>
+                <div class="code" id="currentAccessStatus">Viewer access</div>
+              </div>
+            </div>
+            <div class="access-note">
+              <strong>Access model for this version</strong>
+              <p>This is a shared workspace role selector, not SSO yet. Before production rollout, connect AWS Cognito, Entra ID, or another identity provider so roles are enforced by sign-in.</p>
+            </div>
+          </div>
+
           <div class="panel-head" style="border-top: 1px solid var(--line);">
             <div>
               <h2>Admin Area</h2>
@@ -3070,6 +3167,16 @@
             <button class="button secondary" id="requestClearCustomers" type="button">Request clear customer list</button>
           </div>
           <div class="admin-list" id="adminRequestList"></div>
+
+          <div class="setup-box">
+            <div class="panel-head compact-head">
+              <div>
+                <h2>Audit Trail</h2>
+                <p>Recent customer, standards, schedule, notification, and admin actions. This is stored in shared AWS state when the backend is connected.</p>
+              </div>
+            </div>
+            <div class="audit-list" id="auditTrailList"></div>
+          </div>
 
           <div class="setup-box">
             <div class="panel-head compact-head">
@@ -3090,10 +3197,9 @@
               <div class="field">
                 <label for="teamMemberRole">Role</label>
                 <select id="teamMemberRole">
-                  <option>Account owner</option>
-                  <option>Service owner</option>
-                  <option>Standards owner</option>
+                  <option>Consultant</option>
                   <option>Admin</option>
+                  <option>Viewer</option>
                   <option>Shared queue</option>
                 </select>
               </div>
@@ -3107,9 +3213,10 @@
               <div>
                 <h2>Daily Update Schedule</h2>
                 <p>
-                  Admin-only schedule controls for a future daily standards and
-                  customer-watch update. This saves the preferred schedule to
-                  shared app state; it does not start an AWS automation yet.
+                  Admin-only schedule controls for daily standards and
+                  customer-watch updates. Save the preferred schedule here,
+                  then use the GitHub Actions workflow or AWS scheduler to call
+                  the backend at that time.
                 </p>
               </div>
             </div>
@@ -3162,7 +3269,8 @@
             </div>
             <div class="split">
               <button class="button" id="saveDailySchedule" type="button">Save schedule setting</button>
-              <div class="code" id="dailyScheduleStatus">Daily update automation is not connected yet.</div>
+              <button class="button secondary" id="runScheduledWatchNow" type="button">Run watch now</button>
+              <div class="code" id="dailyScheduleStatus">Daily update automation is ready to be connected.</div>
             </div>
           </div>
 
@@ -3194,6 +3302,11 @@
                 <strong>Paste endpoint here</strong>
                 <p>Use the full API Gateway invoke URL. It may end in /enrich or in the Lambda trigger path AWS created.</p>
               </article>
+              <article class="setup-step">
+                <span>4</span>
+                <strong>Set delivery channels</strong>
+                <p>Add TEAMS_WEBHOOK_URL and/or NOTIFICATION_FROM_EMAIL in Lambda when customer notification tasks should be sent out.</p>
+              </article>
             </div>
             <div class="split">
               <div class="field">
@@ -3209,7 +3322,7 @@
               <button class="button secondary" id="testApiEndpoint" type="button">Test backend connection</button>
             <div class="code" id="apiSetupStatus">The deployed backend endpoint is prefilled. Override it only if AWS API Gateway changes.</div>
             </div>
-            <div class="code">S3 static site -> API Gateway HTTP API -> Lambda -> Claude Haiku -> optional DynamoDB -> future EventBridge watch</div>
+            <div class="code">S3 static site -> API Gateway HTTP API -> Lambda -> Claude Haiku -> DynamoDB shared state -> GitHub Actions or AWS schedule -> Teams / email notification delivery</div>
           </div>
         </section>
           </section>
@@ -3392,21 +3505,21 @@
           id: "user-na-team",
           name: "NA team",
           email: "",
-          role: "Shared queue",
+          role: "Consultant",
           active: true
         },
         {
           id: "user-account-owner",
           name: "Account owner",
           email: "",
-          role: "Account owner",
+          role: "Consultant",
           active: true
         },
         {
           id: "user-standards-owner",
           name: "Standards owner",
           email: "",
-          role: "Standards owner",
+          role: "Admin",
           active: true
         }
       ];
@@ -3417,7 +3530,8 @@
         "assuranceUsersV1",
         "assuranceAdminRequestsV1",
         "assuranceImpactReviewsV1",
-        "assuranceWatchScheduleV1"
+        "assuranceWatchScheduleV1",
+        "assuranceAuditEventsV1"
       ]);
 
       const store = {
@@ -3457,7 +3571,9 @@
       let users = starterUsers;
       let adminRequests = [];
       let impactReviews = [];
+      let auditEvents = store.get("assuranceAuditEventsV1", []);
       let watchSchedule = { ...defaultWatchSchedule };
+      let currentUserId = localStorage.getItem("trnaCcbCurrentUserId") || "user-na-team";
       let selectedRegions = new Set(["Global"]);
       let currentResult = null;
       let expandedCustomerKey = "";
@@ -3536,8 +3652,114 @@
         const base = activeUsers();
         const options = base.some((user) => normalize(user.name) === normalize(selectedName))
           ? base
-          : [...base, normalizeUserRecord({ name: selectedName, role: "Account owner" })];
+          : [...base, normalizeUserRecord({ name: selectedName, role: "Consultant" })];
         return options.map((user) => `<option value="${esc(user.name)}" ${normalize(user.name) === normalize(selectedName) ? "selected" : ""}>${esc(user.name)}${user.role ? ` - ${esc(user.role)}` : ""}</option>`).join("");
+      }
+
+      function normalizedRole(role) {
+        const value = normalize(role);
+        if (value.includes("admin") || value.includes("standards owner")) return "Admin";
+        if (value.includes("viewer")) return "Viewer";
+        return "Consultant";
+      }
+
+      function accessLevelFor(user) {
+        return normalizedRole(user?.role || "Viewer").toLowerCase();
+      }
+
+      function currentUser() {
+        const active = activeUsers();
+        const selected = users.find((user) => user.id === currentUserId && user.active !== false);
+        if (selected) return selected;
+        const fallback = active[0] || normalizeUserRecord({ id: "user-na-team", name: "NA team", role: "Viewer" });
+        currentUserId = fallback.id;
+        localStorage.setItem("trnaCcbCurrentUserId", currentUserId);
+        return fallback;
+      }
+
+      function currentRole() {
+        return accessLevelFor(currentUser());
+      }
+
+      function roleRank(role) {
+        return { viewer: 0, consultant: 1, admin: 2 }[String(role || "").toLowerCase()] ?? 0;
+      }
+
+      function requireRole(requiredRole, actionLabel = "make this change") {
+        if (roleRank(currentRole()) >= roleRank(requiredRole)) return true;
+        setStatus(`You need ${requiredRole} access to ${actionLabel}. Open Settings and switch to an authorized user.`);
+        return false;
+      }
+
+      function currentActorPayload() {
+        const actor = currentUser();
+        return {
+          name: actor.name || "NA team",
+          role: normalizedRole(actor.role || "Viewer"),
+          email: actor.email || ""
+        };
+      }
+
+      function addAuditEvent(action, targetType, targetName, detail, extra = {}) {
+        const actor = currentActorPayload();
+        const event = {
+          id: `audit-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          at: new Date().toISOString(),
+          actor: actor.name,
+          role: actor.role,
+          action,
+          targetType,
+          targetName: targetName || "TRNA CCB",
+          detail,
+          ...extra
+        };
+        auditEvents = [event, ...safeList(auditEvents)].slice(0, 250);
+        store.set("assuranceAuditEventsV1", auditEvents);
+        renderAuditTrail();
+        renderAccessControls();
+      }
+
+      function renderAccessControls() {
+        const user = currentUser();
+        const role = normalizedRole(user.role);
+        setText("currentUserName", user.name || "NA team");
+        setText("currentUserRole", `${role} access`);
+        const select = document.getElementById("currentUserSelect");
+        if (select) {
+          select.innerHTML = activeUsers().map((item) => `<option value="${esc(item.id)}" ${item.id === user.id ? "selected" : ""}>${esc(item.name)} - ${esc(normalizedRole(item.role))}</option>`).join("");
+          select.value = user.id;
+        }
+        const status = document.getElementById("currentAccessStatus");
+        if (status) {
+          const description = role === "Admin"
+            ? "Admin can manage settings, users, schedules, deletion requests, standards, customers, and notification delivery."
+            : role === "Consultant"
+            ? "Consultant can add customers, standards, reviews, projects, and customer notification tasks."
+            : "Viewer can read dashboards and records, but cannot save operational changes.";
+          status.textContent = `${role}: ${description}`;
+        }
+      }
+
+      function renderAuditTrail() {
+        const list = document.getElementById("auditTrailList");
+        if (!list) return;
+        const events = safeList(auditEvents).slice(0, 40);
+        list.innerHTML = events.length ? events.map((event) => `
+          <article class="audit-event">
+            <div>
+              <strong>${esc(event.actor || "System")}</strong>
+              <span>${esc(event.role || "System")}</span>
+            </div>
+            <div>
+              <strong>${esc(event.targetName || "TRNA CCB")}</strong>
+              <p>${esc(event.detail || event.action || "Workspace action")}</p>
+            </div>
+            <div>
+              <code>${esc(event.action || "audit")}</code>
+              <span>${event.at ? esc(new Date(event.at).toLocaleString()) : "Time unknown"}</span>
+            </div>
+          </article>
+        `).join("") : `<article class="info-card"><strong>No audit events yet</strong><p>The next saved customer, standard update, schedule change, or notification action will appear here.</p></article>`;
       }
 
       function isoDateOffset(days = 0) {
@@ -3604,7 +3826,7 @@
           id: user?.id || `user-${Date.now()}`,
           name: name || "Unnamed user",
           email: String(user?.email || "").trim(),
-          role: user?.role || "Account owner",
+          role: normalizedRole(user?.role || "Consultant"),
           active: user?.active !== false
         };
       }
@@ -3698,7 +3920,8 @@
           users,
           adminRequests,
           impactReviews,
-          watchSchedule
+          watchSchedule,
+          auditEvents
         };
       }
 
@@ -3710,6 +3933,7 @@
         store.set("assuranceAdminRequestsV1", adminRequests);
         store.set("assuranceImpactReviewsV1", impactReviews);
         store.set("assuranceWatchScheduleV1", watchSchedule);
+        store.set("assuranceAuditEventsV1", auditEvents);
         suppressRemoteSync = false;
       }
 
@@ -3731,6 +3955,7 @@
         });
         adminRequests = safeList(state.adminRequests);
         impactReviews = safeList(state.impactReviews);
+        auditEvents = safeList(state.auditEvents);
         watchSchedule = { ...defaultWatchSchedule, ...(state.watchSchedule || {}) };
         suppressRemoteSync = false;
         cacheCurrentAppState();
@@ -3739,6 +3964,8 @@
         renderWatch();
         renderAdminRequests();
         renderTeamMembers();
+        renderAccessControls();
+        renderAuditTrail();
       }
 
       async function callStateApi(task, payload = {}) {
@@ -4119,7 +4346,9 @@
           const checks = result.checks || {};
           const storage = checks.sharedStorage || "unknown";
           const ai = checks.aiProvider || "unknown";
-          status.textContent = `Connected. Lambda health check passed. AI: ${ai}. Shared storage: ${storage}.`;
+          const teams = checks.teamsNotifications || "not configured";
+          const email = checks.emailNotifications || "not configured";
+          status.textContent = `Connected. Lambda health check passed. AI: ${ai}. Shared storage: ${storage}. Teams: ${teams}. Email: ${email}.`;
         } catch (error) {
           status.textContent = `Connection failed: ${error.message}. Check API Gateway route, CORS, Lambda trigger permission, and Lambda environment variables.`;
         } finally {
@@ -4129,6 +4358,7 @@
 
       async function runLookup(event, confirmed = null) {
         if (event) event.preventDefault();
+        if (!requireRole("consultant", "add a customer")) return;
         const input = {
           name: document.getElementById("lookupName")?.value || confirmed?.name || "",
           sector: document.getElementById("lookupSector")?.value || confirmed?.sector || "",
@@ -4694,12 +4924,19 @@
       }
 
       function saveLookupProfile(profile) {
+        if (!requireRole("consultant", "save a customer profile")) return;
         const normalized = normalizeCustomerRecord(profile);
         const existingIndex = customers.findIndex((customer) => profileKey(customer) === profileKey(normalized));
         if (existingIndex >= 0) customers[existingIndex] = { ...customers[existingIndex], ...normalized };
         else customers.unshift(normalized);
         expandedCustomerKey = "";
         store.set("assuranceCustomersV2", customers);
+        addAuditEvent(
+          existingIndex >= 0 ? "customer.updated" : "customer.saved",
+          "customer",
+          normalized.name,
+          `${existingIndex >= 0 ? "Updated" : "Saved"} customer profile for ${normalized.name}.`
+        );
         renderCustomers();
         renderWatch();
       }
@@ -4723,6 +4960,7 @@
 
       function saveProjectRecord(event) {
         event.preventDefault();
+        if (!requireRole("consultant", "save a project or assessment")) return;
         const customer = customers.find((item) => profileKey(item) === pendingProjectCustomerKey);
         if (!customer) return;
         const project = {
@@ -4738,12 +4976,14 @@
         customer.knownStandards = unique([...safeList(customer.knownStandards), ...project.standards]);
         store.set("assuranceCustomersV2", customers);
         closeProjectDialog();
+        addAuditEvent("project.saved", "customer", customer.name, `Saved project or assessment "${project.name}" for ${customer.name}.`);
         renderCustomers();
         renderWatch();
         setStatus(`${project.name} added to ${customer.name}.`);
       }
 
       function saveCurrentResult() {
+        if (!requireRole("consultant", "save a customer profile")) return;
         if (!currentResult) return;
         const existingIndex = customers.findIndex((customer) => profileKey(customer) === profileKey(currentResult));
         const existing = existingIndex >= 0 ? customers[existingIndex] : {};
@@ -4796,6 +5036,12 @@
         if (existingIndex >= 0) customers[existingIndex] = merged;
         else customers.unshift(merged);
         store.set("assuranceCustomersV2", customers);
+        addAuditEvent(
+          existingIndex >= 0 ? "customer.updated" : "customer.saved",
+          "customer",
+          merged.name,
+          `${existingIndex >= 0 ? "Updated" : "Saved"} customer profile for ${merged.name}.`
+        );
         renderCustomers();
         renderWatch();
         showSaveVisual(`${currentResult.name} added to the customer list.`);
@@ -4952,6 +5198,7 @@
         });
         list.querySelectorAll("[data-load-customer]").forEach((button) => {
           button.addEventListener("click", () => {
+            if (!requireRole("consultant", "edit a customer profile")) return;
             currentResult = customers[Number(button.dataset.loadCustomer)];
             renderResult(currentResult);
             activateView("customers");
@@ -4959,15 +5206,20 @@
         });
         list.querySelectorAll("[data-toggle-watch]").forEach((button) => {
           button.addEventListener("click", () => {
+            if (!requireRole("consultant", "change customer notification watch")) return;
             const customer = customers[Number(button.dataset.toggleWatch)];
             customer.hypercare = customer.hypercare === "Active" ? "Inactive" : "Active";
             store.set("assuranceCustomersV2", customers);
+            addAuditEvent("customer.watch.updated", "customer", customer.name, `${customer.name} notification watch set to ${customer.hypercare}.`);
             renderCustomers();
             renderWatch();
           });
         });
         list.querySelectorAll("[data-add-project]").forEach((button) => {
-          button.addEventListener("click", () => openProjectDialog(customers[Number(button.dataset.addProject)]));
+          button.addEventListener("click", () => {
+            if (!requireRole("consultant", "add a project or assessment")) return;
+            openProjectDialog(customers[Number(button.dataset.addProject)]);
+          });
         });
         list.querySelectorAll("[data-delete-request]").forEach((button) => {
           button.addEventListener("click", () => openCustomerDeletionDialog(customers[Number(button.dataset.deleteRequest)]));
@@ -5158,6 +5410,7 @@
       }
 
       async function enrichStandardForm() {
+        if (!requireRole("consultant", "enrich a standard")) return;
         const status = document.getElementById("standardAiStatus");
         const button = document.getElementById("enrichStandardWithAi");
         const seed = { ...readStandardFormSeed() };
@@ -5321,6 +5574,7 @@
       }
 
       async function runAiStandardUpdateScan() {
+        if (!requireRole("consultant", "run live standards enrichment")) return;
         const button = document.getElementById("runAiStandardUpdate");
         const status = document.getElementById("standardsUpdateStatus");
         if (!standards.length) return;
@@ -5331,6 +5585,7 @@
           const result = await enrichStandardsWithApi();
           applyStandardsEnrichment(result);
           store.set("assuranceStandardsV2", standards);
+          addAuditEvent("standards.ai-update", "standards", "Standards library", `Ran live AI source update for ${result.standards.length} standards.`);
           renderStandards();
           renderWatch();
           const checkedAt = result.checkedAt ? new Date(result.checkedAt).toLocaleString() : "just now";
@@ -5358,10 +5613,11 @@
           watchSchedule.includeCustomers ? "hypercare customers" : ""
         ].filter(Boolean).join(" and ") || "no sources";
         document.getElementById("dailyScheduleStatus").textContent =
-          `${watchSchedule.status}: ${watchSchedule.frequency.toLowerCase()} at ${watchSchedule.time} ${watchSchedule.timezone}, covering ${scope}. Not connected to AWS automation yet.`;
+          `${watchSchedule.status}: ${watchSchedule.frequency.toLowerCase()} at ${watchSchedule.time} ${watchSchedule.timezone}, covering ${scope}. GitHub Actions can call the backend on this cadence; Run watch now tests the same backend task.`;
       }
 
       function saveDailySchedule() {
+        if (!requireRole("admin", "save the daily watch schedule")) return;
         watchSchedule = {
           status: document.getElementById("dailyUpdateStatus").value,
           frequency: document.getElementById("dailyUpdateFrequency").value,
@@ -5371,7 +5627,29 @@
           includeCustomers: document.getElementById("dailyUpdateCustomers").checked
         };
         store.set("assuranceWatchScheduleV1", watchSchedule);
+        addAuditEvent("schedule.saved", "watch", "Daily watch", `${watchSchedule.status}: ${watchSchedule.frequency} at ${watchSchedule.time} ${watchSchedule.timezone}.`);
         renderDailySchedule();
+      }
+
+      async function runScheduledWatchNow() {
+        if (!requireRole("admin", "run the scheduled standards watch")) return;
+        const button = document.getElementById("runScheduledWatchNow");
+        const status = document.getElementById("dailyScheduleStatus");
+        button.disabled = true;
+        status.textContent = "Running the standards watch through the AWS backend...";
+        try {
+          const result = await callStateApi("scheduled-standards-watch", {
+            actor: currentActorPayload(),
+            source: "manual-ui"
+          });
+          status.textContent = `Watch completed. ${result.updatedStandards || 0} standards checked, ${result.impactMatches || 0} customer-standard matches. Delivery: ${result.delivery?.status || "not configured"}.`;
+          await loadSharedAppState();
+          addAuditEvent("schedule.watch.manual", "watch", "Daily watch", `Manual watch run completed with ${result.impactMatches || 0} customer-standard matches.`);
+        } catch (error) {
+          status.textContent = `Watch failed: ${error.message}. Check Lambda code, APP_STATE_TABLE, source fetch access, and notification environment variables.`;
+        } finally {
+          button.disabled = false;
+        }
       }
 
       function viewForStandard(standard) {
@@ -5705,6 +5983,7 @@
       }
 
       function openImpactReview(customerKey, standardName = "") {
+        if (!requireRole("consultant", "review customer impact")) return;
         const item = findImpactItem(customerKey, standardName);
         if (!item) return;
         pendingImpactReview = item;
@@ -5744,6 +6023,7 @@
 
       function saveImpactReview(event) {
         event.preventDefault();
+        if (!requireRole("consultant", "save an impact review")) return;
         if (!pendingImpactReview) return;
         const { customer, standard, change, recommendation } = pendingImpactReview;
         const key = impactReviewKey(customer, standard, change);
@@ -5791,7 +6071,9 @@
             createdAt: new Date().toISOString()
           });
           saveAdminRequests();
+          addAuditEvent("task.created", "customer", customer.name, `Created customer notification task for ${customer.name} and ${standard}.`);
         }
+        addAuditEvent("impact-review.saved", "customer", customer.name, `Saved impact review for ${standard}: ${decision}.`);
         closeImpactReviewDialog();
         renderWatch();
         setStatus(`Impact review saved for ${customer.name} and ${standard}.`);
@@ -5970,9 +6252,11 @@
               <span class="tag">Owner: ${esc(task.owner || "NA team")}</span>
               <span class="tag">Due: ${esc(task.dueDate || "Not set")}</span>
               <span class="tag">${esc(task.taskStatus || "Open")}</span>
+              ${task.deliveryStatus ? `<span class="tag ${task.deliveryStatus === "sent" ? "ok" : "warn"}">Delivery: ${esc(task.deliveryStatus)}</span>` : ""}
             </div>
             <p class="row-copy">${esc(shortSummary(task.reason || "", 160))}</p>
             <div class="notification-actions">
+              <button class="notification-action" type="button" data-send-task="${task._index}">${task.deliveryStatus === "sent" ? "Send again" : "Send notification"}</button>
               <button class="notification-action" type="button" data-complete-task="${task._index}">Mark customer notified</button>
               <button class="notification-action secondary" type="button" data-open-task-customer="${esc(recordKey(task.customerKey || task.customerName || ""))}">Open customer</button>
               <button class="notification-action secondary" type="button" data-close-task="${task._index}">Close task</button>
@@ -6019,6 +6303,7 @@
       }
 
       function completeNotificationTask(index, status = "Customer notified") {
+        if (!requireRole("consultant", "close a notification task")) return;
         const request = adminRequests[index];
         if (!request || request.type !== "notify-customer") return;
         impactReviews = impactReviews.map((review) => review.key === request.impactKey ? {
@@ -6030,8 +6315,31 @@
         store.set("assuranceImpactReviewsV1", impactReviews);
         adminRequests.splice(index, 1);
         saveAdminRequests();
+        addAuditEvent("task.closed", "customer", request.customerName || "Customer", `${status} task closed for ${request.customerName || "customer"}.`);
         renderWatch();
         setStatus(`${status} task closed for ${request.customerName || "customer"}.`);
+      }
+
+      async function sendNotificationTask(index) {
+        if (!requireRole("consultant", "send a customer notification task")) return;
+        const request = adminRequests[index];
+        if (!request || request.type !== "notify-customer") return;
+        setStatus(`Sending notification task for ${request.customerName || "customer"}...`);
+        try {
+          const result = await callStateApi("send-notification", {
+            requestId: request.id,
+            actor: currentActorPayload()
+          });
+          if (result.request) adminRequests[index] = { ...adminRequests[index], ...result.request };
+          store.set("assuranceAdminRequestsV1", adminRequests);
+          addAuditEvent("notification.sent", "customer", request.customerName || "Customer", `Sent notification task for ${request.standard || "standard"}: ${result.delivery?.status || result.status}.`);
+          renderWatch();
+          setStatus(result.delivery?.status === "sent"
+            ? `Notification sent for ${request.customerName || "customer"}.`
+            : `Notification not sent: ${result.delivery?.message || result.status || "delivery channel not configured"}.`);
+        } catch (error) {
+          setStatus(`Notification delivery failed: ${error.message}. Check Teams webhook or email environment variables in Lambda.`);
+        }
       }
 
       function renderWatch() {
@@ -6221,6 +6529,9 @@
         document.querySelectorAll("[data-open-review-customer]").forEach((button) => {
           button.addEventListener("click", () => openCustomerFromWatch(button.dataset.openReviewCustomer));
         });
+        document.querySelectorAll("[data-send-task]").forEach((button) => {
+          button.addEventListener("click", () => sendNotificationTask(Number(button.dataset.sendTask)));
+        });
         document.querySelectorAll("[data-complete-task]").forEach((button) => {
           button.addEventListener("click", () => completeNotificationTask(Number(button.dataset.completeTask), "Customer notified"));
         });
@@ -6232,10 +6543,12 @@
         });
         document.querySelectorAll("[data-enable-watch]").forEach((button) => {
           button.addEventListener("click", () => {
+            if (!requireRole("consultant", "change customer notification watch")) return;
             const customer = customers.find((item) => recordKey(profileKey(item)) === button.dataset.enableWatch);
             if (!customer) return;
             customer.hypercare = "Active";
             store.set("assuranceCustomersV2", customers);
+            addAuditEvent("customer.watch.updated", "customer", customer.name, `${customer.name} notification watch set to Active.`);
             renderCustomers();
             renderWatch();
           });
@@ -6251,6 +6564,7 @@
         users = users.map(normalizeUserRecord);
         store.set("assuranceUsersV1", users);
         renderTeamMembers();
+        renderAccessControls();
         renderWatch();
       }
 
@@ -6273,13 +6587,17 @@
         `).join("") : `<article class="info-card"><strong>No team members</strong><p>Add at least one owner before assigning notification tasks.</p></article>`;
         list.querySelectorAll("[data-toggle-user]").forEach((button) => {
           button.addEventListener("click", () => {
+            if (!requireRole("admin", "manage team members")) return;
+            const user = users[Number(button.dataset.toggleUser)];
             users[Number(button.dataset.toggleUser)].active = !users[Number(button.dataset.toggleUser)].active;
             saveUsers();
+            addAuditEvent("user.updated", "user", user?.name || "Team member", `${user?.active ? "Activated" : "Deactivated"} ${user?.name || "team member"}.`);
           });
         });
       }
 
       function openCustomerDeletionDialog(customer) {
+        if (!requireRole("consultant", "request customer deletion")) return;
         if (!customer) return;
         pendingDeletionCustomer = customer;
         document.getElementById("deleteCustomerName").textContent = customer.name || "Customer";
@@ -6295,6 +6613,7 @@
       }
 
       function requestCustomerDeletion(customer, reason) {
+        if (!requireRole("consultant", "request customer deletion")) return;
         if (!customer) return;
         const key = profileKey(customer);
         if (!adminRequests.some((request) => request.type === "delete-customer" && request.customerKey === key && request.status === "Pending")) {
@@ -6308,6 +6627,7 @@
             createdAt: new Date().toISOString()
           });
           saveAdminRequests();
+          addAuditEvent("customer.delete.requested", "customer", customer.name, `Requested customer deletion for ${customer.name}: ${reason.trim()}`);
           setStatus(`Deletion request for ${customer.name} sent to Settings.`);
         } else {
           setStatus(`A deletion request for ${customer.name} is already waiting in Settings.`);
@@ -6346,8 +6666,11 @@
         `).join("");
         list.querySelectorAll("[data-dismiss-request]").forEach((button) => {
           button.addEventListener("click", () => {
+            if (!requireRole("admin", "dismiss admin requests")) return;
+            const request = adminRequests[Number(button.dataset.dismissRequest)];
             adminRequests.splice(Number(button.dataset.dismissRequest), 1);
             saveAdminRequests();
+            addAuditEvent("admin.request.dismissed", request?.type || "admin-request", request?.customerName || "Workspace", `Dismissed admin request: ${request?.type || "request"}.`);
           });
         });
         list.querySelectorAll("[data-approve-request]").forEach((button) => {
@@ -6356,6 +6679,7 @@
       }
 
       function approveAdminRequest(index) {
+        if (!requireRole("admin", "approve admin requests")) return;
         const request = adminRequests[index];
         if (!request) return;
         if (request.type === "clear-customers") {
@@ -6376,6 +6700,7 @@
           store.set("assuranceImpactReviewsV1", impactReviews);
         }
         store.set("assuranceCustomersV2", customers);
+        addAuditEvent("admin.request.approved", request.type || "admin-request", request.customerName || "Workspace", `Approved admin request: ${request.type || "request"}.`);
         adminRequests.splice(index, 1);
         saveAdminRequests();
         renderCustomers();
@@ -6384,6 +6709,7 @@
 
       document.getElementById("lookupForm").addEventListener("submit", runLookup);
       document.getElementById("openCustomerDialog").addEventListener("click", () => {
+        if (!requireRole("consultant", "add a customer")) return;
         document.getElementById("candidateDialogTitle").textContent = "Add Customer";
         document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity, enrich the profile, and show a summary before anything is saved.";
         document.getElementById("candidateBox").classList.add("hidden");
@@ -6431,6 +6757,7 @@
 
       document.getElementById("teamMemberForm").addEventListener("submit", (event) => {
         event.preventDefault();
+        if (!requireRole("admin", "manage team members")) return;
         const name = document.getElementById("teamMemberName").value.trim();
         if (!name) return;
         const record = normalizeUserRecord({
@@ -6445,10 +6772,12 @@
         else users.push(record);
         event.target.reset();
         saveUsers();
+        addAuditEvent("user.saved", "user", record.name, `Saved ${record.name} as ${record.role}.`);
         setStatus(`${record.name} added as a task owner.`);
       });
 
       document.getElementById("requestClearCustomers").addEventListener("click", () => {
+        if (!requireRole("admin", "request a full customer-list clear")) return;
         adminRequests.unshift({
           id: `req-${Date.now()}`,
           type: "clear-customers",
@@ -6456,15 +6785,19 @@
           createdAt: new Date().toISOString()
         });
         saveAdminRequests();
+        addAuditEvent("customers.clear.requested", "workspace", "Customers", "Requested a full customer-list clear.");
       });
 
       document.getElementById("resetStandards").addEventListener("click", () => {
+        if (!requireRole("admin", "restore baseline standards")) return;
         standards = starterStandards.map(normalizeStandardRecord);
         store.set("assuranceStandardsV2", standards);
+        addAuditEvent("standards.reset", "standards", "Standards library", "Restored baseline standards.");
         renderStandards();
       });
 
       function openStandardDialog(defaultDomain = "") {
+        if (!requireRole("consultant", "add a standard")) return;
         const dialog = document.getElementById("standardDialog");
         document.body.appendChild(dialog);
         dialog.classList.remove("hidden");
@@ -6502,6 +6835,7 @@
 
       document.getElementById("standardForm").addEventListener("submit", (event) => {
         event.preventDefault();
+        if (!requireRole("consultant", "save a standard")) return;
         const record = normalizeStandardRecord({
           name: document.getElementById("stdName").value.trim(),
           domain: document.getElementById("stdDomain").value,
@@ -6530,6 +6864,7 @@
         }
         expandedStandardKey = recordKey(record.name);
         store.set("assuranceStandardsV2", standards);
+        addAuditEvent(existingIndex >= 0 ? "standard.updated" : "standard.saved", "standard", record.name, `${existingIndex >= 0 ? "Updated" : "Saved"} standard ${record.name}.`);
         event.target.reset();
         renderStandards();
         document.getElementById("standardDialog").classList.add("hidden");
@@ -6548,6 +6883,7 @@
       });
 
       document.getElementById("saveApiEndpoint").addEventListener("click", () => {
+        if (!requireRole("admin", "save the API endpoint")) return;
         const rawValue = document.getElementById("apiEndpoint").value;
         const value = cleanEndpoint(rawValue);
         if (rawValue.trim() && !value) {
@@ -6562,12 +6898,21 @@
           : "Using the deployed TRNA CCB backend endpoint. Use Test backend connection to confirm it.";
         showLookupApiWarning(false);
         showStandardApiWarning(false);
+        addAuditEvent("settings.api-endpoint.saved", "settings", "API endpoint", value && value !== deployedApiUrl ? "Saved a custom API Gateway endpoint." : "Using deployed TRNA CCB API endpoint.");
         setStatus("Backend endpoint ready. Loading shared workspace data...");
         loadSharedAppState();
       });
 
       document.getElementById("testApiEndpoint").addEventListener("click", testSavedEndpoint);
       document.getElementById("saveDailySchedule").addEventListener("click", saveDailySchedule);
+      document.getElementById("runScheduledWatchNow").addEventListener("click", runScheduledWatchNow);
+      document.getElementById("currentUserChip").addEventListener("click", () => activateView("setup"));
+      document.getElementById("currentUserSelect").addEventListener("change", (event) => {
+        currentUserId = event.target.value;
+        localStorage.setItem("trnaCcbCurrentUserId", currentUserId);
+        renderAccessControls();
+        setStatus(`Current user switched to ${currentUser().name}.`);
+      });
       document.getElementById("globalSearch").addEventListener("input", renderGlobalSearchResults);
       document.getElementById("globalSearch").addEventListener("keydown", (event) => {
         if (event.key === "Enter" && globalSearchMatches[0]) {
@@ -6679,6 +7024,8 @@
       renderWatch();
       renderAdminRequests();
       renderTeamMembers();
+      renderAccessControls();
+      renderAuditTrail();
       const initialNavigationState = navigationStateFromHash();
       history.replaceState(
         initialNavigationState,

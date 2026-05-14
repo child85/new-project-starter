@@ -10,10 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Placeholder change check
+      - name: Run TRNA CCB standards watch
+        env:
+          TRNA_CCB_API_URL: ${{ secrets.TRNA_CCB_API_URL }}
+          ASSURANCE_HUB_API_URL: ${{ secrets.ASSURANCE_HUB_API_URL }}
         run: |
-          echo "Daily standards change watch placeholder"
-          echo "Next production step: connect official standards/regulatory sources and notify owners for impacted hypercare customers."
+          API_URL="${TRNA_CCB_API_URL:-$ASSURANCE_HUB_API_URL}"
+          if [ -z "$API_URL" ]; then
+            echo "::error::Missing TRNA_CCB_API_URL repository secret with the API Gateway endpoint."
+            exit 1
+          fi
+          curl --fail-with-body \
+            --request POST "$API_URL" \
+            --header "Content-Type: application/json" \
+            --data '{"task":"scheduled-standards-watch","source":"github-actions","actor":{"name":"GitHub Actions","role":"Automation"}}'

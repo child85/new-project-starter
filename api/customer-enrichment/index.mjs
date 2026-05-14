@@ -17,7 +17,6 @@ const defaultStandards = [
   "TISAX",
   "EU Cyber Resilience Act",
   "NIS2",
-  "DORA",
   "UL 2900",
   "UKCA / CE Market Access"
 ];
@@ -46,6 +45,16 @@ export async function handler(event) {
 
     if (body.task === "standards-update") {
       const result = await enrichStandardsUpdate(body);
+      return response(200, result);
+    }
+
+    if (body.task === "scheduled-standards-watch") {
+      const result = await runScheduledStandardsWatch(body);
+      return response(200, result);
+    }
+
+    if (body.task === "send-notification") {
+      const result = await sendNotificationTask(body);
       return response(200, result);
     }
 
@@ -100,7 +109,9 @@ async function healthCheck() {
         : "rule-based fallback",
     sharedStorage: process.env.APP_STATE_TABLE ? "configured" : "not configured",
     customerAuditTable: process.env.CUSTOMER_TABLE ? "configured" : "not configured",
-    standardsAuditTable: process.env.STANDARDS_TABLE ? "configured" : "not configured"
+    standardsAuditTable: process.env.STANDARDS_TABLE ? "configured" : "not configured",
+    teamsNotifications: process.env.TEAMS_WEBHOOK_URL ? "configured" : "not configured",
+    emailNotifications: process.env.NOTIFICATION_FROM_EMAIL ? "configured" : "not configured"
   };
 
   let updatedAt = "";
@@ -145,7 +156,8 @@ function emptyAppState() {
     users: [],
     adminRequests: [],
     impactReviews: [],
-    watchSchedule: {}
+    watchSchedule: {},
+    auditEvents: []
   };
 }
 
@@ -156,7 +168,8 @@ function sanitizeAppState(state = {}) {
     users: Array.isArray(state.users) ? state.users : [],
     adminRequests: Array.isArray(state.adminRequests) ? state.adminRequests : [],
     impactReviews: Array.isArray(state.impactReviews) ? state.impactReviews : [],
-    watchSchedule: state.watchSchedule && typeof state.watchSchedule === "object" ? state.watchSchedule : {}
+    watchSchedule: state.watchSchedule && typeof state.watchSchedule === "object" ? state.watchSchedule : {},
+    auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents.slice(0, 250) : []
   };
 }
 
@@ -185,13 +198,14 @@ async function saveAppState(state) {
   const dynamo = await dynamoDocumentClient();
   const { PutCommand } = await import("@aws-sdk/lib-dynamodb");
   const updatedAt = new Date().toISOString();
+  const cleanState = sanitizeAppState(state);
 
   await dynamo.send(new PutCommand({
     TableName: tableName,
     Item: {
       pk: "APP#assurance-intelligence-hub",
       sk: "STATE#current",
-      state: sanitizeAppState(state),
+      state: cleanState,
       updated_at: updatedAt
     }
   }));
@@ -200,6 +214,36 @@ async function saveAppState(state) {
     status: "saved",
     storage: "dynamodb",
     updatedAt
+  };
+}
+
+function actorFrom(body = {}) {
+  const actor = body.actor || {};
+  return {
+    name: String(actor.name || body.actorName || "System").trim() || "System",
+    role: String(actor.role || body.actorRole || (body.source === "github-actions" ? "Automation" : "System")).trim() || "System",
+    email: String(actor.email || body.actorEmail || "").trim()
+  };
+}
+
+function auditEvent(action, target, detail = "", actor = { name: "System", role: "System" }, extra = {}) {
+  return {
+    id: `audit-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    at: new Date().toISOString(),
+    actor: actor.name || "System",
+    role: actor.role || "System",
+    action,
+    targetType: target?.type || "workspace",
+    targetName: target?.name || "TRNA CCB",
+    detail,
+    ...extra
+  };
+}
+
+function withAudit(state, event) {
+  return {
+    ...state,
+    auditEvents: [event, ...sanitizeAppState(state).auditEvents].slice(0, 250)
   };
 }
 
@@ -609,6 +653,260 @@ async function saveStandards(standards, checkedAt, status) {
   }))));
 }
 
+async function runScheduledStandardsWatch(body = {}) {
+  const actor = actorFrom(body);
+  const loaded = await loadAppState();
+  let state = sanitizeAppState(loaded.state || {});
+  const checkedAt = new Date().toISOString();
+  const schedule = state.watchSchedule || {};
+  const standardsToCheck = schedule.includeStandards === false ? [] : state.standards;
+
+  if (!standardsToCheck.length) {
+    state = withAudit(state, auditEvent(
+      "standards.watch.noop",
+      { type: "standards", name: "Daily watch" },
+      "Scheduled watch ran, but there were no standards to check.",
+      actor
+    ));
+    await saveAppState(state);
+    return {
+      status: "no_standards",
+      checkedAt,
+      updatedStandards: 0,
+      impactMatches: 0,
+      delivery: { channels: [], status: "skipped" }
+    };
+  }
+
+  const update = await enrichStandardsUpdate({
+    standards: standardsToCheck,
+    source: body.source || "scheduled-watch"
+  });
+  const updatedStandards = mergeStandardRecords(state.standards, update.standards || []);
+  state = {
+    ...state,
+    standards: updatedStandards,
+    watchSchedule: {
+      ...schedule,
+      lastRunAt: update.checkedAt || checkedAt,
+      lastRunStatus: update.status || "completed"
+    }
+  };
+  const impactMatches = buildImpactMatches(state.customers, state.standards);
+  state = withAudit(state, auditEvent(
+    "standards.watch.completed",
+    { type: "standards", name: "Daily watch" },
+    `Checked ${update.standards?.length || 0} standards and found ${impactMatches.length} customer-standard change matches.`,
+    actor,
+    { impactMatches: impactMatches.length }
+  ));
+  await saveAppState(state);
+
+  const delivery = await deliverScheduledSummary(update, impactMatches, state);
+  return {
+    status: "completed",
+    checkedAt: update.checkedAt || checkedAt,
+    updatedStandards: update.standards?.length || 0,
+    impactMatches: impactMatches.length,
+    delivery
+  };
+}
+
+function mergeStandardRecords(existing = [], incoming = []) {
+  const merged = existing.map((standard) => ({ ...standard }));
+  incoming.forEach((updated) => {
+    const index = merged.findIndex((standard) => normalize(standard.name) === normalize(updated.name));
+    if (index >= 0) {
+      merged[index] = {
+        ...merged[index],
+        ...updated,
+        name: merged[index].name || updated.name,
+        markets: normalizeList(updated.markets?.length ? updated.markets : merged[index].markets),
+        topics: normalizeList(updated.topics?.length ? updated.topics : merged[index].topics),
+        changes: mergeChangeLists(updated.changes, merged[index].changes)
+      };
+    } else {
+      merged.push(updated);
+    }
+  });
+  return merged;
+}
+
+function mergeChangeLists(newChanges = [], oldChanges = []) {
+  const merged = [];
+  [...normalizeList(newChanges), ...normalizeList(oldChanges)].forEach((change) => {
+    const key = normalize(`${change.date || ""} ${change.title || ""} ${change.url || ""} ${change.summary || ""}`);
+    if (!key || merged.some((item) => normalize(`${item.date || ""} ${item.title || ""} ${item.url || ""} ${item.summary || ""}`) === key)) return;
+    merged.push(change);
+  });
+  return merged.slice(0, 8);
+}
+
+function customerStandardNames(customer = {}) {
+  const projectStandards = Array.isArray(customer.projects)
+    ? customer.projects.flatMap((project) => normalizeList(project.standards))
+    : [];
+  return Array.from(new Set([
+    ...normalizeList(customer.knownStandards),
+    ...normalizeList(customer.guessedStandards),
+    ...normalizeList(customer.likelyStandards).map((item) => typeof item === "string" ? item : item.name),
+    ...projectStandards
+  ].filter(Boolean)));
+}
+
+function buildImpactMatches(customers = [], standards = []) {
+  const changedStandards = standards.filter((standard) => normalizeList(standard.changes).length);
+  const matches = [];
+  customers.forEach((customer) => {
+    const names = customerStandardNames(customer).map(normalize);
+    changedStandards.forEach((standard) => {
+      if (!names.includes(normalize(standard.name))) return;
+      matches.push({
+        customerName: customer.name,
+        customerKey: slug(customer.name || "customer"),
+        standard: standard.name,
+        owner: customer.owner || "NA team",
+        watched: customer.hypercare === "Active",
+        latestChange: normalizeList(standard.changes)[0] || null
+      });
+    });
+  });
+  return matches;
+}
+
+async function deliverScheduledSummary(update, impactMatches, state) {
+  const text = [
+    "TRNA CCB daily standards watch completed.",
+    `Checked standards: ${update.standards?.length || 0}.`,
+    `Customer-standard impact matches: ${impactMatches.length}.`,
+    impactMatches.slice(0, 8).map((item) => `- ${item.customerName}: ${item.standard}${item.watched ? "" : " (not on notification watch)"}`).join("\n")
+  ].filter(Boolean).join("\n");
+  return deliverNotification({
+    subject: "TRNA CCB daily standards watch",
+    text,
+    to: process.env.DEFAULT_NOTIFICATION_EMAIL || process.env.NOTIFICATION_TO_EMAIL || "",
+    state
+  });
+}
+
+async function sendNotificationTask(body = {}) {
+  const actor = actorFrom(body);
+  const loaded = await loadAppState();
+  let state = sanitizeAppState(loaded.state || {});
+  const requestId = body.requestId || body.taskRequestId;
+  const requestIndex = state.adminRequests.findIndex((request) => request.id === requestId);
+  if (requestIndex < 0) {
+    const error = new Error("Notification task was not found in shared state.");
+    error.statusCode = 404;
+    throw error;
+  }
+  const request = state.adminRequests[requestIndex];
+  if (request.type !== "notify-customer") {
+    const error = new Error("The selected item is not a customer notification task.");
+    error.statusCode = 400;
+    throw error;
+  }
+  const owner = state.users.find((user) => normalize(user.name) === normalize(request.owner));
+  const text = [
+    `Customer notification task: ${request.customerName || "Customer"}`,
+    `Standard: ${request.standard || "Not specified"}`,
+    `Priority: ${request.priority || "Medium"}`,
+    `Due: ${request.dueDate || "Not set"}`,
+    `Owner: ${request.owner || "NA team"}`,
+    "",
+    request.reason || "Review the saved impact review in TRNA CCB."
+  ].join("\n");
+  const delivery = await deliverNotification({
+    subject: `TRNA CCB customer task: ${request.customerName || "Customer"} / ${request.standard || "Standard"}`,
+    text,
+    to: owner?.email || process.env.DEFAULT_NOTIFICATION_EMAIL || process.env.NOTIFICATION_TO_EMAIL || "",
+    state
+  });
+
+  const updatedRequest = {
+    ...request,
+    deliveryStatus: delivery.status,
+    deliveryChannels: delivery.channels,
+    deliveryMessage: delivery.message || "",
+    deliveredAt: delivery.status === "sent" ? new Date().toISOString() : request.deliveredAt || "",
+    taskStatus: delivery.status === "sent" ? "Sent" : request.taskStatus || "Open"
+  };
+  state.adminRequests[requestIndex] = updatedRequest;
+  state = withAudit(state, auditEvent(
+    "notification.sent",
+    { type: "customer", name: request.customerName || "Customer" },
+    delivery.status === "sent"
+      ? `Sent customer notification task for ${request.standard || "standard"} through ${delivery.channels.join(", ")}.`
+      : `Notification delivery attempted for ${request.standard || "standard"}: ${delivery.message || "not configured"}.`,
+    actor,
+    { requestId: request.id, deliveryStatus: delivery.status }
+  ));
+  await saveAppState(state);
+  return {
+    status: delivery.status,
+    delivery,
+    request: updatedRequest
+  };
+}
+
+async function deliverNotification({ subject, text, to }) {
+  const results = [];
+  if (process.env.TEAMS_WEBHOOK_URL) {
+    results.push(await sendTeamsNotification(subject, text));
+  }
+  if (process.env.NOTIFICATION_FROM_EMAIL && to) {
+    results.push(await sendEmailNotification(subject, text, to));
+  }
+  if (!results.length) {
+    return {
+      status: "not_configured",
+      channels: [],
+      message: "Set TEAMS_WEBHOOK_URL and/or NOTIFICATION_FROM_EMAIL plus a recipient email to enable delivery."
+    };
+  }
+  const failed = results.filter((item) => item.status !== "sent");
+  return {
+    status: failed.length === results.length ? "failed" : "sent",
+    channels: results.filter((item) => item.status === "sent").map((item) => item.channel),
+    details: results,
+    message: failed.map((item) => item.message).filter(Boolean).join("; ")
+  };
+}
+
+async function sendTeamsNotification(subject, text) {
+  try {
+    const result = await fetch(process.env.TEAMS_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: `**${subject}**\n\n${text}` })
+    });
+    if (!result.ok) throw new Error(`Teams webhook returned ${result.status}: ${await result.text()}`);
+    return { channel: "teams", status: "sent" };
+  } catch (error) {
+    return { channel: "teams", status: "failed", message: error.message };
+  }
+}
+
+async function sendEmailNotification(subject, text, to) {
+  try {
+    const { SESv2Client, SendEmailCommand } = await import("@aws-sdk/client-sesv2");
+    const client = new SESv2Client({});
+    await client.send(new SendEmailCommand({
+      FromEmailAddress: process.env.NOTIFICATION_FROM_EMAIL,
+      Destination: { ToAddresses: String(to).split(",").map((item) => item.trim()).filter(Boolean) },
+      Content: {
+        Simple: {
+          Subject: { Data: subject },
+          Body: { Text: { Data: text } }
+        }
+      }
+    }));
+    return { channel: "email", status: "sent", to };
+  } catch (error) {
+    return { channel: "email", status: "failed", message: error.message };
+  }
+}
+
 function buildEnrichmentPrompt(body, standards) {
   return `You enrich global B2B customer profiles for a testing, inspection, certification, cybersecurity, functional safety, and market access team.
 
@@ -777,7 +1075,7 @@ function standardsFor(sector, markets) {
   if (sector === "Automotive") list.push("ISO/SAE 21434", "UNECE R155 / R156", "ISO 26262", "TISAX", "IEC 62443");
   if (sector === "Industrial / OT") list.push("IEC 62443", "IEC 61508", "IEC 61511", "ISO 13849", "ISO 27001 / 27002");
   if (sector === "Medical Devices") list.push("UL 2900", "ISO 27001 / 27002", "EU Cyber Resilience Act");
-  if (sector === "Financial Services") list.push("DORA", "ISO 27001 / 27002", "NIS2");
+  if (sector === "Financial Services") list.push("ISO 27001 / 27002", "NIS2");
   if (sector === "ICT / Connected Products") list.push("EU Cyber Resilience Act", "ISO 27001 / 27002", "NIST SP 800-115", "UL 2900");
   if (markets.includes("EU")) list.push("NIS2", "EU Cyber Resilience Act", "UKCA / CE Market Access");
   if (markets.includes("UK")) list.push("UKCA / CE Market Access");
@@ -820,7 +1118,7 @@ function engagementActions(sector, markets, name) {
     ]
   };
   const marketActions = markets.includes("EU")
-    ? ["Check EU regulatory exposure, especially CRA, NIS2, DORA, CE, or sector-specific requirements."]
+    ? ["Check EU regulatory exposure, especially CRA, NIS2, CE, or sector-specific requirements."]
     : ["Check whether global exports require local conformity, test marks, or certification paths."];
   return [...base, ...(sectorActions[sector] || []), ...marketActions, "Identify one immediate gap assessment and one longer-term certification opportunity.", "Create a follow-up plan for account owner and delivery lead."].slice(0, 10);
 }
