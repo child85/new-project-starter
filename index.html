@@ -604,6 +604,41 @@
         line-height: 1.48;
       }
 
+      .impact-review-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .impact-review-panel {
+        display: grid;
+        gap: 8px;
+        padding: 14px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .impact-review-panel.full {
+        grid-column: 1 / -1;
+      }
+
+      .impact-review-panel span {
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .impact-review-panel ul {
+        margin: 0;
+        padding-left: 20px;
+        color: var(--ink);
+      }
+
+      .impact-review-panel li + li {
+        margin-top: 6px;
+      }
+
       .command-strip,
       .task-board,
       .source-grid,
@@ -6046,27 +6081,147 @@
       }
 
       function buildImpactRecommendation(customer, standardName, change) {
+        const standard = standardRecordByName(standardName) || { name: standardName };
         const confirmed = customerConfirmedStandardNames(customer).some((name) => normalize(name) === normalize(standardName));
+        const guessed = safeList(customer.guessedStandards).some((name) => normalize(itemLabel(name)) === normalize(standardName));
         const projects = safeList(customer.projects).filter((project) => safeList(project.standards).some((name) => normalize(name) === normalize(standardName)));
         const text = normalize(`${change?.title || ""} ${change?.summary || ""} ${change?.impact || ""}`);
         const highSignals = ["shall", "must", "deadline", "effective", "mandatory", "new requirement", "certification", "type approval", "cybersecurity", "safety"];
         const signalCount = highSignals.filter((signal) => text.includes(signal)).length;
-        const level = change?.impact === "High" || signalCount >= 3 || confirmed ? "High" : signalCount >= 1 ? "Medium" : "Low";
-        const decision = confirmed || projects.length || level !== "Low" ? "Relevant" : "Needs more review";
-        const why = confirmed
-          ? `${standardName} is already confirmed or delivered for this customer, so a public change can affect prior work, claims, or hypercare outreach.`
-          : `${standardName} is currently AI-suggested or adjacent for this customer. The change may still matter if their products, subsidiaries, or markets depend on it.`;
-        const action = projects.length
-          ? `Check ${projects.map((project) => project.name).join(", ")} for affected scope, deliverables, and customer commitments.`
-          : "Confirm whether the customer's products, markets, or subsidiaries are in scope before sending an external notification.";
+        const watchOnly = normalize(`${change?.title || ""} ${change?.summary || ""}`).includes("watch item") || normalize(`${change?.summary || ""}`).includes("track public");
+        const level = !watchOnly && (change?.impact === "High" || signalCount >= 3 || confirmed || projects.length) ? "High" : signalCount >= 1 || guessed ? "Medium" : "Low";
+        const decision = watchOnly && !projects.length ? "Needs more review" : (confirmed || projects.length || guessed || level !== "Low" ? "Relevant" : "Needs more review");
+        const projectNames = projects.map((project) => project.name).filter(Boolean);
+        const specificChange = change?.summary
+          ? `${change?.title || "Public change"}: ${change.summary}`
+          : `${change?.title || "Public change"} has a saved change note, but no detailed change summary has been captured yet.`;
+        const customerImpact = watchOnly
+          ? `This is a watch note, not enough by itself for a customer notification. First verify whether ${customer.name}'s products, projects, or markets are actually in scope for ${standardName}.`
+          : `${customer.name} may need a focused review of ${standardName} evidence, project commitments, or market-access claims tied to ${regionsText(customer.markets)} operations.`;
+        const whyThisCustomer = [
+          confirmed ? `${standardName} is saved as a confirmed or delivered standard for this customer.` : "",
+          guessed ? `${standardName} is listed as an AI-suggested or publicly possible standard for this customer.` : "",
+          projectNames.length ? `Related saved project / assessment: ${projectNames.join(", ")}.` : "",
+          customer.sector ? `Customer sector: ${customer.sector}.` : "",
+          safeList(customer.markets).length ? `Market exposure: ${regionsText(customer.markets)}.` : ""
+        ].filter(Boolean);
+        const affectedAreas = [
+          ...projectNames.map((name) => `Project / assessment: ${name}`),
+          customer.keyProducts?.[0] ? `Product / service line: ${customer.keyProducts[0]}` : "Product or service scope needs confirmation",
+          safeList(customer.subsidiaries).length ? `Relevant entities: ${safeList(customer.subsidiaries).slice(0, 2).join(", ")}` : "Subsidiary or legal-entity scope needs confirmation",
+          standard.sourceUrl ? "Source-backed standard record" : "Standard source needs confirmation"
+        ];
+        const recommendedActions = [
+          "Read the source link and confirm whether the saved note is a real published change or only a watch item.",
+          `Check whether ${customer.name}'s products, subsidiaries, or delivered projects are in scope.`,
+          "Compare the change against saved project standards and any customer commitments.",
+          "Decide whether the customer owner needs an internal briefing before external outreach.",
+          "Update the customer profile with the final relevance decision."
+        ];
+        const customerQuestions = [
+          `Which ${customer.sector || "product"} lines rely on ${standardName}?`,
+          "Are EU, UK, US, or global market-access claims tied to this standard?",
+          "Has the customer already updated internal compliance evidence for this change?",
+          "Should TUV Rheinland provide a gap review, assessment update, or hypercare briefing?"
+        ];
         return {
           level,
           decision,
-          why,
-          action,
+          specificChange,
+          customerImpact,
+          whyThisCustomer,
+          affectedAreas,
+          recommendedActions,
+          customerQuestions,
+          notificationDraft: `${customer.name}: ${standardName} has a saved change note (${change?.date || "date unknown"}). Please review whether this affects active projects, delivered evidence, or planned compliance work before customer outreach.`,
           priority: level === "High" ? "High" : level === "Low" ? "Low" : "Medium",
-          note: `${level} potential impact. ${why} ${action}`
+          note: `${level} impact review. Specific change: ${specificChange} Customer impact: ${customerImpact}`
         };
+      }
+
+      function renderImpactRecommendation(item, recommendation, stateText = "") {
+        const sourceUrl = item.change.url || standardRecordByName(item.standard)?.sourceUrl || "";
+        const list = (items, emptyText) => safeList(items).length
+          ? `<ul>${safeList(items).map((entry) => `<li>${esc(entry)}</li>`).join("")}</ul>`
+          : `<p>${esc(emptyText)}</p>`;
+        return `
+          <strong>AI recommendation: ${esc(recommendation.level)} impact, ${esc(recommendation.decision.toLowerCase())}</strong>
+          ${stateText ? `<p>${esc(stateText)}</p>` : ""}
+          <div class="impact-review-grid">
+            <div class="impact-review-panel full">
+              <span>Specific saved change</span>
+              <p>${esc(recommendation.specificChange || item.change.summary || "No detailed change content saved yet.")}</p>
+              ${sourceUrl ? `<p>Source: ${externalLink(sourceUrl, "open source website")}</p>` : `<p>Source: no source link saved for this change.</p>`}
+            </div>
+            <div class="impact-review-panel full">
+              <span>Customer-specific impact</span>
+              <p>${esc(recommendation.customerImpact || "No customer-specific impact has been generated yet.")}</p>
+            </div>
+            <div class="impact-review-panel">
+              <span>Why this customer</span>
+              ${list(recommendation.whyThisCustomer, "No customer-specific linkage found yet.")}
+            </div>
+            <div class="impact-review-panel">
+              <span>Likely affected areas</span>
+              ${list(recommendation.affectedAreas, "Affected areas need confirmation.")}
+            </div>
+            <div class="impact-review-panel">
+              <span>Recommended next steps</span>
+              ${list(recommendation.recommendedActions, "No recommended actions generated yet.")}
+            </div>
+            <div class="impact-review-panel">
+              <span>Questions for customer owner</span>
+              ${list(recommendation.customerQuestions, "No validation questions generated yet.")}
+            </div>
+            <div class="impact-review-panel full">
+              <span>Notification draft</span>
+              <p>${esc(recommendation.notificationDraft || "No notification draft generated yet.")}</p>
+            </div>
+          </div>
+          <div class="notification-meta">
+            <span class="tag">${esc(item.standard)}</span>
+            <span class="tag">${esc(item.change.title || "Public change")}</span>
+            <span class="tag">${esc(item.change.impact || "Review")}</span>
+          </div>
+        `;
+      }
+
+      function impactReviewPayload(item, existing) {
+        const standard = standardRecordByName(item.standard) || { name: item.standard };
+        return {
+          customer: {
+            name: item.customer.name,
+            website: item.customer.website,
+            headquarters: item.customer.headquarters,
+            sector: item.customer.sector,
+            subSector: item.customer.subSector,
+            markets: item.customer.markets,
+            employeeEstimate: item.customer.employeeEstimate,
+            revenueEstimate: item.customer.revenueEstimate,
+            keyProducts: item.customer.keyProducts,
+            subsidiaries: item.customer.subsidiaries,
+            knownStandards: customerConfirmedStandardNames(item.customer),
+            guessedStandards: item.customer.guessedStandards,
+            projects: item.customer.projects
+          },
+          standard: {
+            name: standard.name,
+            domain: standard.domain,
+            sector: standard.sector,
+            markets: standard.markets,
+            topics: standard.topics,
+            description: standard.description,
+            sourceUrl: standard.sourceUrl,
+            internalNotes: standard.internalNotes
+          },
+          change: item.change,
+          existingReview: existing || null
+        };
+      }
+
+      async function enrichImpactReviewWithApi(item, existing) {
+        if (!getApiUrl()) return null;
+        return callStateApi("impact-review", impactReviewPayload(item, existing));
       }
 
       function findImpactItem(customerKey, standardName = "") {
@@ -6096,19 +6251,7 @@
         document.getElementById("impactReviewDialog").classList.remove("hidden");
         document.getElementById("impactReviewTitle").textContent = `Review impact: ${item.customer.name}`;
         document.getElementById("impactReviewCopy").textContent = `${item.standard} changed on ${item.change.date || "an unknown date"}.`;
-        document.getElementById("impactRecommendationBox").innerHTML = `
-          <strong>AI recommendation: ${esc(recommendation.level)} impact, ${esc(recommendation.decision.toLowerCase())}</strong>
-          <p>${esc(recommendation.why)}</p>
-          <p><strong>Suggested next step:</strong> ${esc(recommendation.action)}</p>
-          <div class="notification-meta">
-            <span class="tag">${esc(item.standard)}</span>
-            <span class="tag">${esc(item.change.title || "Public change")}</span>
-            <span class="tag">${esc(item.change.impact || "Review")}</span>
-          </div>
-          <div class="lifecycle">
-            ${["New", "In review", "Relevant", "Customer notified", "Closed"].map((step) => `<span class="tag ${step === (existing?.status || "New") ? "active" : ""}">${esc(step)}</span>`).join("")}
-          </div>
-        `;
+        document.getElementById("impactRecommendationBox").innerHTML = renderImpactRecommendation(item, recommendation, getApiUrl() ? "Preparing local review while Claude generates a customer-specific impact analysis..." : "Local structured review. Connect the AWS backend for live AI impact analysis.");
         document.getElementById("impactRelevant").value = existing?.decision || recommendation.decision;
         document.getElementById("impactOwner").innerHTML = userNameOptions(existing?.owner || item.customer.owner || "NA team");
         document.getElementById("impactStatus").value = existing?.status || (recommendation.decision === "Relevant" ? "In review" : "New");
@@ -6116,6 +6259,22 @@
         document.getElementById("impactDueDate").value = existing?.dueDate || isoDateOffset(recommendation.priority === "High" ? 3 : 7);
         document.getElementById("impactNote").value = existing?.note || recommendation.note;
         document.getElementById("createNotificationTask").checked = existing ? Boolean(existing.taskCreated) : recommendation.decision !== "Not relevant";
+        enrichImpactReviewWithApi(item, existing).then((aiRecommendation) => {
+          if (!aiRecommendation || pendingImpactReview !== item) return;
+          pendingImpactReview = { ...item, recommendation: aiRecommendation };
+          document.getElementById("impactRecommendationBox").innerHTML = renderImpactRecommendation(item, aiRecommendation, aiRecommendation.notice || "Claude generated this customer-specific impact analysis from the saved change note and customer profile.");
+          if (!existing) {
+            document.getElementById("impactRelevant").value = aiRecommendation.decision || recommendation.decision;
+            document.getElementById("impactStatus").value = aiRecommendation.decision === "Relevant" ? "In review" : "New";
+            document.getElementById("impactPriority").value = aiRecommendation.priority || recommendation.priority || "Medium";
+            document.getElementById("impactDueDate").value = isoDateOffset((aiRecommendation.priority || recommendation.priority) === "High" ? 3 : 7);
+            document.getElementById("impactNote").value = aiRecommendation.reviewNote || aiRecommendation.note || recommendation.note;
+            document.getElementById("createNotificationTask").checked = aiRecommendation.decision !== "Not relevant";
+          }
+        }).catch((error) => {
+          if (pendingImpactReview !== item) return;
+          document.getElementById("impactRecommendationBox").innerHTML = renderImpactRecommendation(item, recommendation, `AI impact analysis failed: ${error.message}. Showing local structured review.`);
+        });
       }
 
       function closeImpactReviewDialog() {
@@ -6170,7 +6329,7 @@
             priority,
             dueDate,
             taskStatus: "Open",
-            reason: `${decision}: ${note || recommendation.note}`,
+            reason: `${decision}: ${note || recommendation.reviewNote || recommendation.note || recommendation.customerImpact || ""}`,
             createdAt: new Date().toISOString()
           });
           saveAdminRequests();

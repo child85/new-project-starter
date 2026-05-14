@@ -60,6 +60,11 @@ export async function handler(event) {
       return response(200, result);
     }
 
+    if (body.task === "impact-review") {
+      const result = await enrichImpactReview(body);
+      return response(200, result);
+    }
+
     if (!body.name || !String(body.name).trim()) {
       return response(400, { error: "Customer name is required." });
     }
@@ -967,6 +972,234 @@ async function sendEmailNotification(subject, text, to) {
   } catch (error) {
     return { channel: "email", status: "failed", message: error.message };
   }
+}
+
+async function enrichImpactReview(body) {
+  const input = sanitizeImpactReviewInput(body);
+  if (!input.customer.name || !input.standard.name) {
+    return {
+      status: "invalid_request",
+      error: "Customer and standard are required for impact review."
+    };
+  }
+
+  try {
+    if (process.env.ANTHROPIC_API_KEY) {
+      return normalizeImpactRecommendation(await enrichImpactWithClaude(input), input);
+    }
+    if (process.env.OPENAI_API_KEY) {
+      return normalizeImpactRecommendation(await enrichImpactWithOpenAi(input), input);
+    }
+  } catch (error) {
+    return {
+      ...deterministicImpactRecommendation(input),
+      status: "ai_error_fallback",
+      notice: `AI impact review failed: ${error.message}`
+    };
+  }
+
+  return deterministicImpactRecommendation(input);
+}
+
+function sanitizeImpactReviewInput(body) {
+  return {
+    customer: {
+      name: String(body.customer?.name || "").trim(),
+      website: String(body.customer?.website || "").trim(),
+      headquarters: String(body.customer?.headquarters || "").trim(),
+      sector: String(body.customer?.sector || "").trim(),
+      subSector: String(body.customer?.subSector || "").trim(),
+      markets: normalizeList(body.customer?.markets),
+      employeeEstimate: String(body.customer?.employeeEstimate || "").trim(),
+      revenueEstimate: String(body.customer?.revenueEstimate || "").trim(),
+      keyProducts: normalizeList(body.customer?.keyProducts),
+      subsidiaries: normalizeList(body.customer?.subsidiaries),
+      knownStandards: normalizeList(body.customer?.knownStandards),
+      guessedStandards: normalizeList(body.customer?.guessedStandards),
+      projects: Array.isArray(body.customer?.projects) ? body.customer.projects.slice(0, 10).map((project) => ({
+        name: String(project.name || "").trim(),
+        type: String(project.type || "").trim(),
+        status: String(project.status || "").trim(),
+        date: String(project.date || "").trim(),
+        standards: normalizeList(project.standards),
+        notes: String(project.notes || "").trim()
+      })) : []
+    },
+    standard: {
+      name: String(body.standard?.name || "").trim(),
+      domain: String(body.standard?.domain || "").trim(),
+      sector: String(body.standard?.sector || "").trim(),
+      markets: normalizeList(body.standard?.markets),
+      topics: normalizeList(body.standard?.topics),
+      description: String(body.standard?.description || "").trim(),
+      sourceUrl: String(body.standard?.sourceUrl || "").trim(),
+      internalNotes: String(body.standard?.internalNotes || "").trim()
+    },
+    change: {
+      title: String(body.change?.title || "Public change").trim(),
+      date: String(body.change?.date || "").trim(),
+      summary: String(body.change?.summary || "").trim(),
+      impact: String(body.change?.impact || "Review").trim(),
+      url: String(body.change?.url || body.standard?.sourceUrl || "").trim()
+    },
+    existingReview: body.existingReview || null
+  };
+}
+
+async function enrichImpactWithClaude(input) {
+  const aiResponse = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01"
+    },
+    body: JSON.stringify({
+      model: process.env.ANTHROPIC_MODEL || "claude-3-5-haiku-20241022",
+      max_tokens: 1700,
+      system: "You create customer-specific standards-change impact reviews for assurance consultants. Return only compact valid JSON.",
+      messages: [{ role: "user", content: buildImpactReviewPrompt(input) }]
+    })
+  });
+  if (!aiResponse.ok) throw new Error(`Anthropic returned ${aiResponse.status}: ${await aiResponse.text()}`);
+  const payload = await aiResponse.json();
+  const text = (payload.content || []).map((part) => part.type === "text" ? part.text : "").join("").trim();
+  if (!text) throw new Error("Anthropic returned no JSON text.");
+  return parseJsonObject(text);
+}
+
+async function enrichImpactWithOpenAi(input) {
+  const aiResponse = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+      input: buildImpactReviewPrompt(input),
+      text: { format: { type: "json_object" } }
+    })
+  });
+  if (!aiResponse.ok) throw new Error(`OpenAI returned ${aiResponse.status}: ${await aiResponse.text()}`);
+  const payload = await aiResponse.json();
+  const text = payload.output_text || payload.output?.flatMap((item) => item.content || []).map((part) => part.text || "").join("");
+  if (!text) throw new Error("OpenAI returned no JSON text.");
+  return parseJsonObject(text);
+}
+
+function buildImpactReviewPrompt(input) {
+  return `Create a specific customer impact review from a standards-change note.
+
+Return compact valid JSON only. Do not include markdown.
+
+Customer:
+${JSON.stringify(input.customer, null, 2)}
+
+Standard:
+${JSON.stringify(input.standard, null, 2)}
+
+Specific change note:
+${JSON.stringify(input.change, null, 2)}
+
+Return this exact shape:
+{
+  "status": "completed",
+  "level": "Low | Medium | High",
+  "decision": "Relevant | Not relevant | Needs more review",
+  "priority": "Low | Medium | High",
+  "specificChange": "plain-English statement of what changed, based only on the change note",
+  "customerImpact": "specific impact for this customer's products, markets, projects, or likely obligations",
+  "whyThisCustomer": ["2-5 concrete reasons tied to customer fields, projects, markets, or standards"],
+  "affectedAreas": ["products/projects/markets/evidence areas likely affected"],
+  "recommendedActions": ["3-6 concrete consultant next steps"],
+  "customerQuestions": ["3-5 questions to validate with the customer"],
+  "notificationDraft": "short customer-owner notification draft",
+  "reviewNote": "ready-to-save internal review note"
+}
+
+Rules:
+- Do not say the customer is affected merely because the standard changed. Tie impact to confirmed/project standards first, then guessed standards, markets, sector, products, and subsidiaries.
+- If the change note is only a watch item or not a real public change, say that clearly in specificChange and set decision to "Needs more review" unless project evidence makes it relevant.
+- Keep it practical for a consultant deciding whether to notify a customer owner.
+- Separate known facts from assumptions.`;
+}
+
+function normalizeImpactRecommendation(result, input) {
+  const fallback = deterministicImpactRecommendation(input);
+  return {
+    status: result.status || "completed",
+    level: choose(result.level, fallback.level),
+    decision: choose(result.decision, fallback.decision),
+    priority: choose(result.priority, fallback.priority),
+    specificChange: choose(result.specificChange, fallback.specificChange),
+    customerImpact: choose(result.customerImpact, fallback.customerImpact),
+    whyThisCustomer: normalizeList(result.whyThisCustomer).length ? normalizeList(result.whyThisCustomer).slice(0, 5) : fallback.whyThisCustomer,
+    affectedAreas: normalizeList(result.affectedAreas).length ? normalizeList(result.affectedAreas).slice(0, 6) : fallback.affectedAreas,
+    recommendedActions: normalizeList(result.recommendedActions).length ? normalizeList(result.recommendedActions).slice(0, 6) : fallback.recommendedActions,
+    customerQuestions: normalizeList(result.customerQuestions).length ? normalizeList(result.customerQuestions).slice(0, 5) : fallback.customerQuestions,
+    notificationDraft: choose(result.notificationDraft, fallback.notificationDraft),
+    reviewNote: choose(result.reviewNote, fallback.reviewNote)
+  };
+}
+
+function deterministicImpactRecommendation(input) {
+  const confirmed = input.customer.knownStandards.some((name) => normalize(name) === normalize(input.standard.name));
+  const guessed = input.customer.guessedStandards.some((name) => normalize(name) === normalize(input.standard.name));
+  const projects = input.customer.projects.filter((project) => project.standards.some((name) => normalize(name) === normalize(input.standard.name)));
+  const text = normalize(`${input.change.title} ${input.change.summary} ${input.change.impact}`);
+  const isWatchOnly = /watch item|track public|source review|review this/i.test(`${input.change.title} ${input.change.summary}`);
+  const signalCount = ["shall", "must", "deadline", "effective", "mandatory", "new requirement", "certification", "type approval", "safety", "cybersecurity"].filter((signal) => text.includes(signal)).length;
+  const level = !isWatchOnly && (confirmed || projects.length || signalCount >= 3) ? "High" : signalCount || guessed ? "Medium" : "Low";
+  const decision = isWatchOnly && !projects.length ? "Needs more review" : confirmed || projects.length || guessed ? "Relevant" : "Needs more review";
+  const projectNames = projects.map((project) => project.name).filter(Boolean);
+  const specificChange = input.change.summary
+    ? `${input.change.title}: ${input.change.summary}`
+    : `${input.change.title || input.standard.name} has a saved change note, but no detailed change summary has been captured yet.`;
+  const customerFit = [
+    confirmed ? `${input.standard.name} is saved as a confirmed customer standard.` : "",
+    guessed ? `${input.standard.name} is AI-suggested for this customer.` : "",
+    projectNames.length ? `Related saved project or assessment: ${projectNames.join(", ")}.` : "",
+    input.customer.markets.length ? `Customer market exposure: ${input.customer.markets.join(", ")}.` : "",
+    input.customer.sector ? `Customer sector: ${input.customer.sector}.` : ""
+  ].filter(Boolean);
+  const customerImpact = isWatchOnly
+    ? `This saved note is not specific enough to justify an external customer notification by itself. Use it to verify whether ${input.customer.name}'s ${input.customer.sector || "business"} scope has a real exposure to ${input.standard.name}.`
+    : `${input.customer.name} may need a review of affected ${input.customer.sector || "business"} evidence, project claims, or market-access assumptions tied to ${input.standard.name}.`;
+  return {
+    status: "local_structured_review",
+    level,
+    decision,
+    priority: level,
+    specificChange,
+    customerImpact,
+    whyThisCustomer: customerFit.length ? customerFit : [`${input.standard.name} is linked to this customer through saved or suggested standards.`],
+    affectedAreas: [
+      ...projectNames.map((name) => `Project / assessment: ${name}`),
+      input.customer.keyProducts[0] ? `Product or service area: ${input.customer.keyProducts[0]}` : "Product or service scope needs confirmation",
+      input.customer.markets[0] ? `Market exposure: ${input.customer.markets.join(", ")}` : "Market exposure needs confirmation",
+      "Customer-facing claims, gap-analysis notes, or certification roadmap"
+    ].slice(0, 6),
+    recommendedActions: [
+      "Read the source link and confirm whether the change note is a real published change or only a watch item.",
+      `Check whether ${input.customer.name}'s products, subsidiaries, or delivered projects are in scope.`,
+      "Compare the change against saved project standards and any customer commitments.",
+      "Decide whether the customer owner needs an internal briefing before external outreach.",
+      "Update the customer profile with the final relevance decision."
+    ],
+    customerQuestions: [
+      `Which ${input.customer.sector || "product"} lines rely on ${input.standard.name}?`,
+      "Are EU, UK, US, or global market-access claims tied to this standard?",
+      "Has the customer already updated internal compliance evidence for this change?",
+      "Should TUV Rheinland provide a gap review, assessment update, or hypercare briefing?"
+    ],
+    notificationDraft: `${input.customer.name}: ${input.standard.name} has a saved change note (${input.change.date || "date unknown"}). Please review whether this affects active projects, delivered evidence, or planned compliance work before customer outreach.`,
+    reviewNote: `${level} impact review. Specific change: ${specificChange} Customer impact: ${customerImpact}`
+  };
+}
+
+function choose(value, fallback) {
+  return String(value || "").trim() || fallback;
 }
 
 function buildEnrichmentPrompt(body, standards) {
