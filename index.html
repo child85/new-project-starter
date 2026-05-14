@@ -341,16 +341,23 @@
       }
 
       .compliance-kpis .metric {
-        min-height: 178px;
-        color: #ffffff;
-        background: var(--blue);
-        border-color: var(--blue);
+        min-height: 158px;
+        color: var(--ink);
+        background: #ffffff;
+        border-color: var(--line);
+        border-top: 5px solid var(--blue);
       }
 
-      .compliance-kpis .metric span,
-      .compliance-kpis .metric strong,
+      .compliance-kpis .metric span {
+        color: var(--muted);
+      }
+
+      .compliance-kpis .metric strong {
+        color: var(--blue-dark);
+      }
+
       .compliance-kpis .metric p {
-        color: #ffffff;
+        color: var(--copy);
       }
 
       .customer-layout {
@@ -645,6 +652,58 @@
         margin: 0;
         color: var(--muted);
         line-height: 1.45;
+      }
+
+      .operator-guide {
+        display: grid;
+        gap: 14px;
+        padding: 0 26px 22px;
+        background: #f8fafc;
+      }
+
+      .operator-guide h3 {
+        margin: 0;
+        color: var(--blue-dark);
+        font-size: 1.12rem;
+      }
+
+      .operator-guide p {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .guide-strip {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .guide-card {
+        display: grid;
+        gap: 10px;
+        min-height: 164px;
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .guide-card.done {
+        border-left: 4px solid var(--ok);
+      }
+
+      .guide-card strong {
+        color: var(--blue-dark);
+        font-size: 1.04rem;
+      }
+
+      .guide-card .status-badge {
+        width: fit-content;
+      }
+
+      .guide-card button {
+        align-self: end;
+        min-height: 36px;
       }
 
       .command-strip {
@@ -2232,6 +2291,7 @@
         .app-shell,
         .workflow-strip,
         .system-status-grid,
+        .guide-strip,
         .command-strip,
         .task-board,
         .source-grid,
@@ -2276,6 +2336,7 @@
         .setup-grid,
         .workflow-strip,
         .system-status-grid,
+        .guide-strip,
         .command-strip,
         .task-board,
         .source-grid,
@@ -2782,76 +2843,83 @@
         <section class="panel app-view active" id="watch">
           <div class="panel-head">
             <div>
-              <h2>Daily Watch Dashboard</h2>
+              <h2>Daily Watch</h2>
               <p>
-                Quick answer to the core question: which customers are tied to
-                which standards, what changed, and who needs follow-up.
+                Start here each day. This view shows changed standards, affected
+                customers, open impact reviews, and the follow-up work that needs an owner.
               </p>
             </div>
           </div>
           <div class="workflow-strip" aria-label="Daily Watch workflow">
             <article class="workflow-step">
               <span>Step 1</span>
-              <strong>Check what changed</strong>
-              <p>Review standards with saved public change notes or run the live AI source update from Standards Overview.</p>
+              <strong>Build the library</strong>
+              <p>Add the standards and regulations your team tests, assesses, or watches for customer impact.</p>
             </article>
             <article class="workflow-step">
               <span>Step 2</span>
-              <strong>Review customer impact</strong>
-              <p>Decide whether a standard change is relevant for a saved customer, project, or hypercare account.</p>
+              <strong>Add customers</strong>
+              <p>Use AI enrichment to create a customer profile, then confirm the standards that actually matter.</p>
             </article>
             <article class="workflow-step">
               <span>Step 3</span>
-              <strong>Create follow-up tasks</strong>
-              <p>If outreach is needed, create a customer notification task and assign an owner and due date.</p>
+              <strong>Review impact</strong>
+              <p>When a watched source changes, decide whether it is relevant for linked customers or projects.</p>
             </article>
             <article class="workflow-step">
               <span>Step 4</span>
-              <strong>Close the loop</strong>
-              <p>Mark the customer notified or close the review so the dashboard only shows active work.</p>
+              <strong>Notify and close</strong>
+              <p>Create a customer notification task, assign an owner, and close the review when action is complete.</p>
             </article>
           </div>
           <div class="system-status-grid" aria-label="System readiness">
             <article class="system-status-card">
-              <strong>Data storage: shared AWS backend</strong>
-              <p>Customers, tasks, reviews, and users sync through the saved API endpoint when Lambda has app-state storage connected.</p>
+              <strong>Shared workspace data</strong>
+              <p>Customers, standards, tasks, reviews, and users load through the AWS backend so the same view works across devices.</p>
             </article>
             <article class="system-status-card">
-              <strong>AI enrichment: API assisted</strong>
-              <p>Customer and standards enrichment can use the saved AWS endpoint. AI output still needs source review before customer use.</p>
+              <strong>AI enrichment</strong>
+              <p>Customer and standard profiles can be drafted by AI. Treat the result as a working profile until sources are reviewed.</p>
             </article>
             <article class="system-status-card">
-              <strong>Notifications: task queue</strong>
-              <p>The hub creates follow-up tasks here. Email or Teams notifications are not connected yet.</p>
+              <strong>Task queue</strong>
+              <p>Impact reviews can create customer notification tasks with an owner, due date, and status.</p>
             </article>
           </div>
+          <section class="operator-guide" aria-label="First use guidance">
+            <div>
+              <h3>How consultants use this</h3>
+              <p>Keep the tool useful by connecting customers to standards. The dashboard becomes valuable once it can answer: who is exposed, what changed, and who owns the follow-up?</p>
+            </div>
+            <div class="guide-strip" id="operatorGuideList"></div>
+          </section>
           <div class="metric-grid compliance-kpis" style="padding: 22px 26px;">
             <button class="metric" type="button" data-watch-drill="recent-standards">
-              <span>Watched standards</span>
+              <span>Standards watched</span>
               <strong id="dashboardStandardCount">0</strong>
               <p>Standards in scope for the daily change scan.</p>
             </button>
             <button class="metric" type="button" data-watch-drill="matrix">
-              <span>Customer-standard links</span>
+              <span>Linked standards</span>
               <strong id="dashboardLinkCount">0</strong>
-              <p>Jump to the customer-standard overview.</p>
+              <p>Confirmed, project, and suggested customer-standard relationships.</p>
             </button>
             <button class="metric" type="button" data-watch-drill="impacted">
-              <span>Impacted customers</span>
+              <span>Customers to review</span>
               <strong id="dashboardImpactedCount">0</strong>
-              <p>Jump to the affected customer list.</p>
+              <p>Saved customers with standards that have public change notes.</p>
             </button>
             <button class="metric" type="button" data-watch-drill="notifications">
-              <span>Open alerts</span>
+              <span>Change alerts</span>
               <strong id="dashboardAlertCount">0</strong>
-              <p>Jump to change notifications waiting for review.</p>
+              <p>Customer-standard change matches waiting for review.</p>
             </button>
           </div>
           <section class="dashboard-section">
             <div class="row-top">
               <div>
-                <h3>Today&apos;s Command Center</h3>
-                <p class="row-copy">Operational snapshot for reviews, owners, due dates, and customer notifications.</p>
+                <h3>Consultant Command Center</h3>
+                <p class="row-copy">The working queue for reviews, owners, due dates, and customer notifications.</p>
               </div>
             </div>
             <div class="command-strip" id="watchCommandStrip"></div>
@@ -2859,7 +2927,7 @@
           <section class="dashboard-section" id="watchImpactReviewSection">
             <div class="row-top">
               <div>
-                <h3>Open Impact Reviews</h3>
+                <h3>Impact Reviews</h3>
                 <p class="row-copy">Customer-standard impact reviews that still need a decision, notification task, or closure.</p>
               </div>
             </div>
@@ -2868,7 +2936,7 @@
           <section class="dashboard-section" id="watchTaskBoardSection">
             <div class="row-top">
               <div>
-                <h3>Owned Follow-Up Tasks</h3>
+                <h3>Customer Notification Tasks</h3>
                 <p class="row-copy">Customer notification tasks created during impact review, grouped by priority and status.</p>
               </div>
               <button class="button secondary" type="button" data-view="setup">Manage team</button>
@@ -2898,7 +2966,7 @@
           <section class="dashboard-section" id="watchMatrixSection">
             <div class="row-top">
               <div>
-                <h3>Customer-Standard Overview</h3>
+                <h3>Customer Coverage Map</h3>
                 <p class="row-copy">This is the operating view: every saved customer, the standards attached to them, recent change exposure, and whether the customer is in notification watch.</p>
               </div>
               <button class="button secondary" type="button" data-view="customers">Open Customers</button>
@@ -2908,8 +2976,8 @@
           <section class="dashboard-section" id="watchCoverageGapsSection">
             <div class="row-top">
               <div>
-                <h3>Missing Links to Fix</h3>
-                <p class="row-copy">These are the gaps that make the system less useful. Fixing them improves change impact alerts.</p>
+                <h3>Coverage Gaps</h3>
+                <p class="row-copy">These are the missing customer-standard links that prevent reliable change impact alerts.</p>
               </div>
             </div>
             <div class="highlight-list" id="coverageGapList"></div>
@@ -2972,7 +3040,7 @@
                 <input id="createNotificationTask" type="checkbox" checked />
                 <div>
                   <strong>Create customer notification task</strong>
-                  <p>Add this to Daily Watch under Owned Follow-Up Tasks so the customer owner can act on it.</p>
+                  <p>Add this to Daily Watch under Customer Notification Tasks so the customer owner can act on it.</p>
                 </div>
               </label>
               <button class="button" type="submit">Save impact review</button>
@@ -4739,7 +4807,17 @@
         moveCustomerLookupPanel();
         const list = document.getElementById("customerList");
         if (!customers.length) {
-          list.innerHTML = `<div class="customer-card"><h3>No saved customers yet</h3><p>Use Add Customer to look up and save the first profile.</p></div>`;
+          list.innerHTML = `
+            <div class="customer-card">
+              <div>
+                <h3>No saved customers yet</h3>
+                <p>Add the first customer profile, confirm the relevant standards, and the Daily Watch will start showing customer impact alerts.</p>
+              </div>
+              <div class="customer-card-actions">
+                <button class="button" type="button" data-empty-add-customer>Add customer</button>
+              </div>
+            </div>
+          `;
         } else {
           const sortedCustomers = customers
             .map((customer, index) => ({ customer, index }))
@@ -4861,6 +4939,9 @@
         setText("customerCount", customers.length);
         setText("watchCount", customers.filter((customer) => customer.hypercare === "Active").length);
         updateComplianceKpis();
+        list.querySelectorAll("[data-empty-add-customer]").forEach((button) => {
+          button.addEventListener("click", () => document.getElementById("openCustomerDialog")?.click());
+        });
         list.querySelectorAll("[data-toggle-customer]").forEach((button) => {
           button.addEventListener("click", () => {
             const customer = customers[Number(button.dataset.toggleCustomer)];
@@ -5737,6 +5818,91 @@
         `;
       }
 
+      function openGuideAction(action) {
+        if (action === "add-customer") {
+          document.getElementById("openCustomerDialog")?.click();
+          return;
+        }
+        if (action === "customers") {
+          activateView("customers");
+          return;
+        }
+        if (action === "standards") {
+          activateView("cybersecurity");
+          return;
+        }
+        if (action === "coverage") {
+          openWatchDrill("matrix");
+          return;
+        }
+        if (action === "alerts") {
+          openWatchDrill("notifications");
+          return;
+        }
+        openWatchDrill("reviews");
+      }
+
+      function renderOperatorGuide(changes, queue, linkCount, tasks, reviewsOpen) {
+        const guide = document.getElementById("operatorGuideList");
+        if (!guide) return;
+        const standardsWithSources = standards.filter((standard) => standard.sourceUrl || latestChangeFor(standard)).length;
+        const readyForReview = customers.length > 0 && linkCount > 0;
+        const cards = [
+          {
+            done: customers.length > 0,
+            status: customers.length > 0 ? `${customers.length} saved` : "Start here",
+            title: "1. Customer profiles",
+            body: customers.length > 0
+              ? "Open a profile to verify business facts, standards, projects, and customer owner."
+              : "Add the first customer so the tool has an account to assess against standards.",
+            action: customers.length > 0 ? "customers" : "add-customer",
+            label: customers.length > 0 ? "Open customers" : "Add customer"
+          },
+          {
+            done: standardsWithSources > 0,
+            status: standardsWithSources > 0 ? `${standardsWithSources} with sources` : "Needs sources",
+            title: "2. Standard sources",
+            body: "Each useful standard needs a source URL and a short explanation so consultants know why it matters.",
+            action: "standards",
+            label: "Open standards"
+          },
+          {
+            done: linkCount > 0,
+            status: linkCount > 0 ? `${linkCount} links` : "No links yet",
+            title: "3. Customer coverage",
+            body: linkCount > 0
+              ? "The coverage map shows which customers are tied to which standards."
+              : "Confirm suggested or project standards so changed sources can be matched to customers.",
+            action: "coverage",
+            label: "Open coverage map"
+          },
+          {
+            done: readyForReview && queue.length === 0 && reviewsOpen === 0 && tasks.length === 0,
+            status: !readyForReview ? "After setup" : (queue.length || reviewsOpen || tasks.length ? `${queue.length + reviewsOpen + tasks.length} open` : "No open work"),
+            title: "4. Reviews and tasks",
+            body: !readyForReview
+              ? "Once customers and standards are linked, this is where change alerts become review work."
+              : queue.length || reviewsOpen || tasks.length
+              ? "Review relevant changes, assign an owner, and create customer notification tasks where needed."
+              : `No current follow-up is waiting. ${changes.length} saved change note${changes.length === 1 ? "" : "s"} are available for the next review cycle.`,
+            action: !readyForReview ? "coverage" : (queue.length ? "alerts" : "reviews"),
+            label: !readyForReview ? "Open coverage map" : (queue.length ? "Review alerts" : "Open reviews")
+          }
+        ];
+
+        guide.innerHTML = cards.map((card) => `
+          <article class="guide-card ${card.done ? "done" : ""}">
+            <span class="status-badge ${card.done ? "ok" : "warn"}">${esc(card.status)}</span>
+            <strong>${esc(card.title)}</strong>
+            <p>${esc(card.body)}</p>
+            <button class="chip-button" type="button" data-guide-action="${esc(card.action)}">${esc(card.label)}</button>
+          </article>
+        `).join("");
+        guide.querySelectorAll("[data-guide-action]").forEach((button) => {
+          button.addEventListener("click", () => openGuideAction(button.dataset.guideAction));
+        });
+      }
+
       function renderCoverageGaps(queue) {
         const gaps = [];
         const customersWithoutStandards = customers.filter((customer) => !customerStandardNames(customer).length);
@@ -5748,26 +5914,26 @@
 
         if (customersWithoutStandards.length) {
           gaps.push({
-            title: "Customers need standards attached",
-            body: `${customersWithoutStandards.map((customer) => customer.name).join(", ")} will not produce useful change alerts until confirmed or suggested standards are saved.`
+            title: "Customers without standard coverage",
+            body: `${customersWithoutStandards.map((customer) => customer.name).join(", ")} need confirmed, project, or suggested standards before the dashboard can flag impact.`
           });
         }
         if (inactiveImpacted.length) {
           gaps.push({
-            title: "Impacted customers are not in notification watch",
-            body: `${inactiveImpacted.join(", ")} match standards with change notes, but hypercare is inactive. Add watch only where follow-up is expected.`
+            title: "Impacted customers not watched",
+            body: `${inactiveImpacted.join(", ")} match standards with change notes, but notification watch is inactive. Turn it on only where follow-up is expected.`
           });
         }
         if (standardsWithoutCustomers.length) {
           gaps.push({
-            title: "Changed standards have no customer owner",
-            body: `${standardsWithoutCustomers.join(", ")} changed, but no saved customer is tied to them yet.`
+            title: "Changed standards without customers",
+            body: `${standardsWithoutCustomers.join(", ")} have saved public changes, but no saved customer is tied to them yet.`
           });
         }
         if (!gaps.length) {
           gaps.push({
-            title: "No obvious coverage gaps",
-            body: "Saved customers have standard links, and changed standards are visible in the dashboard."
+            title: "Coverage looks usable",
+            body: "Saved customers have standard links, and changed standards can be reviewed from the dashboard."
           });
         }
         return gaps.map((gap) => `
@@ -5791,7 +5957,7 @@
 
       function renderTaskBoard(tasks) {
         if (!tasks.length) {
-          return `<article class="task-card"><strong>No owned follow-up tasks</strong><p class="row-copy">Tasks live here in the Daily Watch command center. Review an impacted customer and select "Create customer notification task" to create the first task.</p></article>`;
+          return `<article class="task-card"><strong>No customer notification tasks</strong><p class="row-copy">Tasks live here in the Consultant Command Center. Review an impacted customer and select "Create customer notification task" to create the first task.</p></article>`;
         }
         return tasks.slice(0, 9).map((task) => `
           <article class="task-card ${isOverdue(task.dueDate) ? "overdue" : ""}">
@@ -5886,6 +6052,7 @@
         setText("dashboardImpactedCount", impactedCustomers.length);
         setText("dashboardAlertCount", queue.length);
         renderDailySchedule();
+        renderOperatorGuide(changes, queue, linkCount, tasks, reviewsOpen);
         document.getElementById("watchCommandStrip").innerHTML = `
           <button class="command-card" type="button" data-command-drill="reviews"><span>Open reviews</span><strong>${reviewsOpen}</strong><p class="row-copy">Impact reviews not closed yet.</p></button>
           <button class="command-card" type="button" data-command-drill="tasks"><span>Notification tasks</span><strong>${tasks.length}</strong><p class="row-copy">Customer follow-up items in the task queue.</p></button>
@@ -5961,7 +6128,7 @@
         `).join("") : `
           <article class="highlight-card">
             <strong>No public changes queued</strong>
-            <p>Run the AI update scan from the Standards tab. The daily watch dashboard will summarize review items here.</p>
+            <p>Run the AI source update from a standards page. Daily Watch will summarize review items here.</p>
           </article>
         `;
         document.getElementById("customerStandardsMatrix").innerHTML = customers.length ? `
