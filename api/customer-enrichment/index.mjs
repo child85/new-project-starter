@@ -1270,8 +1270,8 @@ Return this exact top-level shape:
     "hypercare": "Active",
     "owner": "NA team",
     "actions": ["10 concise engagement, cross-sell, or upsell ideas"],
-    "evidenceNotes": ["assumptions and source-review notes"],
-    "sourceNotes": ["where key facts appear to come from or what must be verified"],
+    "evidenceNotes": ["specific useful evidence points, such as public filing facts, product lines, market exposure, known certifications, or compliance-relevant business context"],
+    "sourceNotes": ["specific source-backed facts that help a consultant trust or challenge the profile"],
     "confidence": "low|medium|medium-high|high"
   }
 }
@@ -1283,6 +1283,7 @@ Rules:
 - Keep summary to one or two short plain-English sentences. Do not bury employee count, revenue, or source caveats in the summary if a dedicated field exists.
 - If a fact is uncertain, use "Unknown - verify" or an explicit range instead of inventing precision.
 - Never state guessed standards as confirmed requirements.
+- Do not include low-value evidence notes such as "subject to change", "verify internally", "customer name from input", "not explicitly confirmed by customer", or generic caveats. Only include notes that add specific source, business, product, market, or standards value.
 - Include exactly 10 actions.
 - Prefer standards relevant to cybersecurity, functional safety, ATEX/explosive atmospheres, OT security, connected products, automotive, medical devices, financial resilience, and global market access.`;
 }

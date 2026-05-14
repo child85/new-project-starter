@@ -4823,7 +4823,7 @@
         const likely = standardSummaryItems(profile);
         const standardNames = likely.map((item) => item.name).filter(Boolean);
         const reviewedStandardNames = standardNames.length ? standardNames : safeList(profile.guessedStandards).map(itemLabel).filter(Boolean);
-        const evidenceNotes = unique([...safeList(profile.evidenceNotes), ...safeList(profile.sourceNotes)]);
+        const evidenceNotes = meaningfulEvidenceNotes(profile);
         const actionNotes = safeList(profile.actions).slice(0, 10);
         box.innerHTML = `
           <form class="review-form" id="quickCustomerProfileForm">
@@ -4923,7 +4923,7 @@
               <p class="short-summary">Use the summary for the customer card. Keep the measurable facts above, not buried in this paragraph.</p>
               <div class="review-field-grid">
                 ${reviewTextarea("Short customer summary", "reviewCustomerSummary", shortSummary(profile.summary || "", 520), "One or two plain-English sentences for the customer card")}
-                ${reviewTextarea("Source notes", "reviewCustomerSourceNotes", safeList(profile.sourceNotes).join("\n"), "Where facts appear to come from, or what must be verified")}
+                ${reviewTextarea("Source notes", "reviewCustomerSourceNotes", evidenceNotes.join("\n"), "Useful source-backed facts or reasoning only")}
                 ${reviewTextarea("Source links", "reviewCustomerSourceLinks", safeList(profile.sourceLinks).join("\n"), "Official website, annual report, standards registry, or other source URL")}
                 ${reviewTextarea("Engagement ideas", "reviewCustomerActions", actionNotes.join("\n"), "One practical account action per line")}
               </div>
@@ -5199,6 +5199,34 @@
         `;
       }
 
+      function isLowValueEvidenceNote(note) {
+        const text = normalize(note);
+        if (!text) return true;
+        const lowValuePatterns = [
+          "subject to change",
+          "verify internally",
+          "not explicitly confirmed by customer",
+          "company name and sector from customer input",
+          "customer name and sector from customer input",
+          "from customer input",
+          "based on customer input",
+          "provided notes",
+          "no explicit cybersecurity-standards mention",
+          "no explicit standards mention",
+          "confirm customer facts",
+          "before outreach",
+          "verify before customer-facing use"
+        ];
+        return lowValuePatterns.some((pattern) => text.includes(pattern));
+      }
+
+      function meaningfulEvidenceNotes(customer) {
+        return unique([
+          ...safeList(customer.evidenceNotes),
+          ...safeList(customer.sourceNotes)
+        ].map(itemLabel).filter((note) => note && !isLowValueEvidenceNote(note))).slice(0, 8);
+      }
+
       function detailList(values, emptyText = "Not saved yet") {
         const list = safeList(values).map(itemLabel).filter(Boolean);
         return list.length ? `<ul class="detail-list">${list.map((value) => `<li>${esc(value)}</li>`).join("")}</ul>` : `<span class="row-copy">${esc(emptyText)}</span>`;
@@ -5426,7 +5454,7 @@
                     <div class="source-item">
                       <span>Evidence notes</span>
                       <strong>Reasoning</strong>
-                      ${detailList([...safeList(customer.evidenceNotes), ...safeList(customer.sourceNotes)], "No evidence notes saved yet")}
+                      ${detailList(meaningfulEvidenceNotes(customer), "No useful evidence notes saved yet")}
                     </div>
                   </div>
                 </div>
@@ -5443,7 +5471,7 @@
                   <div class="profile-grid">
                     ${wideFact("Knowledge source split", renderComplianceSignals(customer))}
                     ${fact("Standards covered in our projects / assessments", renderTags(unique((customer.projects || []).flatMap((project) => safeList(project.standards)))) || `<span class="row-copy">No delivered standards saved yet.</span>`, true)}
-                    ${fact("Evidence / source notes", detailList([...safeList(customer.evidenceNotes), ...safeList(customer.sourceNotes)], "No evidence notes saved yet"), true)}
+                    ${fact("Useful evidence / source notes", detailList(meaningfulEvidenceNotes(customer), "No useful evidence notes saved yet"), true)}
                   </div>
                 </div>
                 <div class="customer-profile-section">
