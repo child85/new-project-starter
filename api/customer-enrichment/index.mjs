@@ -11,6 +11,8 @@ const defaultStandards = [
   "IEC 61508",
   "IEC 61511",
   "ISO 13849",
+  "ATEX Directive 2014/34/EU",
+  "ATEX Workplace Directive 1999/92/EC",
   "IEC 62443",
   "ISO 27001 / 27002",
   "NIST SP 800-115",
@@ -566,7 +568,7 @@ Return this exact top-level shape:
   "standards": [
     {
       "name": "standard or regulation name",
-      "domain": "Cybersecurity | Functional Safety | Regulation | Market Access",
+      "domain": "Cybersecurity | Functional Safety | ATEX | Regulation | Market Access",
       "sector": "sector",
       "markets": ["Global"],
       "topics": ["topic"],
@@ -969,7 +971,7 @@ Rules:
 - If a fact is uncertain, use "Unknown - verify" or an explicit range instead of inventing precision.
 - Never state guessed standards as confirmed requirements.
 - Include exactly 10 actions.
-- Prefer standards relevant to cybersecurity, functional safety, OT security, connected products, automotive, medical devices, financial resilience, and global market access.`;
+- Prefer standards relevant to cybersecurity, functional safety, ATEX/explosive atmospheres, OT security, connected products, automotive, medical devices, financial resilience, and global market access.`;
 }
 
 function deterministicEnrichment(body) {
@@ -1073,7 +1075,7 @@ function sectorSubSector(sector) {
 function standardsFor(sector, markets) {
   const list = [];
   if (sector === "Automotive") list.push("ISO/SAE 21434", "UNECE R155 / R156", "ISO 26262", "TISAX", "IEC 62443");
-  if (sector === "Industrial / OT") list.push("IEC 62443", "IEC 61508", "IEC 61511", "ISO 13849", "ISO 27001 / 27002");
+  if (sector === "Industrial / OT") list.push("IEC 62443", "IEC 61508", "IEC 61511", "ISO 13849", "ATEX Directive 2014/34/EU", "ATEX Workplace Directive 1999/92/EC", "ISO 27001 / 27002");
   if (sector === "Medical Devices") list.push("UL 2900", "ISO 27001 / 27002", "EU Cyber Resilience Act");
   if (sector === "Financial Services") list.push("ISO 27001 / 27002", "NIS2");
   if (sector === "ICT / Connected Products") list.push("EU Cyber Resilience Act", "ISO 27001 / 27002", "NIST SP 800-115", "UL 2900");
@@ -1088,6 +1090,7 @@ function standardsFor(sector, markets) {
 }
 
 function domainFor(name) {
+  if (/ATEX|2014\/34|1999\/92|explosive atmosphere/i.test(name)) return "ATEX";
   if (/61508|61511|13849|26262/.test(name)) return "Functional Safety";
   if (/DORA|NIS2|Resilience|R155|R156/.test(name)) return "Regulation";
   if (/UKCA|CE/.test(name)) return "Market Access";

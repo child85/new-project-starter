@@ -2489,6 +2489,7 @@
               <div class="nav-section-label">Standards Library</div>
               <button class="nav-tab subtab" data-view="cybersecurityStandards">Cybersecurity</button>
               <button class="nav-tab subtab" data-view="functionalSafetyStandards">Functional Safety</button>
+              <button class="nav-tab subtab" data-view="atexStandards">ATEX</button>
               <button class="nav-tab subtab" data-view="marketAccessStandards">Market Access &amp; Other</button>
               <button class="nav-tab" data-view="setup">Settings</button>
             </nav>
@@ -2704,6 +2705,10 @@
                 <strong>Functional Safety</strong>
                 <span>Safety lifecycle, machinery, automotive, process, and product safety references.</span>
               </button>
+              <button class="standards-route" type="button" data-route-view="atexStandards">
+                <strong>ATEX</strong>
+                <span>Explosion-protection, hazardous-area equipment, and EU ATEX workplace requirements.</span>
+              </button>
               <button class="standards-route" type="button" data-route-view="marketAccessStandards">
                 <strong>Market Access &amp; Other</strong>
                 <span>Conformity, regional market-entry, and other regulatory items that do not belong in the two main domains.</span>
@@ -2741,6 +2746,7 @@
                     <select id="stdDomain">
                       <option>Cybersecurity</option>
                       <option>Functional Safety</option>
+                      <option>ATEX</option>
                       <option>Regulation</option>
                       <option>Market Access</option>
                     </select>
@@ -2879,6 +2885,39 @@
             </div>
           </div>
           <div class="standards-list" id="functionalSafetyStandardsList"></div>
+        </section>
+
+        <section class="panel app-view standard-page" id="atexStandards">
+          <div class="panel-head">
+            <div>
+              <h2>ATEX Standards and Regulations</h2>
+              <p>
+                Explosion-protection references for equipment, protective
+                systems, industrial sites, and EU market access in potentially
+                explosive atmospheres.
+              </p>
+            </div>
+            <button class="button" id="openStandardDialogAtex" type="button">Add Standard</button>
+          </div>
+          <div class="controls">
+            <div class="field">
+              <label for="atexSearch">Search</label>
+              <input id="atexSearch" type="search" placeholder="Search ATEX directives, hazardous-area topics, sectors, or descriptions" />
+            </div>
+            <div class="field">
+              <label for="atexSectorFilter">Sector</label>
+              <select id="atexSectorFilter">
+                <option value="All">All sectors</option>
+                <option>Automotive</option>
+                <option>Industrial / OT</option>
+                <option>Medical Devices</option>
+                <option>ICT / Connected Products</option>
+                <option>Financial Services</option>
+                <option>Consumer & Industrial Goods</option>
+              </select>
+            </div>
+          </div>
+          <div class="standards-list" id="atexStandardsList"></div>
         </section>
 
         <section class="panel app-view standard-page" id="marketAccessStandards">
@@ -3395,6 +3434,34 @@
           description: "Applies functional safety practices to safety instrumented systems in process industries. It is relevant for chemical, energy, and other plant environments.",
           status: "Watch",
           sourceUrl: "https://webstore.iec.ch/en/publication/5527"
+        },
+        {
+          name: "ATEX Directive 2014/34/EU",
+          domain: "ATEX",
+          sector: "Industrial / OT",
+          markets: ["EU"],
+          topics: ["explosive atmospheres", "equipment", "protective systems", "conformity assessment", "CE marking"],
+          description: "Covers equipment and protective systems intended for use in potentially explosive atmospheres in the EU. It helps manufacturers show conformity and CE marking readiness before placing products on the EU market.",
+          status: "Monitor",
+          sourceUrl: "https://eur-lex.europa.eu/eli/dir/2014/34/oj",
+          internalNotes: "Use for industrial equipment, electrical and mechanical devices, sensors, controls, and machinery used around gases, vapors, mists, or combustible dust.",
+          sourceConfidence: "Official source verified",
+          watchPriority: "High",
+          changes: []
+        },
+        {
+          name: "ATEX Workplace Directive 1999/92/EC",
+          domain: "ATEX",
+          sector: "Industrial / OT",
+          markets: ["EU"],
+          topics: ["explosive atmospheres", "worker protection", "workplace safety", "hazardous areas", "zone classification"],
+          description: "Sets minimum requirements for improving the safety and health protection of workers potentially at risk from explosive atmospheres. It is relevant for operators and employers managing hazardous-area workplaces in the EU.",
+          status: "Monitor",
+          sourceUrl: "https://eur-lex.europa.eu/eli/dir/1999/92/oj",
+          internalNotes: "Use for customer conversations about site responsibilities, hazardous-area classification, risk assessment, inspection readiness, and linkage between equipment conformity and workplace controls.",
+          sourceConfidence: "Official source verified",
+          watchPriority: "High",
+          changes: []
         },
         {
           name: "ISO 13849",
@@ -5327,9 +5394,10 @@
         const known = standards.find((standard) => normalize(standard.name) === normalize(name));
         if (known) return { ...known, sourceStatus: known.sourceStatus || "matched_existing_record" };
         const safetySignals = ["safety", "sil", "61508", "61511", "26262", "13849", "62061", "functional"];
+        const atexSignals = ["atex", "explosive atmosphere", "explosion protection", "hazardous area", "2014 34", "2014/34", "1999 92", "1999/92"];
         const domain = catalogRecord?.domain || (seed.domain && seed.domain !== "Cybersecurity"
           ? seed.domain
-          : (safetySignals.some((signal) => text.includes(signal)) ? "Functional Safety" : (seed.domain || "Cybersecurity")));
+          : (atexSignals.some((signal) => text.includes(signal)) ? "ATEX" : (safetySignals.some((signal) => text.includes(signal)) ? "Functional Safety" : (seed.domain || "Cybersecurity"))));
         const sector = catalogRecord?.sector || seed.sector || (text.includes("vehicle") || text.includes("automotive") ? "Automotive" : text.includes("industrial") || text.includes("ot") ? "Industrial / OT" : "ICT / Connected Products");
         const markets = safeList(catalogRecord?.markets).length ? safeList(catalogRecord.markets) : (safeList(seed.markets).length ? safeList(seed.markets) : (text.includes("eu") ? ["EU", "Global"] : ["Global"]));
         const topics = safeList(catalogRecord?.topics).length ? safeList(catalogRecord.topics) : (safeList(seed.topics).length ? safeList(seed.topics) : unique([name, domain, sector].join(" ").split(" ").filter((item) => item.length > 3)).slice(0, 5));
@@ -5369,6 +5437,32 @@
             sourceUrl: "https://dodcio.defense.gov/CMMC/",
             sourceConfidence: "Official source saved - verify current rule text",
             internalNotes: "Strong fit for U.S. defense suppliers, manufacturers, software providers, and service organizations in the DoD supply chain. Review CMMC level, contract clauses, CUI handling, and NIST SP 800-171 alignment before scoping an assessment."
+          };
+        }
+        if (name === "atex" || name.includes("atex directive") || name.includes("2014 34") || name.includes("2014/34")) {
+          return {
+            name: "ATEX Directive 2014/34/EU",
+            domain: "ATEX",
+            sector: "Industrial / OT",
+            markets: ["EU"],
+            topics: ["explosive atmospheres", "equipment", "protective systems", "conformity assessment", "CE marking"],
+            description: "Covers equipment and protective systems intended for use in potentially explosive atmospheres in the EU. It helps manufacturers show conformity and CE marking readiness before placing products on the EU market.",
+            sourceUrl: "https://eur-lex.europa.eu/eli/dir/2014/34/oj",
+            sourceConfidence: "Official source verified",
+            internalNotes: "Strong fit for industrial products, mechanical or electrical equipment, sensors, controls, and machinery used in hazardous-area environments."
+          };
+        }
+        if (name.includes("1999 92") || name.includes("1999/92") || name.includes("atex workplace")) {
+          return {
+            name: "ATEX Workplace Directive 1999/92/EC",
+            domain: "ATEX",
+            sector: "Industrial / OT",
+            markets: ["EU"],
+            topics: ["explosive atmospheres", "worker protection", "workplace safety", "hazardous areas", "zone classification"],
+            description: "Sets minimum requirements for improving the safety and health protection of workers potentially at risk from explosive atmospheres. It is relevant for operators and employers managing hazardous-area workplaces in the EU.",
+            sourceUrl: "https://eur-lex.europa.eu/eli/dir/1999/92/oj",
+            sourceConfidence: "Official source verified",
+            internalNotes: "Use for site assessments, hazardous-area classification, workplace risk reviews, and conversations that connect equipment conformity with operator responsibilities."
           };
         }
         return null;
@@ -5497,10 +5591,17 @@
           emptyText: "No functional safety standards match this search yet."
         });
         renderStandardPage({
+          listId: "atexStandardsList",
+          searchId: "atexSearch",
+          sectorId: "atexSectorFilter",
+          predicate: (standard) => standard.domain === "ATEX" || normalize(standard.name).includes("atex") || safeList(standard.topics).some((topic) => normalize(topic).includes("explosive atmosphere")),
+          emptyText: "No ATEX standards or regulations match this search yet."
+        });
+        renderStandardPage({
           listId: "marketAccessStandardsList",
           searchId: "marketAccessSearch",
           sectorId: "marketAccessSectorFilter",
-          predicate: (standard) => !["Cybersecurity", "Functional Safety", "Regulation"].includes(standard.domain),
+          predicate: (standard) => !["Cybersecurity", "Functional Safety", "Regulation", "ATEX"].includes(standard.domain),
           emptyText: "No market access or other regulatory records match this search yet."
         });
         wireStandardToggles();
@@ -5655,6 +5756,7 @@
       function viewForStandard(standard) {
         if (!standard) return "compliance";
         if (standard.domain === "Functional Safety") return "functionalSafetyStandards";
+        if (standard.domain === "ATEX" || normalize(standard.name).includes("atex")) return "atexStandards";
         if (standard.domain === "Cybersecurity" || standard.domain === "Regulation") return "cybersecurityStandards";
         return "marketAccessStandards";
       }
@@ -5663,6 +5765,7 @@
         const ids = {
           cybersecurityStandards: ["cybersecuritySearch", "cybersecuritySectorFilter"],
           functionalSafetyStandards: ["functionalSafetySearch", "functionalSafetySectorFilter"],
+          atexStandards: ["atexSearch", "atexSectorFilter"],
           marketAccessStandards: ["marketAccessSearch", "marketAccessSectorFilter"]
         }[viewId] || [];
         ids.forEach((id) => {
@@ -6811,6 +6914,7 @@
         ["openStandardDialog", ""],
         ["openStandardDialogCyber", "Cybersecurity"],
         ["openStandardDialogSafety", "Functional Safety"],
+        ["openStandardDialogAtex", "ATEX"],
         ["openStandardDialogMarket", "Market Access"]
       ].forEach(([id, defaultDomain]) => {
         document.getElementById(id)?.addEventListener("click", () => {
@@ -6875,6 +6979,8 @@
         "cybersecuritySectorFilter",
         "functionalSafetySearch",
         "functionalSafetySectorFilter",
+        "atexSearch",
+        "atexSectorFilter",
         "marketAccessSearch",
         "marketAccessSectorFilter"
       ].forEach((id) => {
