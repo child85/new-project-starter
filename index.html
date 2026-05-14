@@ -2399,7 +2399,7 @@
                 </form>
                 <div id="lookupApiWarning" class="api-warning hidden">
                   <strong>Customer lookup is not connected yet.</strong>
-                  <p>This browser/domain does not have the AWS API endpoint saved. Open Settings, paste the API Gateway URL, save it, then test the endpoint.</p>
+                  <p>The backend endpoint is missing or unreachable. Open Settings, confirm the API Gateway URL, then test the backend connection.</p>
                   <button class="button secondary" id="openSettingsFromLookup" type="button">Open Settings</button>
                 </div>
                 <div id="enrichmentProgress" class="work-visual hidden">
@@ -2419,7 +2419,7 @@
                 </div>
                 <div class="status-line">
                   <span id="enrichmentStatus">Ready to add a customer.</span>
-                  <span id="apiMode">Storage: backend required</span>
+                  <span id="apiMode">Storage: backend pending</span>
                 </div>
               </div>
             </div>
@@ -2596,8 +2596,8 @@
                   <button class="button secondary" id="enrichStandardWithAi" type="button">Enrich standard with AI</button>
                 </div>
                 <div id="standardApiWarning" class="api-warning hidden">
-                  <strong>AI standard enrichment is not connected on this domain.</strong>
-                  <p>Open Settings, paste the API Gateway URL, save it, and test the endpoint. Without that, this form can only create a local draft from known patterns.</p>
+                  <strong>AI standard enrichment is not connected.</strong>
+                  <p>The backend endpoint is missing or unreachable. Open Settings, confirm the API Gateway URL, then test the backend connection.</p>
                   <button class="button secondary" id="openSettingsFromStandard" type="button">Open Settings</button>
                 </div>
                 <div class="split">
@@ -3129,7 +3129,7 @@
             </div>
             <div class="split">
               <div class="field">
-                <label for="apiEndpoint">Assurance Hub API URL</label>
+                <label for="apiEndpoint">TRNA CCB API URL</label>
                 <input id="apiEndpoint" placeholder="https://abc123.execute-api.us-east-1.amazonaws.com/default/assurance-hub-customer-enrichment" />
               </div>
               <div class="field">
@@ -3138,8 +3138,8 @@
               </div>
             </div>
             <div class="split">
-              <button class="button secondary" id="testApiEndpoint" type="button">Test saved endpoint</button>
-            <div class="code" id="apiSetupStatus">Use the API Gateway endpoint connected to the enrichment Lambda.</div>
+              <button class="button secondary" id="testApiEndpoint" type="button">Test backend connection</button>
+            <div class="code" id="apiSetupStatus">The deployed backend endpoint is prefilled. Override it only if AWS API Gateway changes.</div>
             </div>
             <div class="code">S3 static site -> API Gateway HTTP API -> Lambda -> Claude Haiku -> optional DynamoDB -> future EventBridge watch</div>
           </div>
@@ -3367,6 +3367,8 @@
         }
       };
 
+      const deployedApiUrl = "https://euhji02kuj.execute-api.us-east-1.amazonaws.com/default/assurance-hub-customer-enrichment";
+
       const defaultWatchSchedule = {
         status: "Paused",
         frequency: "Daily",
@@ -3578,6 +3580,9 @@
         try {
           const url = new URL(trimmed);
           if (url.protocol !== "https:") return "";
+          if (url.hostname === "euhji02kuj.execute-api.us-east-1.amazonaws.com" && (url.pathname === "/" || url.pathname === "/default")) {
+            return deployedApiUrl;
+          }
           return url.href;
         } catch {
           return "";
@@ -3585,7 +3590,12 @@
       }
 
       function getApiUrl() {
-        return localStorage.getItem("assuranceHubApiUrl") || "";
+        const saved = cleanEndpoint(localStorage.getItem("assuranceHubApiUrl") || "");
+        return saved || deployedApiUrl;
+      }
+
+      function usingDeployedApiUrl() {
+        return getApiUrl() === deployedApiUrl && !localStorage.getItem("assuranceHubApiUrl");
       }
 
       function storageModeLabel() {
@@ -3598,6 +3608,11 @@
       function setStatus(message, modeText) {
         document.getElementById("enrichmentStatus").textContent = message;
         document.getElementById("apiMode").textContent = modeText || storageModeLabel();
+      }
+
+      function refreshApiEndpointField() {
+        const field = document.getElementById("apiEndpoint");
+        if (field) field.value = getApiUrl();
       }
 
       function showLookupApiWarning(show) {
@@ -4024,11 +4039,13 @@
         const apiUrl = getApiUrl();
         const status = document.getElementById("apiSetupStatus");
         if (!apiUrl) {
-          status.textContent = "No endpoint saved yet. Paste the API Gateway URL ending in /enrich, then save it.";
+          status.textContent = "No backend endpoint is configured. Paste the API Gateway URL, then save it.";
           return;
         }
         document.getElementById("testApiEndpoint").disabled = true;
-        status.textContent = "Testing API Gateway endpoint and Lambda health...";
+        status.textContent = usingDeployedApiUrl()
+          ? "Testing the deployed TRNA CCB backend and Lambda health..."
+          : "Testing the saved API Gateway endpoint and Lambda health...";
         try {
           const result = await callStateApi("health-check");
           const checks = result.checks || {};
@@ -4055,7 +4072,7 @@
         if (!input.name.trim()) return;
         if (!getApiUrl()) {
           showLookupApiWarning(true);
-          setStatus("Customer lookup is blocked because this domain does not have the AWS API endpoint saved yet.", "Storage: endpoint missing");
+          setStatus("Customer lookup is blocked because no backend endpoint is available.", "Storage: endpoint missing");
           return;
         }
 
@@ -5085,7 +5102,7 @@
         showStandardApiWarning(!getApiUrl());
         status.textContent = getApiUrl()
           ? "Asking the AWS AI backend to enrich the standard from its source..."
-          : "AI backend is not connected on this domain. Filling a local draft only.";
+          : "AI backend is not connected. Filling a local draft only.";
         try {
           let record = null;
           if (getApiUrl()) {
@@ -6215,7 +6232,7 @@
         document.getElementById("candidateDialog").classList.add("hidden");
         activateView("setup");
         document.getElementById("apiEndpoint").focus();
-        document.getElementById("apiSetupStatus").textContent = "Paste the API Gateway URL here, save it, then use Test saved endpoint before adding a customer.";
+        document.getElementById("apiSetupStatus").textContent = "Confirm the API Gateway URL here, save it if needed, then use Test backend connection before adding a customer.";
       });
 
       ["lookupName", "lookupSector", "lookupSize", "lookupWebsite", "lookupNotes"].forEach((id) => {
@@ -6313,7 +6330,7 @@
         document.getElementById("standardDialog").classList.add("hidden");
         activateView("setup");
         document.getElementById("apiEndpoint").focus();
-        document.getElementById("apiSetupStatus").textContent = "Paste the API Gateway URL here, save it, then use Test saved endpoint before running AI standard enrichment.";
+        document.getElementById("apiSetupStatus").textContent = "Confirm the API Gateway URL here, save it if needed, then use Test backend connection before running AI standard enrichment.";
       });
 
       document.getElementById("standardForm").addEventListener("submit", (event) => {
@@ -6370,15 +6387,16 @@
           document.getElementById("apiSetupStatus").textContent = "Use the full HTTPS API Gateway invoke URL for the Lambda trigger.";
           return;
         }
-        if (value) localStorage.setItem("assuranceHubApiUrl", value);
+        if (value && value !== deployedApiUrl) localStorage.setItem("assuranceHubApiUrl", value);
         else localStorage.removeItem("assuranceHubApiUrl");
-        document.getElementById("apiEndpoint").value = value;
-        document.getElementById("apiSetupStatus").textContent = value
-          ? "Endpoint saved. Use Test saved endpoint to confirm the Lambda connection."
-          : "Endpoint cleared. Backend enrichment and shared storage are disconnected.";
-        if (value) showLookupApiWarning(false);
-        setStatus(value ? "AWS API endpoint saved. Loading shared workspace data..." : "API endpoint cleared. Backend enrichment and shared storage are disconnected.");
-        if (value) loadSharedAppState();
+        refreshApiEndpointField();
+        document.getElementById("apiSetupStatus").textContent = value && value !== deployedApiUrl
+          ? "Custom endpoint saved. Use Test backend connection to confirm the Lambda connection."
+          : "Using the deployed TRNA CCB backend endpoint. Use Test backend connection to confirm it.";
+        showLookupApiWarning(false);
+        showStandardApiWarning(false);
+        setStatus("Backend endpoint ready. Loading shared workspace data...");
+        loadSharedAppState();
       });
 
       document.getElementById("testApiEndpoint").addEventListener("click", testSavedEndpoint);
@@ -6487,7 +6505,7 @@
         });
       });
 
-      document.getElementById("apiEndpoint").value = getApiUrl();
+      refreshApiEndpointField();
       renderRegionPicker();
       renderStandards();
       renderCustomers();
