@@ -221,8 +221,6 @@
       }
 
       .primary-nav {
-        position: sticky;
-        top: 104px;
         display: grid;
         gap: 8px;
         align-self: start;
@@ -321,6 +319,11 @@
       }
 
       .side-nav {
+        position: sticky;
+        top: 118px;
+        align-self: start;
+        max-height: calc(100vh - 138px);
+        overflow: auto;
         border: 1px solid var(--line);
         background: var(--panel);
         padding: 14px;
@@ -1241,6 +1244,10 @@
       }
 
       .panel + .panel { margin-top: 28px; }
+
+      .workspace > .app-view.active {
+        margin-top: 0;
+      }
 
       .panel-head {
         display: flex;
@@ -2499,7 +2506,12 @@
 
         .primary-nav {
           gap: 14px;
+        }
+
+        .side-nav {
           position: static;
+          max-height: none;
+          overflow: visible;
         }
 
         .customer-card-actions {
