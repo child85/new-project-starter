@@ -1570,6 +1570,46 @@
         line-height: 1.35;
       }
 
+      .profile-fact.wide {
+        grid-column: span 2;
+      }
+
+      .compliance-signal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .compliance-signal-card {
+        min-height: 170px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .compliance-signal-card.public {
+        border-left: 5px solid var(--ok);
+        background: #f8fcfa;
+      }
+
+      .compliance-signal-card.ai {
+        border-left: 5px solid var(--blue);
+        background: #f6fbff;
+      }
+
+      .compliance-signal-card h5 {
+        margin: 0 0 8px;
+        color: var(--blue-dark);
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .compliance-signal-card p {
+        margin: 0 0 14px;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
       .subpanel {
         padding: 22px;
         border-top: 1px solid var(--line);
@@ -2519,9 +2559,14 @@
         .controls,
         .audit-event,
         .standards-route-grid,
+        .compliance-signal-grid,
         .impact-review-main,
         .impact-review-list-grid {
           grid-template-columns: 1fr;
+        }
+
+        .profile-fact.wide {
+          grid-column: auto;
         }
 
         .primary-nav {
@@ -5115,6 +5160,45 @@
         return `<div class="profile-fact"><span>${esc(label)}</span>${html ? `<div class="profile-fact-value">${value}</div>` : `<strong>${esc(value)}</strong>`}</div>`;
       }
 
+      function wideFact(label, value) {
+        return `<div class="profile-fact wide"><span>${esc(label)}</span><div class="profile-fact-value">${value}</div></div>`;
+      }
+
+      function customerPublicKnowledgeStandards(customer) {
+        return unique([
+          ...safeList(customer.knownStandards).map(itemLabel),
+          ...safeList(customer.publiclyKnownStandards).map(itemLabel),
+          ...safeList(customer.publicStandards).map(itemLabel)
+        ].filter(Boolean));
+      }
+
+      function customerAiSuggestedStandards(customer) {
+        const publicNames = customerPublicKnowledgeStandards(customer).map(normalize);
+        return unique([
+          ...safeList(customer.guessedStandards).map(itemLabel),
+          ...safeList(customer.likelyStandards).map(itemLabel)
+        ].filter((name) => name && !publicNames.includes(normalize(name))));
+      }
+
+      function renderComplianceSignals(customer) {
+        const publicStandards = customerPublicKnowledgeStandards(customer);
+        const aiStandards = customerAiSuggestedStandards(customer);
+        return `
+          <div class="compliance-signal-grid">
+            <div class="compliance-signal-card public">
+              <h5>Publicly known or confirmed</h5>
+              <p>Standards supported by public information, saved evidence, or project history.</p>
+              <div class="tags">${renderTags(publicStandards) || `<span class="row-copy">No public or confirmed standards saved yet.</span>`}</div>
+            </div>
+            <div class="compliance-signal-card ai">
+              <h5>AI suggested</h5>
+              <p>AI hypotheses based on sector, products, markets, and similar customer patterns. Review before using externally.</p>
+              <div class="tags">${renderTags(aiStandards) || `<span class="row-copy">No AI suggested standards saved yet.</span>`}</div>
+            </div>
+          </div>
+        `;
+      }
+
       function detailList(values, emptyText = "Not saved yet") {
         const list = safeList(values).map(itemLabel).filter(Boolean);
         return list.length ? `<ul class="detail-list">${list.map((value) => `<li>${esc(value)}</li>`).join("")}</ul>` : `<span class="row-copy">${esc(emptyText)}</span>`;
@@ -5357,7 +5441,7 @@
                 <div class="customer-profile-section">
                   <h4>Compliance Profile</h4>
                   <div class="profile-grid">
-                    ${fact("AI suggested or publicly known standards", renderTags(safeList(customer.guessedStandards).slice(0, 12)) || `<span class="row-copy">No suggested standards saved.</span>`, true)}
+                    ${wideFact("Knowledge source split", renderComplianceSignals(customer))}
                     ${fact("Standards covered in our projects / assessments", renderTags(unique((customer.projects || []).flatMap((project) => safeList(project.standards)))) || `<span class="row-copy">No delivered standards saved yet.</span>`, true)}
                     ${fact("Evidence / source notes", detailList([...safeList(customer.evidenceNotes), ...safeList(customer.sourceNotes)], "No evidence notes saved yet"), true)}
                   </div>
