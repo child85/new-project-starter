@@ -587,15 +587,16 @@
 
       .recommendation-box {
         display: grid;
-        gap: 12px;
-        padding: 18px;
+        gap: 14px;
+        padding: 18px 20px;
         border: 1px solid var(--blue);
-        border-left: 7px solid var(--blue);
+        border-left: 5px solid var(--blue);
         background: #f7fbff;
       }
 
       .recommendation-box strong {
         color: var(--blue-dark);
+        font-weight: 600;
       }
 
       .recommendation-box p {
@@ -606,20 +607,41 @@
 
       .impact-review-grid {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 14px;
+        gap: 12px;
       }
 
       .impact-review-panel {
         display: grid;
-        gap: 8px;
-        padding: 14px;
+        gap: 6px;
+        padding: 0 0 12px;
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        background: transparent;
+      }
+
+      .impact-review-panel:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+      }
+
+      .impact-review-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 14px;
+      }
+
+      .impact-review-panel.impact-focus {
+        padding: 14px 16px;
         border: 1px solid var(--line);
         background: #ffffff;
       }
 
-      .impact-review-panel.full {
-        grid-column: 1 / -1;
+      .impact-review-panel.impact-focus.primary {
+        border-left: 4px solid var(--blue);
+      }
+
+      .impact-review-panel.impact-focus.secondary {
+        border-left: 4px solid var(--green);
       }
 
       .impact-review-panel span {
@@ -633,10 +655,18 @@
         margin: 0;
         padding-left: 20px;
         color: var(--ink);
+        line-height: 1.4;
       }
 
       .impact-review-panel li + li {
-        margin-top: 6px;
+        margin-top: 4px;
+      }
+
+      .impact-review-list-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px 24px;
+        padding-top: 2px;
       }
 
       .command-strip,
@@ -2411,6 +2441,11 @@
         .customer-standard-standards {
           grid-template-columns: 1fr 1fr;
         }
+
+        .impact-review-main,
+        .impact-review-list-grid {
+          grid-template-columns: 1fr;
+        }
       }
 
       @media (max-width: 760px) {
@@ -2456,7 +2491,9 @@
         .customer-card,
         .controls,
         .audit-event,
-        .standards-route-grid {
+        .standards-route-grid,
+        .impact-review-main,
+        .impact-review-list-grid {
           grid-template-columns: 1fr;
         }
 
@@ -6148,32 +6185,36 @@
           <strong>AI recommendation: ${esc(recommendation.level)} impact, ${esc(recommendation.decision.toLowerCase())}</strong>
           ${stateText ? `<p>${esc(stateText)}</p>` : ""}
           <div class="impact-review-grid">
-            <div class="impact-review-panel full">
-              <span>Specific saved change</span>
-              <p>${esc(recommendation.specificChange || item.change.summary || "No detailed change content saved yet.")}</p>
-              ${sourceUrl ? `<p>Source: ${externalLink(sourceUrl, "open source website")}</p>` : `<p>Source: no source link saved for this change.</p>`}
+            <div class="impact-review-main">
+              <div class="impact-review-panel impact-focus primary">
+                <span>Specific saved change</span>
+                <p>${esc(recommendation.specificChange || item.change.summary || "No detailed change content saved yet.")}</p>
+                ${sourceUrl ? `<p>Source: ${externalLink(sourceUrl, "open source website")}</p>` : `<p>Source: no source link saved for this change.</p>`}
+              </div>
+              <div class="impact-review-panel impact-focus secondary">
+                <span>Customer-specific impact</span>
+                <p>${esc(recommendation.customerImpact || "No customer-specific impact has been generated yet.")}</p>
+              </div>
             </div>
-            <div class="impact-review-panel full">
-              <span>Customer-specific impact</span>
-              <p>${esc(recommendation.customerImpact || "No customer-specific impact has been generated yet.")}</p>
+            <div class="impact-review-list-grid">
+              <div class="impact-review-panel">
+                <span>Why this customer</span>
+                ${list(recommendation.whyThisCustomer, "No customer-specific linkage found yet.")}
+              </div>
+              <div class="impact-review-panel">
+                <span>Likely affected areas</span>
+                ${list(recommendation.affectedAreas, "Affected areas need confirmation.")}
+              </div>
+              <div class="impact-review-panel">
+                <span>Recommended next steps</span>
+                ${list(recommendation.recommendedActions, "No recommended actions generated yet.")}
+              </div>
+              <div class="impact-review-panel">
+                <span>Questions for customer owner</span>
+                ${list(recommendation.customerQuestions, "No validation questions generated yet.")}
+              </div>
             </div>
             <div class="impact-review-panel">
-              <span>Why this customer</span>
-              ${list(recommendation.whyThisCustomer, "No customer-specific linkage found yet.")}
-            </div>
-            <div class="impact-review-panel">
-              <span>Likely affected areas</span>
-              ${list(recommendation.affectedAreas, "Affected areas need confirmation.")}
-            </div>
-            <div class="impact-review-panel">
-              <span>Recommended next steps</span>
-              ${list(recommendation.recommendedActions, "No recommended actions generated yet.")}
-            </div>
-            <div class="impact-review-panel">
-              <span>Questions for customer owner</span>
-              ${list(recommendation.customerQuestions, "No validation questions generated yet.")}
-            </div>
-            <div class="impact-review-panel full">
               <span>Notification draft</span>
               <p>${esc(recommendation.notificationDraft || "No notification draft generated yet.")}</p>
             </div>
