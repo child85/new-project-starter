@@ -261,6 +261,12 @@
         font-size: 0.98rem;
       }
 
+      .nav-tab.settings-subtab {
+        min-height: 38px;
+        padding-left: 30px;
+        font-size: 0.92rem;
+      }
+
       .hero {
         position: relative;
         min-height: 540px;
@@ -1247,6 +1253,10 @@
 
       .workspace > .app-view.active {
         margin-top: 0;
+      }
+
+      .settings-anchor {
+        scroll-margin-top: 130px;
       }
 
       .panel-head {
@@ -2576,6 +2586,13 @@
               <button class="nav-tab subtab" data-view="atexStandards">ATEX</button>
               <button class="nav-tab subtab" data-view="marketAccessStandards">Market Access &amp; Other</button>
               <button class="nav-tab" data-view="setup">Settings</button>
+              <div class="nav-section-label">Settings</div>
+              <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-user-access">User Access</button>
+              <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-admin-area">Admin Area</button>
+              <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-audit-trail">Audit Trail</button>
+              <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-team-members">Team Members</button>
+              <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-daily-update">Daily Update</button>
+              <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-backend">Backend/API</button>
             </nav>
           </aside>
           <section class="workspace">
@@ -3259,7 +3276,7 @@
             </div>
           </div>
 
-          <div class="setup-box">
+          <div class="setup-box settings-anchor" id="settings-user-access">
             <div class="panel-head compact-head">
               <div>
                 <h2>User Access</h2>
@@ -3282,7 +3299,7 @@
             </div>
           </div>
 
-          <div class="panel-head" style="border-top: 1px solid var(--line);">
+          <div class="panel-head settings-anchor" id="settings-admin-area" style="border-top: 1px solid var(--line);">
             <div>
               <h2>Admin Area</h2>
               <p>Deletion requests and maintenance actions are staged here. Customer notification tasks are handled from the Daily Watch command center.</p>
@@ -3291,7 +3308,7 @@
           </div>
           <div class="admin-list" id="adminRequestList"></div>
 
-          <div class="setup-box">
+          <div class="setup-box settings-anchor" id="settings-audit-trail">
             <div class="panel-head compact-head">
               <div>
                 <h2>Audit Trail</h2>
@@ -3301,7 +3318,7 @@
             <div class="audit-list" id="auditTrailList"></div>
           </div>
 
-          <div class="setup-box">
+          <div class="setup-box settings-anchor" id="settings-team-members">
             <div class="panel-head compact-head">
               <div>
                 <h2>Team Members</h2>
@@ -3331,7 +3348,7 @@
             <div class="admin-list" id="teamMemberList"></div>
           </div>
 
-          <div class="setup-box">
+          <div class="setup-box settings-anchor" id="settings-daily-update">
             <div class="panel-head compact-head">
               <div>
                 <h2>Daily Update Schedule</h2>
@@ -3397,7 +3414,7 @@
             </div>
           </div>
 
-          <div class="setup-box">
+          <div class="setup-box settings-anchor" id="settings-backend">
             <div class="panel-head compact-head">
               <div>
                 <h2>AI Backend Configuration</h2>
@@ -7329,7 +7346,11 @@
           document.querySelectorAll(".nav-tab").forEach((tab) => tab.classList.remove("active"));
           document.querySelectorAll(".app-view").forEach((item) => item.classList.remove("active"));
           document.querySelectorAll(".view-overview").forEach((item) => item.classList.toggle("active", nextViewId === "customers"));
-          document.querySelector(`.nav-tab[data-view="${nextViewId}"]`)?.classList.add("active");
+          const navTabs = [...document.querySelectorAll(".nav-tab")];
+          const activeTab = navTabs.find((tab) => tab.dataset.view === nextViewId && (target ? tab.dataset.target === target : !tab.dataset.target))
+            || navTabs.find((tab) => tab.dataset.view === nextViewId && !tab.dataset.target)
+            || navTabs.find((tab) => tab.dataset.view === nextViewId);
+          activeTab?.classList.add("active");
           document.getElementById(nextViewId)?.classList.add("active");
           currentViewId = nextViewId;
           if (options.pushHistory !== false) {
@@ -7347,7 +7368,7 @@
 
       document.querySelectorAll("[data-view]").forEach((button) => {
         button.addEventListener("click", () => {
-          activateView(button.dataset.view);
+          activateView(button.dataset.view, { target: button.dataset.target || "" });
         });
       });
 
