@@ -262,9 +262,19 @@
       }
 
       .nav-tab.settings-subtab {
+        display: none;
         min-height: 38px;
         padding-left: 30px;
         font-size: 0.92rem;
+      }
+
+      .settings-nav-label {
+        display: none;
+      }
+
+      .side-nav.settings-open .settings-subtab,
+      .side-nav.settings-open .settings-nav-label {
+        display: block;
       }
 
       .hero {
@@ -2586,7 +2596,7 @@
               <button class="nav-tab subtab" data-view="atexStandards">ATEX</button>
               <button class="nav-tab subtab" data-view="marketAccessStandards">Market Access &amp; Other</button>
               <button class="nav-tab" data-view="setup">Settings</button>
-              <div class="nav-section-label">Settings</div>
+              <div class="nav-section-label settings-nav-label">Settings</div>
               <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-user-access">User Access</button>
               <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-admin-area">Admin Area</button>
               <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-audit-trail">Audit Trail</button>
@@ -7346,6 +7356,7 @@
           document.querySelectorAll(".nav-tab").forEach((tab) => tab.classList.remove("active"));
           document.querySelectorAll(".app-view").forEach((item) => item.classList.remove("active"));
           document.querySelectorAll(".view-overview").forEach((item) => item.classList.toggle("active", nextViewId === "customers"));
+          document.querySelector(".side-nav")?.classList.toggle("settings-open", nextViewId === "setup");
           const navTabs = [...document.querySelectorAll(".nav-tab")];
           const activeTab = navTabs.find((tab) => tab.dataset.view === nextViewId && (target ? tab.dataset.target === target : !tab.dataset.target))
             || navTabs.find((tab) => tab.dataset.view === nextViewId && !tab.dataset.target)
