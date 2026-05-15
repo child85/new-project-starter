@@ -243,14 +243,14 @@
         border-left-color: var(--blue);
         color: var(--blue-dark);
         background: #ffffff;
-        font-weight: 800;
+        font-weight: 600;
       }
 
       .nav-section-label {
         margin: 10px 12px 2px;
         color: var(--muted);
         font-size: 0.74rem;
-        font-weight: 800;
+        font-weight: 600;
         letter-spacing: 0;
         text-transform: uppercase;
       }
@@ -590,7 +590,7 @@
         border: 1px solid var(--blue);
         color: #ffffff;
         background: var(--blue);
-        font-weight: 800;
+        font-weight: 600;
       }
 
       .notification-action.secondary {
@@ -731,6 +731,55 @@
         margin: 0;
         color: var(--muted);
         line-height: 1.45;
+      }
+
+      .with-info {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .info-dot {
+        display: inline-grid;
+        width: 18px;
+        height: 18px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        color: var(--blue-dark);
+        background: #ffffff;
+        font-size: 0.72rem;
+        font-weight: 700;
+        line-height: 1;
+        cursor: help;
+      }
+
+      .ai-band-grid {
+        display: grid;
+        gap: 1px;
+        padding: 0 26px 22px;
+        background: #f8fafc;
+      }
+
+      .ai-band {
+        display: grid;
+        grid-template-columns: minmax(180px, 260px) 1fr;
+        gap: 18px;
+        padding: 14px 16px;
+        color: #ffffff;
+        background: #1f2933;
+        font-family: Consolas, "Courier New", monospace;
+        font-size: 0.9rem;
+        line-height: 1.45;
+      }
+
+      .ai-band strong {
+        color: #ffffff;
+        font-weight: 700;
+      }
+
+      .ai-band span {
+        color: #e6edf3;
       }
 
       .system-status-grid {
@@ -1088,7 +1137,7 @@
         color: var(--ink);
         background: #ffffff;
         font-size: 0.82rem;
-        font-weight: 800;
+        font-weight: 600;
       }
 
       .status-badge.warn {
@@ -1114,7 +1163,7 @@
         border: 1px solid var(--blue);
         color: var(--blue-dark);
         background: #ffffff;
-        font-weight: 800;
+        font-weight: 600;
       }
 
       .chip-button.changed {
@@ -1352,12 +1401,12 @@
       }
 
       .button {
-        min-height: 42px;
+        min-height: 40px;
         padding: 0 16px;
         border: 1px solid var(--blue);
         color: var(--panel);
         background: var(--blue);
-        font-weight: 800;
+        font-weight: 600;
         white-space: nowrap;
       }
 
@@ -1520,7 +1569,7 @@
         color: var(--blue-dark);
         background: #ffffff;
         font-size: 0.82rem;
-        font-weight: 800;
+        font-weight: 600;
       }
 
       .chip {
@@ -2595,6 +2644,7 @@
         .setup-grid,
         .workflow-strip,
         .system-status-grid,
+        .ai-band,
         .guide-strip,
         .command-strip,
         .task-board,
@@ -2711,12 +2761,7 @@
           <section class="panel customer-overview">
             <div class="panel-head">
               <div>
-                <h2>Saved Customers</h2>
-                <p>
-                  Customer profiles are shown here as simple cards with a short
-                  account description. Open a card only when you need the saved
-                  standards, projects, website, or hypercare controls.
-                </p>
+                <h2 class="with-info">Saved Customers <span class="info-dot" title="Open a customer only when you need details, projects, links, or standards.">&#9432;</span></h2>
               </div>
               <button class="button" id="openCustomerDialog" type="button">Add Customer</button>
             </div>
@@ -2728,7 +2773,7 @@
               <div class="panel-head">
                 <div>
                   <h2 id="candidateDialogTitle">Add Customer</h2>
-                  <p id="candidateDialogCopy">Enter a customer name. The hub will resolve the entity, enrich the profile, and show a summary before anything is saved.</p>
+                  <p id="candidateDialogCopy">Search, review, then save.</p>
                 </div>
                 <button class="button secondary" id="closeCandidateDialog" type="button">Close</button>
               </div>
@@ -2867,34 +2912,29 @@
             <section class="panel">
               <div class="panel-head">
                 <div>
-                  <h2>Standards and Compliance Intelligence</h2>
-                  <p>
-                    Track cybersecurity and functional safety standards, add
-                    internal service notes, and watch public changes that may
-                    affect customer projects or hypercare outreach.
-                  </p>
+                  <h2 class="with-info">Standards Overview <span class="info-dot" title="KPI view for certification work, sought-after standards, changes, and watch administration.">&#9432;</span></h2>
                 </div>
               </div>
               <div class="metric-grid compliance-kpis" style="padding: 22px 26px;">
                 <button class="metric" type="button" data-overview-action="certified">
                   <span>Certified this year</span>
                   <strong id="certifiedYearCount">0</strong>
-                  <p>Saved project records marked as certification work.</p>
+                  <p>Project records</p>
                 </button>
                 <button class="metric" type="button" data-overview-action="top-standard">
                   <span>Most sought after</span>
                   <strong id="topStandardName">-</strong>
-                  <p>Based on saved customer suggestions and project records.</p>
+                  <p>Customer + project signals</p>
                 </button>
                 <button class="metric" type="button" data-overview-action="recent-change">
                   <span>Recently changed</span>
                   <strong id="recentChangeCount">0</strong>
-                  <p>Public change notes saved in the standards library.</p>
+                  <p>Saved change notes</p>
                 </button>
                 <button class="metric" type="button" data-overview-action="settings">
                   <span>Watch administration</span>
                   <strong>Admin</strong>
-                  <p>Daily update schedule is managed from Settings.</p>
+                  <p>Schedule + backend</p>
                 </button>
               </div>
             </section>
@@ -2902,12 +2942,7 @@
           <div class="panel standards-overview">
             <div class="panel-head">
               <div>
-                <h2>Standards and Regulations</h2>
-                <p>
-                  Short, readable descriptions for standards used in testing,
-                  assessments, gap analyses, certifications, and market access
-                  planning.
-                </p>
+                <h2 class="with-info">Standards and Regulations <span class="info-dot" title="The standards library drives source monitoring and customer impact reviews.">&#9432;</span></h2>
               </div>
               <div class="customer-card-actions">
                 <button class="button" id="openStandardDialog" type="button">Add Standard</button>
@@ -2915,7 +2950,7 @@
                 <button class="button secondary" id="resetStandards" type="button">Restore baseline standards</button>
               </div>
             </div>
-            <div class="code" id="standardsUpdateStatus">Live standards enrichment uses the saved AWS API endpoint, fetches official source links in Lambda, and asks AI to summarize the source material.</div>
+            <div class="code" id="standardsUpdateStatus">AI standards enrichment: Lambda fetches official source links, then Claude drafts the source summary.</div>
 
             <div class="standards-route-grid">
               <button class="standards-route" type="button" data-route-view="cybersecurityStandards">
@@ -2942,7 +2977,7 @@
               <div class="panel-head">
                 <div>
                   <h2 id="standardDialogTitle">Add Standard</h2>
-                  <p>Save the standard with a short plain-English description account teams can use.</p>
+                  <p>Search, review, then save.</p>
                 </div>
                 <button class="button secondary" id="closeStandardDialog" type="button">Close</button>
               </div>
@@ -2953,7 +2988,7 @@
                 </div>
                 <div class="info-card">
                   <strong>AI enrichment</strong>
-                  <p id="standardAiStatus">Enter a standard name, then let AI draft the description, source review fields, markets, topics, and internal notes.</p>
+                  <p id="standardAiStatus">Draft description, source, topics, and notes.</p>
                   <button class="button secondary" id="enrichStandardWithAi" type="button">Enrich standard with AI</button>
                 </div>
                 <div id="standardApiWarning" class="api-warning hidden">
@@ -3177,53 +3212,48 @@
         <section class="panel app-view active" id="watch">
           <div class="panel-head">
             <div>
-              <h2>Daily Watch</h2>
-              <p>
-                Start here each day. This view shows changed standards, affected
-                customers, open impact reviews, and the follow-up work that needs an owner.
-              </p>
+              <h2 class="with-info">Daily Watch <span class="info-dot" title="Start here: changed standards, impacted customers, open reviews, and tasks.">&#9432;</span></h2>
             </div>
           </div>
           <div class="workflow-strip" aria-label="Daily Watch workflow">
             <article class="workflow-step">
               <span>Step 1</span>
               <strong>Build the library</strong>
-              <p>Add the standards and regulations your team tests, assesses, or watches for customer impact.</p>
+              <p>Standards, sources, change notes.</p>
             </article>
             <article class="workflow-step">
               <span>Step 2</span>
               <strong>Add customers</strong>
-              <p>Use AI enrichment to create a customer profile, then confirm the standards that actually matter.</p>
+              <p>AI drafts, consultant confirms.</p>
             </article>
             <article class="workflow-step">
               <span>Step 3</span>
               <strong>Review impact</strong>
-              <p>When a watched source changes, decide whether it is relevant for linked customers or projects.</p>
+              <p>Actual changes matched to customers.</p>
             </article>
             <article class="workflow-step">
               <span>Step 4</span>
               <strong>Notify and close</strong>
-              <p>Create a customer notification task, assign an owner, and close the review when action is complete.</p>
+              <p>Owner, task, status.</p>
             </article>
           </div>
-          <div class="system-status-grid" aria-label="System readiness">
-            <article class="system-status-card">
-              <strong>Shared workspace data</strong>
-              <p>Customers, standards, tasks, reviews, and users load through the AWS backend so the same view works across devices.</p>
-            </article>
-            <article class="system-status-card">
+          <div class="ai-band-grid" aria-label="AI and architecture notes">
+            <div class="ai-band">
+              <strong>Shared data</strong>
+              <span>AWS backend stores customers, standards, reviews, tasks, and users across devices.</span>
+            </div>
+            <div class="ai-band">
               <strong>AI enrichment</strong>
-              <p>Customer and standard profiles can be drafted by AI. Treat the result as a working profile until sources are reviewed.</p>
-            </article>
-            <article class="system-status-card">
+              <span>Claude drafts customer and standard profiles; consultants confirm before saving.</span>
+            </div>
+            <div class="ai-band">
               <strong>Task queue</strong>
-              <p>Impact reviews can create customer notification tasks with an owner, due date, and status.</p>
-            </article>
+              <span>Impact reviews create owner-based notification tasks for follow-up.</span>
+            </div>
           </div>
           <section class="operator-guide" aria-label="First use guidance">
             <div>
-              <h3>How consultants use this</h3>
-              <p>Keep the tool useful by connecting customers to standards. The dashboard becomes valuable once it can answer: who is exposed, what changed, and who owns the follow-up?</p>
+              <h3 class="with-info">Consultant flow <span class="info-dot" title="The dashboard is useful when customers, standards, changes, and owners are connected.">&#9432;</span></h3>
             </div>
             <div class="guide-strip" id="operatorGuideList"></div>
           </section>
@@ -3231,29 +3261,28 @@
             <button class="metric" type="button" data-watch-drill="recent-standards">
               <span>Standards watched</span>
               <strong id="dashboardStandardCount">0</strong>
-              <p>Standards in scope for the daily change scan.</p>
+              <p>Daily scan scope</p>
             </button>
             <button class="metric" type="button" data-watch-drill="matrix">
               <span>Linked standards</span>
               <strong id="dashboardLinkCount">0</strong>
-              <p>Confirmed, project, and suggested customer-standard relationships.</p>
+              <p>Customer-standard links</p>
             </button>
             <button class="metric" type="button" data-watch-drill="impacted">
               <span>Customers to review</span>
               <strong id="dashboardImpactedCount">0</strong>
-              <p>Saved customers with standards that have public change notes.</p>
+              <p>Matched change notes</p>
             </button>
             <button class="metric" type="button" data-watch-drill="notifications">
               <span>Change alerts</span>
               <strong id="dashboardAlertCount">0</strong>
-              <p>Customer-standard change matches waiting for review.</p>
+              <p>Waiting for review</p>
             </button>
           </div>
           <section class="dashboard-section">
             <div class="row-top">
               <div>
-                <h3>Consultant Command Center</h3>
-                <p class="row-copy">The working queue for reviews, owners, due dates, and customer notifications.</p>
+                <h3 class="with-info">Consultant Command Center <span class="info-dot" title="Reviews, tasks, owners, and overdue follow-up.">&#9432;</span></h3>
               </div>
             </div>
             <div class="command-strip" id="watchCommandStrip"></div>
@@ -3262,7 +3291,6 @@
             <div class="row-top">
               <div>
                 <h3>Impact Reviews</h3>
-                <p class="row-copy">Customer-standard impact reviews that still need a decision, notification task, or closure.</p>
               </div>
             </div>
             <div class="task-board" id="watchImpactReviewBoard"></div>
@@ -3271,7 +3299,6 @@
             <div class="row-top">
               <div>
                 <h3>Customer Notification Tasks</h3>
-                <p class="row-copy">Customer notification tasks created during impact review, grouped by priority and status.</p>
               </div>
               <button class="button secondary" type="button" data-view="setup">Manage team</button>
             </div>
@@ -3300,8 +3327,7 @@
           <section class="dashboard-section" id="watchMatrixSection">
             <div class="row-top">
               <div>
-                <h3>Customer Coverage Map</h3>
-                <p class="row-copy">This is the operating view: every saved customer, the standards attached to them, recent change exposure, and whether the customer is in notification watch.</p>
+                <h3 class="with-info">Customer Coverage Map <span class="info-dot" title="Saved customers, linked standards, change matches, and task status.">&#9432;</span></h3>
               </div>
               <button class="button secondary" type="button" data-view="customers">Open Customers</button>
             </div>
@@ -3310,8 +3336,7 @@
           <section class="dashboard-section" id="watchCoverageGapsSection">
             <div class="row-top">
               <div>
-                <h3>Coverage Gaps</h3>
-                <p class="row-copy">These are the missing customer-standard links that prevent reliable change impact alerts.</p>
+                <h3 class="with-info">Coverage Gaps <span class="info-dot" title="Missing links that prevent reliable customer impact alerts.">&#9432;</span></h3>
               </div>
             </div>
             <div class="highlight-list" id="coverageGapList"></div>
@@ -3323,7 +3348,7 @@
             <div class="panel-head">
               <div>
                 <h2 id="impactReviewTitle">Review Customer Impact</h2>
-                <p id="impactReviewCopy">Review the AI recommendation, decide relevance, and create a notification task if follow-up is needed.</p>
+                <p id="impactReviewCopy">Decision, owner, task.</p>
               </div>
               <button class="button secondary" id="closeImpactReviewDialog" type="button">Close</button>
             </div>
@@ -3374,7 +3399,6 @@
                 <input id="createNotificationTask" type="checkbox" checked />
                 <div>
                   <strong>Create customer notification task</strong>
-                  <p>Add this to Daily Watch under Customer Notification Tasks so the customer owner can act on it.</p>
                 </div>
               </label>
               <button class="button" type="submit">Save impact review</button>
@@ -3385,22 +3409,14 @@
         <section class="panel app-view" id="setup">
           <div class="panel-head">
             <div>
-              <h2>Settings</h2>
-              <p>
-                Administrative controls for deletion requests, customer-list
-                maintenance, and AI backend connection settings. This area
-                should be restricted before the hub is shared broadly. Team
-                roles here are shared workspace settings until real
-                authentication is connected.
-              </p>
+              <h2 class="with-info">Settings <span class="info-dot" title="Admin controls, user access, audit trail, daily update schedule, and backend/API connection.">&#9432;</span></h2>
             </div>
           </div>
 
           <div class="setup-box settings-anchor" id="settings-user-access">
             <div class="panel-head compact-head">
               <div>
-                <h2>User Access</h2>
-                <p>Select who is using the hub right now. Admin can maintain settings, consultants can create customer and standard work, and viewers can review dashboards.</p>
+                <h2 class="with-info">User Access <span class="info-dot" title="Local role selector for this shared workspace version. Replace with SSO before production rollout.">&#9432;</span></h2>
               </div>
             </div>
             <div class="split">
@@ -3415,14 +3431,13 @@
             </div>
             <div class="access-note">
               <strong>Access model for this version</strong>
-              <p>This is a shared workspace role selector, not SSO yet. Before production rollout, connect AWS Cognito, Entra ID, or another identity provider so roles are enforced by sign-in.</p>
+              <p>Workspace role selector now. SSO later.</p>
             </div>
           </div>
 
           <div class="panel-head settings-anchor" id="settings-admin-area" style="border-top: 1px solid var(--line);">
             <div>
-              <h2>Admin Area</h2>
-              <p>Deletion requests and maintenance actions are staged here. Customer notification tasks are handled from the Daily Watch command center.</p>
+              <h2 class="with-info">Admin Area <span class="info-dot" title="Deletion and maintenance requests. Notification tasks stay in Daily Watch.">&#9432;</span></h2>
             </div>
             <button class="button secondary" id="requestClearCustomers" type="button">Request clear customer list</button>
           </div>
@@ -3431,8 +3446,7 @@
           <div class="setup-box settings-anchor" id="settings-audit-trail">
             <div class="panel-head compact-head">
               <div>
-                <h2>Audit Trail</h2>
-                <p>Recent customer, standards, schedule, notification, and admin actions. This is stored in shared AWS state when the backend is connected.</p>
+                <h2 class="with-info">Audit Trail <span class="info-dot" title="Recent customer, standards, schedule, notification, and admin actions.">&#9432;</span></h2>
               </div>
             </div>
             <div class="audit-list" id="auditTrailList"></div>
@@ -3441,8 +3455,7 @@
           <div class="setup-box settings-anchor" id="settings-team-members">
             <div class="panel-head compact-head">
               <div>
-                <h2>Team Members</h2>
-                <p>Users here can own impact reviews and customer notification tasks. Shared user data is stored through the AWS backend when app-state storage is connected.</p>
+                <h2 class="with-info">Team Members <span class="info-dot" title="People who can own impact reviews and customer notification tasks.">&#9432;</span></h2>
               </div>
             </div>
             <form class="split" id="teamMemberForm">
@@ -3471,13 +3484,7 @@
           <div class="setup-box settings-anchor" id="settings-daily-update">
             <div class="panel-head compact-head">
               <div>
-                <h2>Daily Update Schedule</h2>
-                <p>
-                  Admin-only schedule controls for daily standards and
-                  customer-watch updates. Save the preferred schedule here,
-                  then use the GitHub Actions workflow or AWS scheduler to call
-                  the backend at that time.
-                </p>
+                <h2 class="with-info">Daily Update Schedule <span class="info-dot" title="Demo schedule setting. Connect GitHub Actions or AWS Scheduler to run it automatically.">&#9432;</span></h2>
               </div>
             </div>
             <div class="split">
@@ -3516,14 +3523,12 @@
                 <input id="dailyUpdateStandards" type="checkbox" />
                 <span>
                   <strong>Standards and regulations</strong>
-                  <span class="row-copy">Check saved standards for public changes and internal follow-up notes.</span>
                 </span>
               </label>
               <label class="standard-choice">
                 <input id="dailyUpdateCustomers" type="checkbox" />
                 <span>
                   <strong>Hypercare customers</strong>
-                  <span class="row-copy">Compare customer watched standards against new change notes.</span>
                 </span>
               </label>
             </div>
@@ -3537,13 +3542,7 @@
           <div class="setup-box settings-anchor" id="settings-backend">
             <div class="panel-head compact-head">
               <div>
-                <h2>AI Backend Configuration</h2>
-                <p>
-                  API keys must stay in AWS Lambda environment variables. This
-                  browser page stores only the API Gateway endpoint URL used to
-                  call the secured enrichment backend for customers and
-                  standards source checks.
-                </p>
+                <h2 class="with-info">Backend/API <span class="info-dot" title="API keys stay in Lambda. This page stores only the API Gateway URL.">&#9432;</span></h2>
               </div>
             </div>
             <div class="setup-grid">
@@ -5051,7 +5050,7 @@
           document.getElementById("saveVisual").classList.add("hidden");
           document.getElementById("candidateDialog").classList.remove("review-mode");
           document.getElementById("candidateDialogTitle").textContent = "Add Customer";
-          document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity and show a summary before anything is saved.";
+          document.getElementById("candidateDialogCopy").textContent = "Search, review, then save.";
           document.getElementById("lookupForm").reset();
           document.getElementById("lookupName").focus();
           setStatus("Ready to add a customer.");
@@ -6775,8 +6774,8 @@
             status: customers.length > 0 ? `${customers.length} saved` : "Start here",
             title: "1. Customer profiles",
             body: customers.length > 0
-              ? "Open a profile to verify business facts, standards, projects, and customer owner."
-              : "Add the first customer so the tool has an account to assess against standards.",
+              ? "Verify facts, standards, projects, owner."
+              : "Create the first account profile.",
             action: customers.length > 0 ? "customers" : "add-customer",
             label: customers.length > 0 ? "Open customers" : "Add customer"
           },
@@ -6784,7 +6783,7 @@
             done: standardsWithSources > 0,
             status: standardsWithSources > 0 ? `${standardsWithSources} with sources` : "Needs sources",
             title: "2. Standard sources",
-            body: "Each useful standard needs a source URL and a short explanation so consultants know why it matters.",
+            body: "Source URL and plain summary.",
             action: "standards",
             label: "Open standards"
           },
@@ -6793,8 +6792,8 @@
             status: linkCount > 0 ? `${linkCount} links` : "No links yet",
             title: "3. Customer coverage",
             body: linkCount > 0
-              ? "The coverage map shows which customers are tied to which standards."
-              : "Confirm suggested or project standards so changed sources can be matched to customers.",
+              ? "Customers tied to standards."
+              : "Confirm standards for each customer.",
             action: "coverage",
             label: "Open coverage map"
           },
@@ -6803,10 +6802,10 @@
             status: !readyForReview ? "After setup" : (queue.length || reviewsOpen || tasks.length ? `${queue.length + reviewsOpen + tasks.length} open` : "No open work"),
             title: "4. Reviews and tasks",
             body: !readyForReview
-              ? "Once customers and standards are linked, this is where change alerts become review work."
+              ? "Alerts start after coverage exists."
               : queue.length || reviewsOpen || tasks.length
-              ? "Review relevant changes, assign an owner, and create customer notification tasks where needed."
-              : `No current follow-up is waiting. ${changes.length} saved change note${changes.length === 1 ? "" : "s"} are available for the next review cycle.`,
+              ? "Review, assign, notify, close."
+              : `${changes.length} saved change note${changes.length === 1 ? "" : "s"}. No open work.`,
             action: !readyForReview ? "coverage" : (queue.length ? "alerts" : "reviews"),
             label: !readyForReview ? "Open coverage map" : (queue.length ? "Review alerts" : "Open reviews")
           }
@@ -6879,7 +6878,7 @@
 
       function renderTaskBoard(tasks) {
         if (!tasks.length) {
-          return `<article class="task-card"><strong>No customer notification tasks</strong><p class="row-copy">Tasks live here in the Consultant Command Center. Review an impacted customer and select "Create customer notification task" to create the first task.</p></article>`;
+          return `<article class="task-card"><strong>No notification tasks</strong><p class="row-copy">Create one from an impact review.</p></article>`;
         }
         return tasks.slice(0, 9).map((task) => `
           <article class="task-card ${isOverdue(task.dueDate) ? "overdue" : ""}">
@@ -6925,7 +6924,7 @@
 
       function renderImpactReviewBoard(reviews) {
         if (!reviews.length) {
-          return `<article class="task-card"><strong>No open impact reviews</strong><p class="row-copy">Open reviews appear here after you save an impact review that is still in review, relevant, or waiting on customer notification.</p></article>`;
+          return `<article class="task-card"><strong>No open impact reviews</strong><p class="row-copy">Reviews appear when a customer is matched to a changed standard.</p></article>`;
         }
         return reviews.slice(0, 9).map((review) => `
           <article class="task-card ${isOverdue(review.dueDate) ? "overdue" : ""}" data-impact-review-card="${esc(review.id || review.key)}">
@@ -7010,10 +7009,10 @@
         renderDailySchedule();
         renderOperatorGuide(changes, queue, linkCount, tasks, reviewsOpen);
         document.getElementById("watchCommandStrip").innerHTML = `
-          <button class="command-card" type="button" data-command-drill="reviews"><span>Open reviews</span><strong>${reviewsOpen}</strong><p class="row-copy">Impact reviews not closed yet.</p></button>
-          <button class="command-card" type="button" data-command-drill="tasks"><span>Notification tasks</span><strong>${tasks.length}</strong><p class="row-copy">Customer follow-up items in the task queue.</p></button>
-          <button class="command-card" type="button" data-command-drill="overdue"><span>Overdue</span><strong>${overdueTasks}</strong><p class="row-copy">Tasks past due date.</p></button>
-          <button class="command-card" type="button" data-view="setup"><span>Team owners</span><strong>${activeUsers().length}</strong><p class="row-copy">Active users available for assignment.</p></button>
+          <button class="command-card" type="button" data-command-drill="reviews"><span>Open reviews</span><strong>${reviewsOpen}</strong><p class="row-copy">Need decision</p></button>
+          <button class="command-card" type="button" data-command-drill="tasks"><span>Notification tasks</span><strong>${tasks.length}</strong><p class="row-copy">Need follow-up</p></button>
+          <button class="command-card" type="button" data-command-drill="overdue"><span>Overdue</span><strong>${overdueTasks}</strong><p class="row-copy">Past due</p></button>
+          <button class="command-card" type="button" data-view="setup"><span>Team owners</span><strong>${activeUsers().length}</strong><p class="row-copy">Available owners</p></button>
         `;
         document.getElementById("watchImpactReviewBoard").innerHTML = renderImpactReviewBoard(openReviews);
         document.getElementById("watchTaskBoard").innerHTML = renderTaskBoard(tasks);
@@ -7044,7 +7043,7 @@
         }).join("") : `
           <article class="highlight-card">
             <strong>No customer impact alerts yet</strong>
-            <p>Save customers with standards, then run the AI source update. Matching standards with public changes will appear here.</p>
+            <p>Customer-standard matches appear here.</p>
           </article>
         `;
         const impactedGroups = customers
@@ -7084,7 +7083,7 @@
         `).join("") : `
           <article class="highlight-card">
             <strong>No public changes queued</strong>
-            <p>Run the AI source update from a standards page. Daily Watch will summarize review items here.</p>
+            <p>Run AI source update from a standards page.</p>
           </article>
         `;
         document.getElementById("customerStandardsMatrix").innerHTML = customers.length ? `
@@ -7135,7 +7134,7 @@
         ` : `
           <article class="highlight-card">
             <strong>No customers saved yet</strong>
-            <p>Add a customer, confirm the relevant standards, and this overview becomes the daily operating map.</p>
+            <p>Add a customer to start the coverage map.</p>
           </article>
         `;
         document.getElementById("watchList").innerHTML = active.length ? active.slice(0, 4).map((customer) => `
@@ -7152,7 +7151,7 @@
         `).join("") : `
           <article class="highlight-card">
             <strong>No hypercare customers yet</strong>
-            <p>Add a customer to hypercare from the Customers tab to include them in daily watch monitoring.</p>
+            <p>Add hypercare from a customer profile.</p>
           </article>
         `;
         document.getElementById("coverageGapList").innerHTML = renderCoverageGaps(queue);
@@ -7232,7 +7231,7 @@
               <button class="notification-action secondary" type="button" data-toggle-user="${index}">${user.active ? "Deactivate" : "Activate"}</button>
             </div>
           </article>
-        `).join("") : `<article class="info-card"><strong>No team members</strong><p>Add at least one owner before assigning notification tasks.</p></article>`;
+        `).join("") : `<article class="info-card"><strong>No team members</strong><p>Add an owner before assigning tasks.</p></article>`;
         list.querySelectorAll("[data-toggle-user]").forEach((button) => {
           button.addEventListener("click", () => {
             if (!requireRole("admin", "manage team members")) return;
@@ -7289,7 +7288,7 @@
           .map((request, index) => ({ request, index }))
           .filter(({ request }) => request.type !== "notify-customer");
         if (!visibleRequests.length) {
-          list.innerHTML = `<article class="info-card"><strong>No admin requests</strong><p>Deletion and clear-list requests will appear here for an administrator to review. Customer notification tasks live in the Daily Watch command center.</p></article>`;
+          list.innerHTML = `<article class="info-card"><strong>No admin requests</strong><p>Deletion and maintenance requests appear here.</p></article>`;
           return;
         }
         const requestTitle = (request) => {
@@ -7359,7 +7358,7 @@
       document.getElementById("openCustomerDialog").addEventListener("click", () => {
         if (!requireRole("consultant", "add a customer")) return;
         document.getElementById("candidateDialogTitle").textContent = "Add Customer";
-        document.getElementById("candidateDialogCopy").textContent = "Enter a customer name. The hub will resolve the entity, enrich the profile, and show a summary before anything is saved.";
+        document.getElementById("candidateDialogCopy").textContent = "Search, review, then save.";
         document.getElementById("candidateBox").classList.add("hidden");
         document.getElementById("saveVisual").classList.add("hidden");
         showLookupApiWarning(false);
