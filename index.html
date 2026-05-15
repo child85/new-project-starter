@@ -4113,6 +4113,28 @@
         return externalLink(url, sourceLabelForUrl(url));
       }
 
+      function sourceStatusLabel(status) {
+        const value = String(status || "").trim();
+        if (!value) return "";
+        const normalized = normalize(value);
+        if (normalized === "source_fetched") return "Source page fetched";
+        if (normalized === "pending") return "Source check pending";
+        if (normalized === "missing_source_url") return "Missing source URL";
+        if (normalized === "matched_existing_record") return "Matched existing library record";
+        if (normalized === "browser_assisted_draft") return "Browser-assisted draft";
+        if (normalized.startsWith("source_http_")) return `Source returned HTTP ${value.replace("source_http_", "")}`;
+        if (normalized.startsWith("source_fetch_failed")) return value.replace("source_fetch_failed:", "Source fetch failed:");
+        return value.replace(/_/g, " ");
+      }
+
+      function renderSourceCheckStatus(standard) {
+        if (!standard.sourceStatus && !standard.sourceCheckedAt) return "";
+        const checked = standard.sourceCheckedAt ? ` on ${esc(new Date(standard.sourceCheckedAt).toLocaleString())}` : "";
+        const label = sourceStatusLabel(standard.sourceStatus || "source_fetched");
+        const link = standard.sourceUrl ? `: ${sourceLink(standard.sourceUrl)}` : "";
+        return `<p>${esc(label)}${checked}${link}</p>`;
+      }
+
       function cleanEndpoint(value) {
         const trimmed = String(value || "").trim();
         if (!trimmed) return "";
@@ -5620,8 +5642,7 @@
                   <strong>Official source website</strong>
                   <p>${standard.sourceUrl ? externalLink(standard.sourceUrl, standard.sourceUrl) : "No official source URL saved yet. Add one when editing this standard."}</p>
                   ${standard.sourceConfidence ? `<p>Source confidence: ${esc(standard.sourceConfidence)}</p>` : ""}
-                  ${standard.sourceCheckedAt ? `<p>Last live AI source check: ${esc(new Date(standard.sourceCheckedAt).toLocaleString())}</p>` : ""}
-                  ${standard.sourceStatus ? `<p>Source status: ${esc(standard.sourceStatus)}</p>` : ""}
+                  ${renderSourceCheckStatus(standard)}
                   ${standard.sourceEvidence ? `<p>${esc(standard.sourceEvidence)}</p>` : ""}
                 </div>
                 ${standard.internalNotes ? `<div class="row-copy">TUV Rheinland notes: ${esc(standard.internalNotes)}</div>` : ""}
