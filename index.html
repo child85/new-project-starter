@@ -2842,6 +2842,16 @@
                   <label for="projectDialogStandards">Standards covered</label>
                   <input id="projectDialogStandards" placeholder="ISO/SAE 21434, ISO 26262, IEC 62443" />
                 </div>
+                <div class="split">
+                  <div class="field">
+                    <label for="projectDialogBcsLink">BCS project link</label>
+                    <input id="projectDialogBcsLink" type="url" placeholder="https://..." />
+                  </div>
+                  <div class="field">
+                    <label for="projectDialogSharePointLink">SharePoint document location</label>
+                    <input id="projectDialogSharePointLink" type="url" placeholder="https://..." />
+                  </div>
+                </div>
                 <div class="field">
                   <label for="projectDialogNotes">Notes</label>
                   <textarea id="projectDialogNotes" placeholder="Outcome, scope, report/certificate reference, or hypercare notes."></textarea>
@@ -5358,6 +5368,14 @@
         return customer.lastVerifiedAt ? new Date(customer.lastVerifiedAt).toLocaleDateString() : "Not verified";
       }
 
+      function projectReferenceLinks(project) {
+        const links = [
+          project.bcsLink ? externalLink(project.bcsLink, "BCS project") : "",
+          project.sharePointLink ? externalLink(project.sharePointLink, "SharePoint documents") : ""
+        ].filter(Boolean);
+        return links.length ? `<div class="source-link-stack project-links">${links.join("")}</div>` : "";
+      }
+
       function saveLookupProfile(profile) {
         if (!requireRole("consultant", "save a customer profile")) return;
         const normalized = normalizeCustomerRecord(profile);
@@ -5404,6 +5422,8 @@
           date: document.getElementById("projectDialogDate").value,
           status: document.getElementById("projectDialogStatus").value,
           standards: readCsvField("projectDialogStandards"),
+          bcsLink: readTextField("projectDialogBcsLink"),
+          sharePointLink: readTextField("projectDialogSharePointLink"),
           notes: readTextField("projectDialogNotes")
         };
         if (!project.name) return;
@@ -5600,6 +5620,7 @@
                       <strong>${esc(project.name)}</strong>
                       <span>${esc(project.type || "Project")} | ${esc(project.status || "Status unknown")} | ${esc(project.date || "Date unknown")}</span>
                       <div class="tags" style="margin-top: 8px;">${renderTags(project.standards)}</div>
+                      ${projectReferenceLinks(project)}
                       ${project.notes ? `<p class="row-copy">${esc(project.notes)}</p>` : ""}
                     </div>
                   `).join("") : `<p class="row-copy">No projects or assessments saved yet.</p>`}
