@@ -69,24 +69,36 @@ export async function handler(event) {
       return response(400, { error: "Customer name is required." });
     }
 
+    if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+      return response(503, {
+        status: "ai_provider_missing",
+        error: "AI provider is not configured.",
+        detail: "Add ANTHROPIC_API_KEY or OPENAI_API_KEY to the Lambda environment before customer enrichment can run."
+      });
+    }
+
     let result;
     try {
       result = process.env.ANTHROPIC_API_KEY
         ? await enrichWithClaude(body)
-        : process.env.OPENAI_API_KEY
-          ? await enrichWithAi(body)
-          : deterministicEnrichment(body);
+        : await enrichWithAi(body);
     } catch (aiError) {
-      result = deterministicEnrichment(body);
-      result.status = "ai_error_fallback";
-      result.notice = `AI enrichment failed: ${aiError.message}`;
-      result.customer.evidence_notes = [
-        ...(result.customer.evidence_notes || []),
-        `AI enrichment failed: ${aiError.message}`
-      ];
+      return response(502, {
+        status: "ai_provider_error",
+        error: "AI enrichment failed.",
+        detail: aiError.message
+      });
     }
 
-    await saveCustomerProfile(result.customer, result.status);
+    if (!result?.customer?.name) {
+      return response(502, {
+        status: "ai_provider_error",
+        error: "AI enrichment returned an incomplete customer profile.",
+        detail: "The backend did not receive a usable customer profile from the AI provider."
+      });
+    }
+
+    await saveCustomerProfile(result.customer, result.status || "completed");
 
     return response(200, result);
   } catch (error) {
@@ -113,7 +125,7 @@ async function healthCheck() {
       ? `anthropic:${process.env.ANTHROPIC_MODEL || "default"}`
       : process.env.OPENAI_API_KEY
         ? `openai:${process.env.OPENAI_MODEL || "default"}`
-        : "rule-based fallback",
+        : "not configured",
     sharedStorage: process.env.APP_STATE_TABLE ? "configured" : "not configured",
     customerAuditTable: process.env.CUSTOMER_TABLE ? "configured" : "not configured",
     standardsAuditTable: process.env.STANDARDS_TABLE ? "configured" : "not configured",
@@ -992,13 +1004,17 @@ async function enrichImpactReview(body) {
     }
   } catch (error) {
     return {
-      ...deterministicImpactRecommendation(input),
-      status: "ai_error_fallback",
-      notice: `AI impact review failed: ${error.message}`
+      status: "ai_provider_error",
+      error: "AI impact review failed.",
+      detail: error.message
     };
   }
 
-  return deterministicImpactRecommendation(input);
+  return {
+    status: "ai_provider_missing",
+    error: "AI provider is not configured.",
+    detail: "Add ANTHROPIC_API_KEY or OPENAI_API_KEY to generate customer-specific impact reviews."
+  };
 }
 
 function sanitizeImpactReviewInput(body) {
@@ -1286,158 +1302,6 @@ Rules:
 - Do not include low-value evidence notes such as "subject to change", "verify internally", "customer name from input", "not explicitly confirmed by customer", or generic caveats. Only include notes that add specific source, business, product, market, or standards value.
 - Include exactly 10 actions.
 - Prefer standards relevant to cybersecurity, functional safety, ATEX/explosive atmospheres, OT security, connected products, automotive, medical devices, financial resilience, and global market access.`;
-}
-
-function deterministicEnrichment(body) {
-  const name = String(body.confirmedEntity?.name || body.name).trim();
-  const inputMarkets = normalizeList(body.markets);
-  const text = normalize(`${name} ${body.sector || ""} ${body.notes || ""} ${inputMarkets.join(" ")}`);
-  const sector = body.sector || inferSector(text);
-  const markets = Array.from(new Set([...(inputMarkets.length ? inputMarkets : ["North America"]), ...(text.includes("global") ? ["Global"] : [])]));
-  const likelyStandards = standardsFor(sector, markets);
-
-  return {
-    status: "completed_rule_based_fallback",
-    notice: "Rule-based fallback was used. Configure or fix the AI provider before treating this as customer intelligence.",
-    candidates: [],
-    customer: {
-      name,
-      website: body.website || body.confirmedEntity?.website || "",
-      headquarters: body.confirmedEntity?.headquarters || "Unknown - verify with customer",
-      sector,
-      subSector: sectorSubSector(sector),
-      size: body.size || (markets.includes("Global") ? "Global enterprise" : "Enterprise"),
-      employeeEstimate: body.size ? employeeEstimateFor(body.size, sector, markets) : "Unknown - verify with AI or customer source",
-      revenueEstimate: body.size ? revenueEstimateFor(body.size) : "Unknown - verify with AI or customer source",
-      yearFounded: "Unknown - verify",
-      ownership: "Unknown - verify",
-      keyProducts: keyProductsFor(sector),
-      targetMarkets: markets,
-      subsidiaries: [],
-      markets,
-      summary: `${name} was not enriched by AI. The fallback only matched the entered name and market hints to a broad ${sector} profile, so verify the entity before saving.`,
-      knownStandards: [],
-      guessedStandards: likelyStandards.map((item) => item.name),
-      likelyStandards,
-      hypercare: "Active",
-      owner: "NA team",
-      actions: engagementActions(sector, markets, name),
-      evidenceNotes: [
-        "Rule-based fallback was used because the AI provider was not available.",
-        "Confirm customer facts, subsidiaries, and standards before outreach."
-      ],
-      sourceNotes: [
-        "Fallback profile uses user-entered hints and sector logic only. Configure or repair Claude for AI-enriched business metadata."
-      ],
-      sourceConfidence: "Rule-based fallback only - AI enrichment did not run",
-      confidence: "low"
-    }
-  };
-}
-
-function employeeEstimateFor(size, sector, markets = []) {
-  const text = normalize(`${size} ${sector} ${markets.join(" ")}`);
-  if (text.includes("global enterprise")) return "10,000+ employees";
-  if (text.includes("enterprise")) return "1,000-10,000 employees";
-  if (text.includes("mid market") || text.includes("mid-market")) return "250-1,000 employees";
-  if (text.includes("small")) return "50-250 employees";
-  if (text.includes("startup")) return "10-100 employees";
-  if (text.includes("automotive") || text.includes("industrial")) return "500-5,000 employees";
-  return "Unknown - verify";
-}
-
-function revenueEstimateFor(size) {
-  const text = normalize(size);
-  if (text.includes("global enterprise")) return "$10B+ annual revenue";
-  if (text.includes("enterprise")) return "$1B-$10B annual revenue";
-  if (text.includes("mid market") || text.includes("mid-market")) return "$50M-$1B annual revenue";
-  if (text.includes("small")) return "$10M-$50M annual revenue";
-  if (text.includes("startup")) return "Pre-revenue to $25M annual revenue";
-  return "Unknown - verify";
-}
-
-function keyProductsFor(sector) {
-  const map = {
-    "Automotive": ["connected vehicle systems", "mobility software", "vehicle components"],
-    "Industrial / OT": ["automation systems", "control software", "connected industrial equipment"],
-    "Medical Devices": ["connected medical devices", "regulated software", "diagnostic systems"],
-    "Financial Services": ["digital services", "ICT operations", "customer platforms"],
-    "ICT / Connected Products": ["connected products", "software platforms", "cloud-enabled services"]
-  };
-  return map[sector] || ["products and services to verify"];
-}
-
-function inferSector(text) {
-  if (text.includes("vehicle") || text.includes("automotive")) return "Automotive";
-  if (text.includes("industrial") || text.includes("automation") || text.includes("plant") || text.includes("ot")) return "Industrial / OT";
-  if (text.includes("medical") || text.includes("health")) return "Medical Devices";
-  if (text.includes("finance") || text.includes("bank")) return "Financial Services";
-  return "ICT / Connected Products";
-}
-
-function sectorSubSector(sector) {
-  const map = {
-    "Automotive": "Connected vehicles, software-defined vehicle systems, suppliers, or manufacturing",
-    "Industrial / OT": "Industrial automation, plant systems, process safety, or OT cybersecurity",
-    "Medical Devices": "Connected medical technology, regulated software, or product security",
-    "Financial Services": "Digital operational resilience, third-party ICT risk, and information security",
-    "ICT / Connected Products": "Connected products, software, cloud, or digital infrastructure"
-  };
-  return map[sector] || "General assurance and market access";
-}
-
-function standardsFor(sector, markets) {
-  const list = [];
-  if (sector === "Automotive") list.push("ISO/SAE 21434", "UNECE R155 / R156", "ISO 26262", "TISAX", "IEC 62443");
-  if (sector === "Industrial / OT") list.push("IEC 62443", "IEC 61508", "IEC 61511", "ISO 13849", "ATEX Directive 2014/34/EU", "ATEX Workplace Directive 1999/92/EC", "ISO 27001 / 27002");
-  if (sector === "Medical Devices") list.push("UL 2900", "ISO 27001 / 27002", "EU Cyber Resilience Act");
-  if (sector === "Financial Services") list.push("ISO 27001 / 27002", "NIS2");
-  if (sector === "ICT / Connected Products") list.push("EU Cyber Resilience Act", "ISO 27001 / 27002", "NIST SP 800-115", "UL 2900");
-  if (markets.includes("EU")) list.push("NIS2", "EU Cyber Resilience Act", "UKCA / CE Market Access");
-  if (markets.includes("UK")) list.push("UKCA / CE Market Access");
-  return Array.from(new Set(list)).slice(0, 8).map((name) => ({
-    name,
-    confidence: "medium",
-    domain: domainFor(name),
-    why: `${name} is a plausible fit for ${sector} customers with ${markets.join(", ")} exposure. Confirm with the delivery team before treating it as required.`
-  }));
-}
-
-function domainFor(name) {
-  if (/ATEX|2014\/34|1999\/92|explosive atmosphere/i.test(name)) return "ATEX";
-  if (/61508|61511|13849|26262/.test(name)) return "Functional Safety";
-  if (/DORA|NIS2|Resilience|R155|R156/.test(name)) return "Regulation";
-  if (/UKCA|CE/.test(name)) return "Market Access";
-  return "Cybersecurity";
-}
-
-function engagementActions(sector, markets, name) {
-  const base = [
-    `Confirm ${name}'s entity, subsidiaries, markets, and product lines before outreach.`,
-    "Map known standards from past projects into hypercare.",
-    "Prepare a two-page customer briefing with confirmed facts and AI assumptions separated."
-  ];
-  const sectorActions = {
-    "Automotive": [
-      "Discuss ISO/SAE 21434 readiness for connected-vehicle programs.",
-      "Connect functional safety and cybersecurity topics where safety depends on software or connectivity.",
-      "Offer TISAX or supplier readiness support for European OEM programs."
-    ],
-    "Industrial / OT": [
-      "Position IEC 62443 assessment for OT environments or automation products.",
-      "Discuss IEC 61508 or IEC 61511 if safety instrumented systems are involved.",
-      "Offer plant resilience, remote assessment, or OT security testing support."
-    ],
-    "Medical Devices": [
-      "Review connected-product cybersecurity evidence and vulnerability handling.",
-      "Discuss product security testing for network-connectable systems.",
-      "Check market access and privacy expectations for regulated health technology."
-    ]
-  };
-  const marketActions = markets.includes("EU")
-    ? ["Check EU regulatory exposure, especially CRA, NIS2, CE, or sector-specific requirements."]
-    : ["Check whether global exports require local conformity, test marks, or certification paths."];
-  return [...base, ...(sectorActions[sector] || []), ...marketActions, "Identify one immediate gap assessment and one longer-term certification opportunity.", "Create a follow-up plan for account owner and delivery lead."].slice(0, 10);
 }
 
 function normalize(value) {

@@ -15,7 +15,7 @@ The hub is intended to help NA-based team members work with global customers:
 - create customer notification tasks when a standard or regulation changes
 - select a current user role, assign owners, and keep an audit trail of key changes
 
-Customer data is no longer seeded with fake saved records. The browser keeps a temporary local cache so the page can render quickly, but shared records should be loaded and saved through the AWS backend.
+Customer data is no longer seeded with fake saved records. Shared records should load and save through the AWS backend; local browser storage is only used for UI preferences such as the selected endpoint or current user selector.
 
 ## Architecture
 
@@ -47,7 +47,7 @@ In this setup:
 
 The website now has three workspace roles:
 
-- `Admin`: manages API endpoint settings, users, schedules, baseline standards, and admin requests.
+- `Admin`: manages API endpoint settings, users, schedules, curated standards, and admin requests.
 - `Consultant`: adds customers, standards, projects, impact reviews, and customer notification tasks.
 - `Viewer`: reviews dashboards and records without saving operational changes.
 
@@ -96,7 +96,7 @@ The Lambda supports these task types through the same API Gateway endpoint:
 - Scheduled standards watch: send `{ "task": "scheduled-standards-watch", "actor": { "name": "GitHub Actions", "role": "Automation" } }`.
 - Send one customer notification task: send `{ "task": "send-notification", "requestId": "req-..." }`.
 
-Customer enrichment should return AI-backed profile data. If Claude or OpenAI is missing or failing, the Lambda returns a rule-based fallback with low confidence. The website blocks saving that fallback profile so unknown website, headquarters, employee count, or revenue estimates are not mistaken for confirmed customer intelligence.
+Customer enrichment must return AI-backed profile data. If Claude or OpenAI is missing or failing, the Lambda now returns a clear error and does not store a customer profile.
 
 ## AWS Setup Checklist
 
@@ -147,10 +147,10 @@ Required GitHub repository secrets:
 - `AWS_REGION`
 - `S3_BUCKET`
 
-For the current bucket, the expected values are:
+For the current bucket, use your active website bucket:
 
 - `AWS_REGION`: `us-east-1`
-- `S3_BUCKET`: `nfecke-demo-page-2026`
+- `S3_BUCKET`: your S3 website bucket name
 
 The AWS user or role behind the access key needs permission to list the bucket, upload objects, delete old objects, and set object content in the S3 website bucket.
 
