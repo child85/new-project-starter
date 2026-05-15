@@ -909,6 +909,60 @@
         font-size: 1rem;
       }
 
+      .trust-grid {
+        display: grid;
+        grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+        gap: 14px;
+      }
+
+      .trust-card,
+      .reasoning-card {
+        padding: 16px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .trust-card {
+        border-left: 5px solid var(--blue);
+      }
+
+      .trust-card.warning {
+        border-left-color: var(--warn);
+        background: #fffaf3;
+      }
+
+      .trust-card span,
+      .reasoning-card span {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+
+      .trust-card strong,
+      .reasoning-card strong {
+        display: block;
+        color: var(--ink);
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+
+      .reasoning-card {
+        margin-top: 14px;
+      }
+
+      .source-link-stack {
+        display: grid;
+        gap: 7px;
+        margin-top: 10px;
+      }
+
+      .warning-copy {
+        color: var(--warn);
+        font-weight: 600;
+      }
+
       .standard-map {
         display: grid;
         gap: 14px;
@@ -2560,6 +2614,7 @@
         .audit-event,
         .standards-route-grid,
         .compliance-signal-grid,
+        .trust-grid,
         .impact-review-main,
         .impact-review-list-grid {
           grid-template-columns: 1fr;
@@ -5261,6 +5316,48 @@
           : `<span class="row-copy">No citation links saved yet.</span>`;
       }
 
+      function sourceLinkType(url, customer = {}) {
+        const clean = String(url || "").trim();
+        if (!clean) return "Source";
+        const normalizedUrl = normalize(clean);
+        try {
+          const sourceHost = new URL(clean.startsWith("http") ? clean : `https://${clean}`).hostname.replace(/^www\./, "");
+          const customerHost = customer.website ? new URL(String(customer.website).startsWith("http") ? customer.website : `https://${customer.website}`).hostname.replace(/^www\./, "") : "";
+          if (customerHost && sourceHost === customerHost) return "Company website";
+        } catch {
+          // Keep the path-based labels below when a saved URL is incomplete.
+        }
+        if (normalizedUrl.includes("sec.gov")) return "SEC filing";
+        if (normalizedUrl.includes("annual") || normalizedUrl.includes("investor") || normalizedUrl.includes("10-k") || normalizedUrl.includes("form-10")) return "Annual report";
+        if (normalizedUrl.includes("press") || normalizedUrl.includes("news")) return "Press release";
+        return sourceLabelForUrl(clean);
+      }
+
+      function namedCustomerSourceLinks(customer) {
+        const links = safeList(customer.sourceLinks).map(itemLabel).filter(Boolean);
+        if (!links.length) {
+          return `<p class="row-copy warning-copy">No citation links saved. Treat AI reasoning as unverified.</p>`;
+        }
+        return `<div class="source-link-stack">${links.map((url) => `<div>${externalLink(url, sourceLinkType(url, customer))}</div>`).join("")}</div>`;
+      }
+
+      function confidenceLine(customer) {
+        const confidence = customer.confidence || "medium";
+        return `Profile confidence: ${confidence.charAt(0).toUpperCase()}${confidence.slice(1)}`;
+      }
+
+      function confidenceCopy(customer) {
+        const sourceConfidence = String(customer.sourceConfidence || "").trim();
+        if (!sourceConfidence || normalize(sourceConfidence) === normalize(customer.confidence || "")) {
+          return "Use source links and evidence notes to decide whether this profile is ready for customer-facing use.";
+        }
+        return sourceConfidence;
+      }
+
+      function lastVerifiedLabel(customer) {
+        return customer.lastVerifiedAt ? new Date(customer.lastVerifiedAt).toLocaleDateString() : "Not verified";
+      }
+
       function saveLookupProfile(profile) {
         if (!requireRole("consultant", "save a customer profile")) return;
         const normalized = normalizeCustomerRecord(profile);
@@ -5457,27 +5554,23 @@
                 </div>
                 <div class="customer-profile-section">
                   <h4>Data Confidence and Sources</h4>
-                  <div class="source-grid">
-                    <div class="source-item">
-                      <span>Profile confidence</span>
-                      <strong>${esc(customer.confidence || "medium")}</strong>
-                      <p class="row-copy">${esc(customer.sourceConfidence || "AI-assisted profile. Verify before customer-facing use.")}</p>
+                  <div class="trust-grid">
+                    <div class="trust-card">
+                      <span>Trust level</span>
+                      <strong>${esc(confidenceLine(customer))}</strong>
+                      <p class="row-copy">${esc(confidenceCopy(customer))}</p>
+                      <p class="row-copy">Last verified: ${esc(lastVerifiedLabel(customer))}</p>
                     </div>
-                    <div class="source-item">
-                      <span>Last verified</span>
-                      <strong>${customer.lastVerifiedAt ? esc(new Date(customer.lastVerifiedAt).toLocaleDateString()) : "Not verified"}</strong>
-                      <p class="row-copy">Use citations to separate confirmed facts from AI inference.</p>
+                    <div class="trust-card ${safeList(customer.sourceLinks).length ? "" : "warning"}">
+                      <span>Source coverage</span>
+                      <strong>${safeList(customer.sourceLinks).length ? `${safeList(customer.sourceLinks).length} citation link${safeList(customer.sourceLinks).length === 1 ? "" : "s"} saved` : "No citation links saved"}</strong>
+                      ${namedCustomerSourceLinks(customer)}
                     </div>
-                    <div class="source-item">
-                      <span>Citation links</span>
-                      <strong>Sources</strong>
-                      ${sourceLinkList(customer.sourceLinks)}
-                    </div>
-                    <div class="source-item">
-                      <span>Evidence notes</span>
-                      <strong>Reasoning</strong>
-                      ${detailList(meaningfulEvidenceNotes(customer), "No useful evidence notes saved yet")}
-                    </div>
+                  </div>
+                  <div class="reasoning-card">
+                    <span>Useful reasoning</span>
+                    <strong>Evidence notes</strong>
+                    ${detailList(meaningfulEvidenceNotes(customer), "No useful evidence notes saved yet")}
                   </div>
                 </div>
                 <div class="customer-profile-section">
