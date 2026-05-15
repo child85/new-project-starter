@@ -1571,7 +1571,7 @@
       }
 
       .profile-fact.wide {
-        grid-column: span 2;
+        grid-column: 1 / -1;
       }
 
       .compliance-signal-grid {
@@ -5492,8 +5492,8 @@
                   <h4>Compliance Profile</h4>
                   <div class="profile-grid">
                     ${wideFact("Knowledge source split", renderComplianceSignals(customer))}
-                    ${fact("Standards covered in our projects / assessments", renderTags(unique((customer.projects || []).flatMap((project) => safeList(project.standards)))) || `<span class="row-copy">No delivered standards saved yet.</span>`, true)}
-                    ${fact("Useful evidence / source notes", detailList(meaningfulEvidenceNotes(customer), "No useful evidence notes saved yet"), true)}
+                    ${wideFact("Standards covered in our projects / assessments", renderTags(unique((customer.projects || []).flatMap((project) => safeList(project.standards)))) || `<span class="row-copy">No delivered standards saved yet.</span>`)}
+                    ${wideFact("Useful evidence / source notes", detailList(meaningfulEvidenceNotes(customer), "No useful evidence notes saved yet"))}
                   </div>
                 </div>
                 <div class="customer-profile-section">
