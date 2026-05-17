@@ -13,6 +13,7 @@ The hub is intended to help NA-based team members work with global customers:
 - keep a standards library with official source links and last-change notes
 - review which customers are tied to which standards
 - create customer notification tasks when a standard or regulation changes
+- save up to three hosted training/reference videos in Settings for team playback
 - select a current user role, assign owners, and keep an audit trail of key changes
 
 Customer data is no longer seeded with fake saved records. Shared records should load and save through the AWS backend; local browser storage is only used for UI preferences such as the selected endpoint or current user selector.
@@ -38,7 +39,7 @@ In this setup:
 - S3 hosts the public website.
 - API Gateway provides the HTTPS endpoint the page calls.
 - Lambda runs customer enrichment, standards source checks, and app-state load/save.
-- `APP_STATE_TABLE` is the shared database for the hub state: customers, standards, users, admin requests, impact reviews, tasks, schedule settings, and audit events.
+- `APP_STATE_TABLE` is the shared database for the hub state: customers, standards, users, admin requests, impact reviews, tasks, schedule settings, Settings video links, and audit events.
 - Optional audit tables can store individual enrichment runs and standards source-review history.
 - GitHub Actions or an AWS scheduler can call the same API Gateway endpoint daily for scheduled standards/regulations checks.
 - Teams and/or email delivery can send customer notification tasks once the Lambda delivery environment variables are configured.
@@ -54,6 +55,10 @@ The website now has three workspace roles:
 This is a shared workspace role selector inside the page, not production SSO. For broader rollout, connect AWS Cognito, Microsoft Entra ID, or another identity provider so roles are enforced by sign-in rather than a browser selector.
 
 Key changes are saved into `auditEvents` in `APP_STATE_TABLE` and shown in the Settings audit trail.
+
+## Settings Videos
+
+The Settings page can store three training or reference videos. For shared team viewing, upload each video to a hosted location such as S3/CloudFront or SharePoint, then paste the HTTPS video URL into the video slot. The local file picker is only a same-browser preview helper; it does not upload the file or make it available to other devices.
 
 ## Lambda Environment Variables
 

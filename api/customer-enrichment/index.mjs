@@ -176,6 +176,7 @@ function emptyAppState() {
     adminRequests: [],
     impactReviews: [],
     watchSchedule: {},
+    videos: [],
     auditEvents: []
   };
 }
@@ -188,6 +189,7 @@ function sanitizeAppState(state = {}) {
     adminRequests: Array.isArray(state.adminRequests) ? state.adminRequests : [],
     impactReviews: Array.isArray(state.impactReviews) ? state.impactReviews : [],
     watchSchedule: state.watchSchedule && typeof state.watchSchedule === "object" ? state.watchSchedule : {},
+    videos: Array.isArray(state.videos) ? state.videos.slice(0, 3) : [],
     auditEvents: Array.isArray(state.auditEvents) ? state.auditEvents.slice(0, 250) : []
   };
 }

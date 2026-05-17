@@ -2270,6 +2270,47 @@
         gap: 14px;
       }
 
+      .video-admin-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+      }
+
+      .video-slot {
+        display: grid;
+        gap: 13px;
+        padding: 18px;
+        border: 1px solid var(--line);
+        background: #ffffff;
+      }
+
+      .video-slot h3 {
+        margin: 0;
+        color: var(--blue-dark);
+        font-size: 1.08rem;
+        font-weight: 500;
+      }
+
+      .video-preview {
+        display: grid;
+        min-height: 178px;
+        place-items: center;
+        border: 1px solid var(--line);
+        background: var(--soft);
+      }
+
+      .video-preview video {
+        width: 100%;
+        max-height: 260px;
+        background: #111827;
+      }
+
+      .video-empty {
+        padding: 16px;
+        color: var(--muted);
+        text-align: center;
+      }
+
       .setup-step {
         min-height: 146px;
         padding: 18px;
@@ -2597,6 +2638,7 @@
         .guide-strip,
         .command-strip,
         .task-board,
+        .video-admin-grid,
         .source-grid,
         .profile-section-grid,
         .dashboard-grid {
@@ -2642,6 +2684,7 @@
         .section-grid,
         .dashboard-grid,
         .setup-grid,
+        .video-admin-grid,
         .workflow-strip,
         .system-status-grid,
         .ai-band,
@@ -2751,6 +2794,7 @@
               <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-admin-area">Admin Area</button>
               <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-audit-trail">Audit Trail</button>
               <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-team-members">Team Members</button>
+              <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-videos">Videos</button>
               <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-daily-update">Daily Update</button>
               <button class="nav-tab subtab settings-subtab" data-view="setup" data-target="#settings-backend">Backend/API</button>
             </nav>
@@ -3481,6 +3525,19 @@
             <div class="admin-list" id="teamMemberList"></div>
           </div>
 
+          <div class="setup-box settings-anchor" id="settings-videos">
+            <div class="panel-head compact-head">
+              <div>
+                <h2 class="with-info">Videos <span class="info-dot" title="Use hosted HTTPS video URLs for shared playback. Local file preview only works in this browser.">&#9432;</span></h2>
+              </div>
+            </div>
+            <div class="video-admin-grid" id="settingsVideoList"></div>
+            <div class="split">
+              <button class="button" id="saveSettingsVideos" type="button">Save video links</button>
+              <div class="code" id="videoSettingsStatus">No videos saved yet.</div>
+            </div>
+          </div>
+
           <div class="setup-box settings-anchor" id="settings-daily-update">
             <div class="panel-head compact-head">
               <div>
@@ -3786,7 +3843,8 @@
         "assuranceAdminRequestsV1",
         "assuranceImpactReviewsV1",
         "assuranceWatchScheduleV1",
-        "assuranceAuditEventsV1"
+        "assuranceAuditEventsV1",
+        "assuranceSettingsVideosV1"
       ]);
 
       const store = {
@@ -3828,6 +3886,7 @@
       let impactReviews = [];
       let auditEvents = store.get("assuranceAuditEventsV1", []);
       let watchSchedule = { ...defaultWatchSchedule };
+      let settingsVideos = [];
       let currentUserId = localStorage.getItem("trnaCcbCurrentUserId") || "current-session-user";
       let selectedRegions = new Set(["Global"]);
       let currentResult = null;
@@ -3837,6 +3896,7 @@
       let pendingImpactReview = null;
       let pendingProjectCustomerKey = "";
       let globalSearchMatches = [];
+      const localVideoPreviews = new Map();
 
       function normalize(value) {
         return String(value || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -4087,6 +4147,19 @@
         };
       }
 
+      function normalizeVideoRecord(video = {}, index = 0) {
+        return {
+          id: video.id || `settings-video-${index + 1}`,
+          title: String(video.title || "").trim(),
+          url: String(video.url || video.src || "").trim()
+        };
+      }
+
+      function normalizeVideoSlots(value = []) {
+        const list = safeList(value);
+        return Array.from({ length: 3 }, (_, index) => normalizeVideoRecord(list[index] || {}, index));
+      }
+
       suppressRemoteSync = true;
       standards = standards
         .map(normalizeStandardRecord)
@@ -4105,6 +4178,7 @@
       curatedUsers.map(normalizeUserRecord).forEach((starter) => {
         if (!users.some((user) => normalize(user.name) === normalize(starter.name))) users.push(starter);
       });
+      settingsVideos = normalizeVideoSlots(settingsVideos);
       store.set("assuranceStandardsV2", standards);
       store.set("assuranceUsersV1", users);
       suppressRemoteSync = false;
@@ -4224,6 +4298,7 @@
           adminRequests,
           impactReviews,
           watchSchedule,
+          videos: settingsVideos,
           auditEvents
         };
       }
@@ -4236,6 +4311,7 @@
         store.set("assuranceAdminRequestsV1", adminRequests);
         store.set("assuranceImpactReviewsV1", impactReviews);
         store.set("assuranceWatchScheduleV1", watchSchedule);
+        store.set("assuranceSettingsVideosV1", settingsVideos);
         store.set("assuranceAuditEventsV1", auditEvents);
         suppressRemoteSync = false;
       }
@@ -4260,6 +4336,7 @@
         impactReviews = safeList(state.impactReviews);
         auditEvents = safeList(state.auditEvents);
         watchSchedule = { ...defaultWatchSchedule, ...(state.watchSchedule || {}) };
+        settingsVideos = normalizeVideoSlots(state.videos || state.settingsVideos || []);
         suppressRemoteSync = false;
         cacheCurrentAppState();
         renderStandards();
@@ -4267,6 +4344,7 @@
         renderWatch();
         renderAdminRequests();
         renderTeamMembers();
+        renderSettingsVideos();
         renderAccessControls();
         renderAuditTrail();
       }
@@ -7116,6 +7194,109 @@
         });
       }
 
+      function videoSourceForSlot(video, index) {
+        return localVideoPreviews.get(index) || video.url || "";
+      }
+
+      function updateVideoStatus(message = "") {
+        const status = document.getElementById("videoSettingsStatus");
+        if (!status) return;
+        if (message) {
+          status.textContent = message;
+          return;
+        }
+        const savedCount = normalizeVideoSlots(settingsVideos).filter((video) => video.url).length;
+        status.textContent = savedCount
+          ? `${savedCount} hosted video link${savedCount === 1 ? "" : "s"} saved for shared playback.`
+          : "No hosted video links saved yet.";
+      }
+
+      function renderSettingsVideos() {
+        const list = document.getElementById("settingsVideoList");
+        if (!list) return;
+        settingsVideos = normalizeVideoSlots(settingsVideos);
+        list.innerHTML = settingsVideos.map((video, index) => {
+          const source = videoSourceForSlot(video, index);
+          const title = video.title || `Video ${index + 1}`;
+          const link = video.url ? `<p class="row-copy">${externalLink(video.url, sourceLabelForUrl(video.url))}</p>` : "";
+          return `
+            <article class="video-slot">
+              <h3>${esc(title)}</h3>
+              <div class="video-preview" id="settingsVideoPreview${index}">
+                ${source ? `<video controls preload="metadata" src="${esc(source)}"></video>` : `<div class="video-empty">Add a hosted URL or choose a local preview file.</div>`}
+              </div>
+              ${link}
+              <div class="field">
+                <label for="settingsVideoTitle${index}">Title</label>
+                <input id="settingsVideoTitle${index}" value="${esc(video.title)}" placeholder="Example: Customer enrichment walkthrough" />
+              </div>
+              <div class="field">
+                <label for="settingsVideoUrl${index}">Hosted video URL</label>
+                <input id="settingsVideoUrl${index}" value="${esc(video.url)}" placeholder="https://..." />
+              </div>
+              <div class="field">
+                <label for="settingsVideoFile${index}">Local preview file</label>
+                <input id="settingsVideoFile${index}" type="file" accept="video/*" data-video-file="${index}" />
+              </div>
+              <button class="button secondary" type="button" data-clear-video="${index}">Clear slot</button>
+            </article>
+          `;
+        }).join("");
+
+        list.querySelectorAll("[data-video-file]").forEach((input) => {
+          input.addEventListener("change", (event) => {
+            const index = Number(event.target.dataset.videoFile);
+            const file = event.target.files?.[0];
+            if (!file) return;
+            const existing = localVideoPreviews.get(index);
+            if (existing) URL.revokeObjectURL(existing);
+            const previewUrl = URL.createObjectURL(file);
+            localVideoPreviews.set(index, previewUrl);
+            const preview = document.getElementById(`settingsVideoPreview${index}`);
+            if (preview) preview.innerHTML = `<video controls preload="metadata" src="${esc(previewUrl)}"></video>`;
+            const titleField = document.getElementById(`settingsVideoTitle${index}`);
+            if (titleField && !titleField.value.trim()) titleField.value = file.name.replace(/\.[^.]+$/, "");
+            updateVideoStatus("Local preview loaded. Paste a hosted URL and save it for shared team playback.");
+          });
+        });
+
+        list.querySelectorAll("[data-clear-video]").forEach((button) => {
+          button.addEventListener("click", () => {
+            if (!requireRole("admin", "clear a video slot")) return;
+            const index = Number(button.dataset.clearVideo);
+            const existing = localVideoPreviews.get(index);
+            if (existing) URL.revokeObjectURL(existing);
+            localVideoPreviews.delete(index);
+            document.getElementById(`settingsVideoTitle${index}`).value = "";
+            document.getElementById(`settingsVideoUrl${index}`).value = "";
+            const preview = document.getElementById(`settingsVideoPreview${index}`);
+            if (preview) preview.innerHTML = `<div class="video-empty">Slot cleared. Save video links to update shared settings.</div>`;
+            updateVideoStatus("Slot cleared. Save video links to update shared settings.");
+          });
+        });
+        updateVideoStatus();
+      }
+
+      function collectSettingsVideos() {
+        return Array.from({ length: 3 }, (_, index) => normalizeVideoRecord({
+          id: `settings-video-${index + 1}`,
+          title: document.getElementById(`settingsVideoTitle${index}`)?.value || "",
+          url: document.getElementById(`settingsVideoUrl${index}`)?.value || ""
+        }, index));
+      }
+
+      function saveSettingsVideos() {
+        if (!requireRole("admin", "save settings videos")) return;
+        settingsVideos = collectSettingsVideos();
+        store.set("assuranceSettingsVideosV1", settingsVideos);
+        const savedCount = settingsVideos.filter((video) => video.url).length;
+        addAuditEvent("settings.videos.saved", "settings", "Videos", `Saved ${savedCount} hosted video link${savedCount === 1 ? "" : "s"}.`);
+        renderSettingsVideos();
+        setStatus(getApiUrl()
+          ? (savedCount ? "Video links saved for shared playback." : "Video slots saved with no hosted URLs.")
+          : "Video links saved locally. Connect the AWS API endpoint before using this with the team.");
+      }
+
       function openCustomerDeletionDialog(customer) {
         if (!requireRole("consultant", "request customer deletion")) return;
         if (!customer) return;
@@ -7429,6 +7610,7 @@
       document.getElementById("testApiEndpoint").addEventListener("click", testSavedEndpoint);
       document.getElementById("saveDailySchedule").addEventListener("click", saveDailySchedule);
       document.getElementById("runScheduledWatchNow").addEventListener("click", runScheduledWatchNow);
+      document.getElementById("saveSettingsVideos").addEventListener("click", saveSettingsVideos);
       document.getElementById("currentUserChip").addEventListener("click", () => activateView("setup"));
       document.getElementById("currentUserSelect").addEventListener("change", (event) => {
         currentUserId = event.target.value;
@@ -7552,6 +7734,7 @@
       renderWatch();
       renderAdminRequests();
       renderTeamMembers();
+      renderSettingsVideos();
       renderAccessControls();
       renderAuditTrail();
       const initialNavigationState = navigationStateFromHash();
