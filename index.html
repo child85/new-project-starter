@@ -3886,7 +3886,7 @@
       let impactReviews = [];
       let auditEvents = store.get("assuranceAuditEventsV1", []);
       let watchSchedule = { ...defaultWatchSchedule };
-      let settingsVideos = [];
+      let settingsVideos = store.get("assuranceSettingsVideosV1", []);
       let currentUserId = localStorage.getItem("trnaCcbCurrentUserId") || "current-session-user";
       let selectedRegions = new Set(["Global"]);
       let currentResult = null;
@@ -4336,7 +4336,12 @@
         impactReviews = safeList(state.impactReviews);
         auditEvents = safeList(state.auditEvents);
         watchSchedule = { ...defaultWatchSchedule, ...(state.watchSchedule || {}) };
-        settingsVideos = normalizeVideoSlots(state.videos || state.settingsVideos || []);
+        const hasVideoState = Object.prototype.hasOwnProperty.call(state, "videos")
+          || Object.prototype.hasOwnProperty.call(state, "settingsVideos");
+        const localVideoState = store.get("assuranceSettingsVideosV1", settingsVideos);
+        settingsVideos = hasVideoState
+          ? normalizeVideoSlots(state.videos || state.settingsVideos || [])
+          : normalizeVideoSlots(localVideoState);
         suppressRemoteSync = false;
         cacheCurrentAppState();
         renderStandards();
@@ -7223,7 +7228,7 @@
             <article class="video-slot">
               <h3>${esc(title)}</h3>
               <div class="video-preview" id="settingsVideoPreview${index}">
-                ${source ? `<video controls preload="metadata" src="${esc(source)}"></video>` : `<div class="video-empty">Add a hosted URL or choose a local preview file.</div>`}
+                ${source ? `<video controls preload="metadata" src="${esc(source)}"></video>` : `<div class="video-empty">Paste a hosted URL. Local previews are temporary.</div>`}
               </div>
               ${link}
               <div class="field">
@@ -7235,7 +7240,7 @@
                 <input id="settingsVideoUrl${index}" value="${esc(video.url)}" placeholder="https://..." />
               </div>
               <div class="field">
-                <label for="settingsVideoFile${index}">Local preview file</label>
+                <label for="settingsVideoFile${index}">Temporary local preview</label>
                 <input id="settingsVideoFile${index}" type="file" accept="video/*" data-video-file="${index}" />
               </div>
               <button class="button secondary" type="button" data-clear-video="${index}">Clear slot</button>
@@ -7256,7 +7261,7 @@
             if (preview) preview.innerHTML = `<video controls preload="metadata" src="${esc(previewUrl)}"></video>`;
             const titleField = document.getElementById(`settingsVideoTitle${index}`);
             if (titleField && !titleField.value.trim()) titleField.value = file.name.replace(/\.[^.]+$/, "");
-            updateVideoStatus("Local preview loaded. Paste a hosted URL and save it for shared team playback.");
+            updateVideoStatus("Temporary preview loaded. It will disappear after reload unless a hosted URL is saved.");
           });
         });
 
@@ -7285,16 +7290,24 @@
         }, index));
       }
 
-      function saveSettingsVideos() {
+      async function saveSettingsVideos() {
         if (!requireRole("admin", "save settings videos")) return;
         settingsVideos = collectSettingsVideos();
         store.set("assuranceSettingsVideosV1", settingsVideos);
         const savedCount = settingsVideos.filter((video) => video.url).length;
         addAuditEvent("settings.videos.saved", "settings", "Videos", `Saved ${savedCount} hosted video link${savedCount === 1 ? "" : "s"}.`);
         renderSettingsVideos();
-        setStatus(getApiUrl()
-          ? (savedCount ? "Video links saved for shared playback." : "Video slots saved with no hosted URLs.")
-          : "Video links saved locally. Connect the AWS API endpoint before using this with the team.");
+        if (!getApiUrl()) {
+          setStatus("Video links saved locally. Connect the AWS API endpoint before using this with the team.");
+          return;
+        }
+        setStatus("Saving video links to shared AWS storage...");
+        try {
+          await saveSharedAppState("settings.videos.saved");
+          setStatus(savedCount ? "Video links saved for shared playback." : "Video slots saved with no hosted URLs.");
+        } catch (error) {
+          setStatus(`Video links saved in this browser, but shared save failed: ${error.message}`);
+        }
       }
 
       function openCustomerDeletionDialog(customer) {
