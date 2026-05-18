@@ -4160,6 +4160,16 @@
         return Array.from({ length: 3 }, (_, index) => normalizeVideoRecord(list[index] || {}, index));
       }
 
+      function videoSlotHasValue(video) {
+        return Boolean(String(video?.title || "").trim() || String(video?.url || "").trim());
+      }
+
+      function mergeVideoSlots(primary = [], fallback = []) {
+        const first = normalizeVideoSlots(primary);
+        const second = normalizeVideoSlots(fallback);
+        return first.map((slot, index) => videoSlotHasValue(slot) ? slot : second[index]);
+      }
+
       suppressRemoteSync = true;
       standards = standards
         .map(normalizeStandardRecord)
@@ -4336,12 +4346,8 @@
         impactReviews = safeList(state.impactReviews);
         auditEvents = safeList(state.auditEvents);
         watchSchedule = { ...defaultWatchSchedule, ...(state.watchSchedule || {}) };
-        const hasVideoState = Object.prototype.hasOwnProperty.call(state, "videos")
-          || Object.prototype.hasOwnProperty.call(state, "settingsVideos");
         const localVideoState = store.get("assuranceSettingsVideosV1", settingsVideos);
-        settingsVideos = hasVideoState
-          ? normalizeVideoSlots(state.videos || state.settingsVideos || [])
-          : normalizeVideoSlots(localVideoState);
+        settingsVideos = mergeVideoSlots(state.videos || state.settingsVideos || [], localVideoState);
         suppressRemoteSync = false;
         cacheCurrentAppState();
         renderStandards();
