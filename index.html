@@ -4151,8 +4151,20 @@
         return {
           id: video.id || `settings-video-${index + 1}`,
           title: String(video.title || "").trim(),
-          url: String(video.url || video.src || "").trim()
+          url: normalizeHostedVideoUrl(video.url || video.src || "")
         };
+      }
+
+      function normalizeHostedVideoUrl(value = "") {
+        const clean = String(value || "").trim();
+        if (!clean) return "";
+        if (/^https?:\/\//i.test(clean)) return clean;
+        if (/^s3:\/\//i.test(clean)) {
+          const key = clean.split("/").slice(3).join("/");
+          return key ? `https://trnaccb.feckelabs.com/${encodeURI(key)}` : "";
+        }
+        const fileName = clean.split(/[\\/]/).filter(Boolean).pop() || clean;
+        return `https://trnaccb.feckelabs.com/videos/${encodeURIComponent(fileName)}`;
       }
 
       function normalizeVideoSlots(value = []) {
@@ -7243,7 +7255,7 @@
               </div>
               <div class="field">
                 <label for="settingsVideoUrl${index}">Hosted video URL</label>
-                <input id="settingsVideoUrl${index}" value="${esc(video.url)}" placeholder="https://..." />
+                <input id="settingsVideoUrl${index}" value="${esc(video.url)}" placeholder="https://... or uploaded-file.mp4" />
               </div>
               <div class="field">
                 <label for="settingsVideoFile${index}">Temporary local preview</label>
@@ -7301,18 +7313,34 @@
         settingsVideos = collectSettingsVideos();
         store.set("assuranceSettingsVideosV1", settingsVideos);
         const savedCount = settingsVideos.filter((video) => video.url).length;
+        const hasLocalPreview = Array.from(localVideoPreviews.keys()).length > 0;
+        if (!savedCount && hasLocalPreview) {
+          const message = "Local previews cannot be shared. Paste each S3/CloudFront video URL, or just the uploaded .mp4 filename, then save.";
+          updateVideoStatus(message);
+          setStatus(message);
+          return;
+        }
         addAuditEvent("settings.videos.saved", "settings", "Videos", `Saved ${savedCount} hosted video link${savedCount === 1 ? "" : "s"}.`);
         renderSettingsVideos();
         if (!getApiUrl()) {
-          setStatus("Video links saved locally. Connect the AWS API endpoint before using this with the team.");
+          const message = savedCount
+            ? "Video links saved in this browser. Connect the AWS API endpoint before using this with the team."
+            : "No hosted video links saved. Paste S3/CloudFront URLs or uploaded .mp4 filenames first.";
+          updateVideoStatus(message);
+          setStatus(message);
           return;
         }
+        updateVideoStatus("Saving video links to shared AWS storage...");
         setStatus("Saving video links to shared AWS storage...");
         try {
           await saveSharedAppState("settings.videos.saved");
-          setStatus(savedCount ? "Video links saved for shared playback." : "Video slots saved with no hosted URLs.");
+          const message = savedCount ? "Video links saved for shared playback." : "Video slots saved with no hosted URLs.";
+          updateVideoStatus(message);
+          setStatus(message);
         } catch (error) {
-          setStatus(`Video links saved in this browser, but shared save failed: ${error.message}`);
+          const message = `Video links saved in this browser, but shared save failed: ${error.message}`;
+          updateVideoStatus(message);
+          setStatus(message);
         }
       }
 
