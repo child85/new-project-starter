@@ -5922,11 +5922,20 @@
           });
           if (!response.ok) throw new Error(`API returned ${response.status}`);
           const result = await response.json();
+          if (result.status === "ai_error_source_review" || result.status === "source_review_without_ai") {
+            throw new Error(result.notice || "The backend did not complete AI enrichment.");
+          }
           const record = result.standards?.[0] || result.standard || null;
           if (!record) throw new Error("No AI-enriched standard was returned.");
           const enriched = normalizeStandardRecord(record);
+          const hasUsefulDraft = Boolean(enriched.description || enriched.sourceUrl || safeList(enriched.topics).length || safeList(enriched.markets).length);
+          if (!hasUsefulDraft) {
+            throw new Error("The backend returned an empty draft. Update the Lambda code, deploy it, then try again.");
+          }
           fillStandardForm(enriched);
-          status.textContent = "AI enrichment filled the draft. Review the fields, then save.";
+          status.textContent = enriched.sourceStatus === "ai_draft_needs_source"
+            ? "AI drafted a first profile. Add or verify the official source URL before saving as source-verified."
+            : "AI enrichment filled the draft. Review the fields, then save.";
         } catch (error) {
           showStandardApiWarning(true);
           status.textContent = `AI enrichment failed: ${error.message}. Nothing was saved or prefilled.`;

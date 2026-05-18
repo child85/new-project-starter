@@ -631,7 +631,7 @@ async function enrichStandardsWithOpenAi(sourceSnapshots, checkedAt) {
 }
 
 function buildStandardsPrompt(sourceSnapshots, checkedAt) {
-  return `Update a standards/regulations library using source pages fetched live by the backend.
+  return `Update or draft a standards/regulations library using source pages fetched live by the backend when available.
 
 Checked at: ${checkedAt}
 
@@ -673,6 +673,11 @@ Return this exact top-level shape:
 
 Rules:
 - Use only the source extracts and existing record fields. Do not invent publication dates or official changes.
+- When sourceUrl is missing or sourceStatus is "missing_source_url", draft a useful first profile from the standard/regulation name and widely known public information. In that case:
+  - Set sourceStatus to "ai_draft_needs_source".
+  - Set sourceEvidence to "AI drafted from the standard name; add an official source URL before treating this as source-verified."
+  - Suggest the most likely official sourceUrl only when you are confident it is a stable publisher page, such as iso.org, iec.ch, eur-lex.europa.eu, unece.org, nist.gov, ul.com, or gov.uk.
+  - Do not create a fake publication change. Use a change entry titled "Source needed" with impact "Low" and explain that no official source has been checked yet.
 - If the source extract does not state a new amendment/change, create one change entry titled "AI source review" with impact "Review" and summarize what the current source page says.
 - If the source could not be fetched, keep the prior description if present and set sourceEvidence to the failure reason.
 - Keep descriptions short, practical, and useful for customer-facing assurance teams.
