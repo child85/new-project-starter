@@ -4699,13 +4699,24 @@
       async function enrichWithApi(input, confirmed = null) {
         const apiUrl = getApiUrl();
         if (!apiUrl) return null;
+        const customerStandardsContext = standards.slice(0, 60).map((standard) => ({
+          name: standard.name,
+          domain: standard.domain,
+          sector: standard.sector,
+          markets: safeList(standard.markets).slice(0, 6),
+          topics: safeList(standard.topics).slice(0, 8),
+          description: shortSummary(standard.description || "", 220)
+        }));
         const response = await fetch(apiUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...input, confirmedEntity: confirmed, standards })
+          body: JSON.stringify({ ...input, confirmedEntity: confirmed, standards: customerStandardsContext })
         });
-        if (!response.ok) throw new Error(`API returned ${response.status}`);
-        return response.json();
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || data.error) {
+          throw new Error(data.detail || data.error || `API returned ${response.status}`);
+        }
+        return data;
       }
 
       async function enrichStandardsWithApi() {

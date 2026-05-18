@@ -348,7 +348,8 @@ async function enrichWithClaude(body) {
     },
     body: JSON.stringify({
       model: process.env.ANTHROPIC_MODEL || "claude-3-5-haiku-20241022",
-      max_tokens: 2200,
+      max_tokens: Number(process.env.ANTHROPIC_MAX_TOKENS || 4200),
+      temperature: 0.2,
       system: "You enrich customer profiles for assurance, cybersecurity, functional safety, and market-access teams. Return only a valid JSON object. Do not include markdown, comments, prose, or trailing commas.",
       messages: [
         {
@@ -1307,7 +1308,8 @@ Rules:
 - If a fact is uncertain, use "Unknown - verify" or an explicit range instead of inventing precision.
 - Never state guessed standards as confirmed requirements.
 - Do not include low-value evidence notes such as "subject to change", "verify internally", "customer name from input", "not explicitly confirmed by customer", or generic caveats. Only include notes that add specific source, business, product, market, or standards value.
-- Include exactly 10 actions.
+- Include exactly 10 actions. Keep each action under 150 characters.
+- Keep every evidence note and source note under 180 characters.
 - Prefer standards relevant to cybersecurity, functional safety, ATEX/explosive atmospheres, OT security, connected products, automotive, medical devices, financial resilience, and global market access.`;
 }
 
